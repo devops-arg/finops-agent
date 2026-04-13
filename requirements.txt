@@ -1,0 +1,9 @@
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+pydantic==2.10.3
+python-dotenv==1.0.1
+anthropic==0.42.0
+openai==1.58.1
+boto3==1.35.86
+botocore==1.35.86
+sse-starlette==2.2.1

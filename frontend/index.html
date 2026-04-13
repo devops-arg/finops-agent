@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FinOps Intelligence Platform — DevOps ARG</title>
+<link rel="icon" type="image/png" href="/favicon-64.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  /* Clean Linear/Vercel-inspired dark palette */
+  --bg: #0a0a0b;
+  --surface: #121214;
+  --surface-2: #18181b;
+  --surface-hover: #1f1f23;
+  --border: #27272a;
+  --border-strong: #3f3f46;
+  --text: #fafafa;
+  --text-secondary: #a1a1aa;
+  --text-muted: #71717a;
+  /* Accent: DevOps ARG gold */
+  --accent: #C9A227;
+  --accent-hover: #d4b43c;
+  --accent-dim: rgba(201,162,39,0.10);
+  --accent-border: rgba(201,162,39,0.25);
+  /* Data colors */
+  --cyan: #06b6d4;
+  --green: #10b981;
+  --red: #ef4444;
+  --orange: #f59e0b;
+  --purple: #a78bfa;
+  --blue: #3b82f6;
+  --pink: #ec4899;
+  /* Layout */
+  --sidebar-w: 240px;
+  --topbar-h: 56px;
+  --radius: 8px;
+  --radius-sm: 6px;
+  --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);font-size:14px;line-height:1.5;background:var(--bg);-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;font-feature-settings:"cv02","cv03","cv04","cv11";}
+
+/* ── TOPBAR (Linear/Vercel style) ── */
+.topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-h);background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:100;gap:20px;}
+.topbar-brand{display:flex;align-items:center;gap:12px;min-width:260px;}
+.brand-logo{width:32px;height:32px;flex-shrink:0;border-radius:50%;}
+.brand-text{display:flex;flex-direction:column;gap:0;}
+.brand-name{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-0.01em;line-height:1.1;}
+.brand-sub{font-size:11px;color:var(--text-muted);font-weight:400;line-height:1.2;margin-top:2px;}
+.topbar-center{flex:1;display:flex;align-items:center;gap:16px;}
+.topbar-search{display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;color:var(--text-muted);font-size:13px;min-width:280px;cursor:pointer;transition:border-color .15s;}
+.topbar-search:hover{border-color:var(--border-strong);}
+.topbar-search svg{opacity:.5;}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.mode-badge{font-size:11px;font-weight:500;padding:4px 10px;border-radius:6px;display:flex;align-items:center;gap:6px;font-family:var(--mono);}
+.mode-badge::before{content:'';width:6px;height:6px;border-radius:50%;}
+.mode-localstack{background:rgba(167,139,250,0.08);color:#a78bfa;border:1px solid rgba(167,139,250,0.25);}
+.mode-localstack::before{background:#a78bfa;}
+.mode-live{background:rgba(16,185,129,0.08);color:var(--green);border:1px solid rgba(16,185,129,0.25);}
+.mode-live::before{background:var(--green);box-shadow:0 0 8px rgba(16,185,129,0.6);}
+.mode-loading{background:var(--surface);color:var(--text-muted);border:1px solid var(--border);}
+.mode-loading::before{background:var(--text-muted);}
+.topbar-btn{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;color:var(--text-secondary);cursor:pointer;font-size:13px;font-family:var(--font);transition:all .15s;text-decoration:none;}
+.topbar-btn:hover{background:var(--surface);border-color:var(--border-strong);color:var(--text);}
+.topbar-btn svg{opacity:.7;}
+.alerts-btn{position:relative;}
+.alert-count-badge{position:absolute;top:-5px;right:-5px;background:var(--red);color:#fff;font-size:9px;font-weight:700;min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 4px;border:2px solid var(--bg);}
+
+/* ── APP LAYOUT ── */
+.app-layout{display:flex;position:fixed;top:var(--topbar-h);left:0;right:0;bottom:0;}
+
+/* ── SIDEBAR (Linear/Vercel style) ── */
+.sidebar{width:var(--sidebar-w);background:var(--bg);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0;overflow-y:auto;}
+.nav-section{padding:14px 12px 4px;}
+.nav-section-label{font-size:11px;color:var(--text-muted);font-weight:500;padding:0 10px 8px;letter-spacing:0;}
+.nav-btn{width:100%;display:flex;align-items:center;gap:10px;padding:7px 10px;border-radius:var(--radius-sm);border:none;background:transparent;color:var(--text-secondary);cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font);text-align:left;transition:all 0.12s;margin-bottom:1px;}
+.nav-btn:hover{background:var(--surface);color:var(--text);}
+.nav-btn.active{background:var(--surface);color:var(--text);}
+.nav-btn.active::before{content:'';position:absolute;left:0;width:3px;height:16px;background:var(--accent);border-radius:0 2px 2px 0;}
+.nav-btn{position:relative;}
+.nav-btn svg{flex-shrink:0;opacity:0.6;color:currentColor;}
+.nav-btn:hover svg,.nav-btn.active svg{opacity:1;}
+.sidebar-footer{margin-top:auto;padding:16px 16px 20px;border-top:1px solid var(--border);}
+.sidebar-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px;}
+.sidebar-card-title{font-size:11px;color:var(--text-muted);font-weight:500;margin-bottom:4px;}
+.sidebar-card-value{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--accent);}
+.sidebar-card-sub{font-size:11px;color:var(--text-muted);margin-top:4px;}
+.sidebar-links{display:flex;flex-direction:column;gap:2px;margin-bottom:10px;}
+.sidebar-links a{font-size:12px;color:var(--text-secondary);text-decoration:none;transition:color .15s;padding:4px 8px;border-radius:4px;display:flex;align-items:center;gap:8px;}
+.sidebar-links a:hover{color:var(--text);background:var(--surface);}
+.sidebar-links a svg{opacity:.5;}
+.sidebar-version{font-size:10px;color:var(--text-muted);padding:0 8px;font-family:var(--mono);}
+
+/* ── MAIN CONTENT ── */
+.main-content{flex:1;overflow-y:auto;padding:24px 32px;position:relative;z-index:1;}
+.tab-panel{display:none;max-width:1400px;}
+.tab-panel.active{display:block;}
+.page-header{display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border);}
+.page-title{font-size:22px;font-weight:600;color:var(--text);letter-spacing:-0.02em;}
+.page-meta{font-size:13px;color:var(--text-muted);flex:1;}
+.btn-secondary{background:var(--surface);border:1px solid var(--border);color:var(--text-secondary);padding:6px 12px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font);transition:all 0.15s;display:inline-flex;align-items:center;gap:6px;}
+.btn-secondary:hover{background:var(--surface-hover);border-color:var(--border-strong);color:var(--text);}
+.btn-primary{background:var(--accent);border:1px solid var(--accent);color:#0a0a0b;padding:8px 16px;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:600;font-family:var(--font);transition:all 0.15s;}
+.btn-primary:hover{background:var(--accent-hover);border-color:var(--accent-hover);}
+.btn-primary:disabled{opacity:0.5;cursor:not-allowed;}
+
+/* ── KPI GRID ── */
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:24px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;position:relative;transition:all 0.15s ease;}
+.kpi-card:hover{border-color:var(--border-strong);background:var(--surface-hover);}
+.kpi-label{font-size:12px;color:var(--text-muted);font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+.kpi-label svg{opacity:.6;}
+.kpi-value{font-size:24px;font-weight:600;font-family:var(--font);color:var(--text);margin-bottom:6px;letter-spacing:-0.03em;font-variant-numeric:tabular-nums;}
+.kpi-delta{font-size:12px;display:flex;align-items:center;gap:4px;color:var(--text-muted);}
+.delta-up{color:var(--red);}
+.delta-down{color:var(--green);}
+.delta-neutral{color:var(--text-muted);}
+
+/* ── CHARTS ── */
+.charts-row{display:grid;grid-template-columns:1fr 320px;gap:16px;margin-bottom:24px;}
+.chart-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+.chart-title{font-size:13px;font-weight:600;color:var(--text);}
+.chart-badge{font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);padding:3px 8px;border-radius:4px;}
+#trend-chart{width:100%;height:200px;display:block;}
+#donut-chart{display:block;margin:0 auto;}
+.donut-legend{margin-top:10px;display:flex;flex-direction:column;gap:5px;}
+.legend-item{display:flex;align-items:center;gap:8px;font-size:11px;}
+.legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.legend-name{color:var(--text-muted);flex:1;}
+.legend-val{font-family:var(--mono);color:var(--text);font-weight:600;}
+.legend-pct{font-size:10px;color:var(--text-muted);}
+
+/* ── CARDS ROW ── */
+.cards-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+.info-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+.info-card-header{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--text);margin-bottom:12px;}
+.info-count{background:var(--red-dim);color:var(--red);font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-left:auto;}
+.info-list{display:flex;flex-direction:column;gap:8px;}
+.anomaly-item{background:var(--red-dim);border:1px solid rgba(239,68,68,0.2);border-radius:6px;padding:10px 12px;}
+.anomaly-service{font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;margin-bottom:3px;}
+.anomaly-desc{font-size:12px;color:var(--text-muted);}
+.anomaly-cost{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);margin-top:4px;}
+.insight-item{display:flex;align-items:flex-start;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);}
+.insight-item:last-child{border-bottom:none;}
+.insight-icon{color:var(--gold);margin-top:1px;flex-shrink:0;}
+.insight-text{font-size:12px;color:var(--text-muted);line-height:1.5;}
+
+/* ── SERVICES TAB ── */
+.services-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.service-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;align-items:center;gap:14px;transition:all 0.15s;}
+.service-card:hover{background:var(--surface-hover);border-color:var(--border-strong);}
+.svc-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
+.svc-info{flex:1;min-width:0;}
+.svc-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.svc-costs{display:flex;gap:12px;margin-bottom:6px;}
+.svc-cost-item{display:flex;flex-direction:column;}
+.svc-cost-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;}
+.svc-cost-val{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text);}
+.svc-bar-wrap{background:var(--surface2);border-radius:2px;height:4px;overflow:hidden;}
+.svc-bar{height:100%;border-radius:2px;transition:width 1s ease-out;}
+.svc-sparkline{flex-shrink:0;}
+
+/* ── OPTIMIZER TAB ── */
+.optimizer-layout{display:grid;grid-template-columns:240px 1fr;gap:20px;}
+.score-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;margin-bottom:14px;}
+.score-label{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:12px;}
+#gauge-chart{display:block;margin:0 auto;}
+.score-number{font-family:var(--mono);font-size:32px;font-weight:800;color:var(--gold);margin-top:8px;}
+.score-sub{font-size:11px;color:var(--text-muted);}
+.savings-total-card{background:var(--green-dim);border:1px solid rgba(34,197,94,0.25);border-radius:var(--radius);padding:16px;text-align:center;}
+.savings-total-label{font-size:11px;color:var(--green);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:6px;}
+.savings-total-value{font-family:var(--mono);font-size:22px;font-weight:800;color:var(--green);}
+.savings-total-period{font-size:11px;color:var(--text-muted);margin-top:3px;}
+.recommendations-list{display:flex;flex-direction:column;gap:12px;}
+.rec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;transition:all 0.15s;}
+.rec-card:hover{background:var(--surface-hover);border-color:var(--border-strong);}
+.rec-header{display:flex;align-items:center;gap:10px;margin-bottom:10px;}
+.priority-badge{font-size:10px;font-weight:600;padding:3px 8px;border-radius:4px;letter-spacing:0.02em;font-family:var(--mono);}
+.priority-p1{background:rgba(239,68,68,0.08);color:var(--red);border:1px solid rgba(239,68,68,0.2);}
+.priority-p2{background:rgba(245,158,11,0.08);color:var(--orange);border:1px solid rgba(245,158,11,0.2);}
+.priority-p3{background:rgba(16,185,129,0.08);color:var(--green);border:1px solid rgba(16,185,129,0.2);}
+.rec-category{font-size:11px;color:var(--text-muted);text-transform:uppercase;}
+.rec-savings{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--green);margin-left:auto;}
+.rec-title{font-size:14px;font-weight:600;color:var(--text);margin-bottom:5px;}
+.rec-desc{font-size:12px;color:var(--text-muted);line-height:1.5;margin-bottom:10px;}
+.rec-footer{display:flex;align-items:center;gap:8px;}
+.rec-effort{font-size:11px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text-muted);}
+
+/* ── INFRASTRUCTURE TAB ── */
+.infra-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.infra-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:all 0.15s;}
+.infra-section:hover{background:var(--surface-hover);border-color:var(--border-strong);}
+.infra-section-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+.infra-section-title{font-size:13px;font-weight:600;color:var(--text);}
+.infra-section-count{font-size:11px;color:var(--text-muted);margin-left:auto;}
+.resource-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);}
+.resource-row:last-child{border-bottom:none;}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.status-healthy{background:var(--green);box-shadow:0 0 6px rgba(34,197,94,0.5);}
+.status-warning{background:var(--orange);box-shadow:0 0 6px rgba(249,115,22,0.5);}
+.status-error{background:var(--red);box-shadow:0 0 6px rgba(239,68,68,0.5);}
+.status-stopped{background:var(--text-muted);}
+.resource-name{font-size:12px;font-weight:600;color:var(--text);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.resource-meta{font-size:11px;color:var(--text-muted);white-space:nowrap;}
+.resource-type{font-size:10px;color:var(--text-muted);background:var(--surface2);padding:2px 6px;border-radius:3px;white-space:nowrap;}
+.metric-bar-row{display:flex;align-items:center;gap:6px;margin-top:3px;}
+.metric-label{font-size:10px;color:var(--text-muted);width:26px;}
+.metric-bar{flex:1;background:var(--surface2);border-radius:2px;height:4px;overflow:hidden;}
+.metric-fill{height:100%;border-radius:2px;}
+.fill-green{background:var(--green);}
+.fill-orange{background:var(--orange);}
+.fill-red{background:var(--red);}
+.fill-cyan{background:var(--cyan);}
+.metric-val{font-size:10px;font-family:var(--mono);color:var(--text-muted);width:32px;text-align:right;}
+.resource-meta-grid{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 6px;font-size:11px;color:var(--text-muted);}
+.resource-meta-grid span{background:var(--surface2);border:1px solid var(--border);padding:3px 8px;border-radius:4px;font-family:var(--mono);}
+
+/* ── CHAT TAB ── */
+.chat-layout{display:grid !important;grid-template-columns:260px 1fr 280px;height:calc(100vh - var(--topbar-h) - 48px);gap:14px;}
+.trace-sidebar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:8px;overflow:hidden;}
+.trace-sidebar-header{display:flex;align-items:center;gap:8px;padding-bottom:8px;border-bottom:1px solid var(--border);flex-shrink:0;}
+.trace-sidebar-title{font-size:13px;color:var(--text);font-weight:600;}
+.trace-status-dot{width:8px;height:8px;border-radius:50%;background:var(--text-muted);flex-shrink:0;}
+.trace-status-dot.active{background:var(--cyan);animation:pulse-dot 1.2s ease-in-out infinite;}
+.trace-status-dot.done{background:var(--green);}
+.trace-items-list{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;padding-right:4px;}
+.chat-sidebar{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;display:flex;flex-direction:column;gap:4px;overflow-y:auto;}
+.chat-sidebar-title{font-size:11px;color:var(--text-muted);font-weight:500;padding:10px 8px 4px;letter-spacing:0;}
+.chat-queries{display:flex;flex-direction:column;gap:6px;}
+.query-btn{background:transparent;border:1px solid transparent;color:var(--text-secondary);padding:7px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-family:var(--font);text-align:left;line-height:1.4;transition:all 0.12s;}
+.query-btn:hover{background:var(--surface-hover);color:var(--text);border-color:var(--border);}
+.trace-title{font-size:11px;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.1em;font-weight:600;margin-bottom:8px;}
+.trace-item{font-size:11.5px;color:var(--text-secondary);padding:6px 10px;border-left:2px solid var(--border);line-height:1.45;font-family:var(--mono);background:var(--surface-2);border-radius:0 4px 4px 0;word-break:break-word;}
+.trace-item.trace-tool{border-left-color:var(--cyan);color:var(--cyan);}
+.trace-item.trace-think{border-left-color:var(--accent);color:var(--accent);}
+.trace-item.trace-done{border-left-color:var(--green);color:var(--green);}
+.chat-main{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;overflow:hidden;}
+.score-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;margin-bottom:14px;}
+.savings-total-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center;}
+.savings-total-card .savings-total-label{color:var(--green);}
+.savings-total-card .savings-total-value{color:var(--green);}
+.chat-messages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:14px;}
+.chat-welcome{text-align:center;padding:40px 20px;}
+.chat-welcome-title{font-size:16px;font-weight:700;color:var(--text);margin-bottom:8px;}
+.chat-welcome-sub{font-size:13px;color:var(--text-muted);line-height:1.6;}
+.msg-row{display:flex;gap:10px;}
+.msg-row.user{flex-direction:row-reverse;}
+.msg-avatar{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:600;flex-shrink:0;margin-top:2px;overflow:hidden;}
+.avatar-ai{background:var(--accent-dim);border:1px solid var(--accent-border);color:var(--accent);}
+.avatar-ai img{width:100%;height:100%;object-fit:cover;}
+.avatar-user{background:var(--surface-2);border:1px solid var(--border);color:var(--text-secondary);}
+.msg-bubble{max-width:82%;padding:12px 16px;border-radius:10px;font-size:13.5px;line-height:1.6;}
+.bubble-ai{background:var(--surface);border:1px solid var(--border);color:var(--text);}
+.bubble-user{background:var(--accent-dim);border:1px solid var(--accent-border);color:var(--text);}
+.bubble-ai pre{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:12px;margin:8px 0;font-family:var(--mono);font-size:12px;overflow-x:auto;}
+.bubble-ai table{width:100%;border-collapse:collapse;margin:8px 0;font-size:12px;}
+.bubble-ai th{background:var(--surface);border:1px solid var(--border);padding:5px 8px;text-align:left;font-weight:600;}
+.bubble-ai td{border:1px solid var(--border);padding:5px 8px;}
+.typing-indicator{display:flex;gap:4px;padding:4px 0;}
+.typing-dot{width:6px;height:6px;border-radius:50%;background:var(--text-muted);animation:typing 1.4s ease-in-out infinite;}
+.typing-dot:nth-child(2){animation-delay:0.2s;}
+.typing-dot:nth-child(3){animation-delay:0.4s;}
+@keyframes typing{0%,60%,100%{transform:translateY(0);}30%{transform:translateY(-6px);}}
+.chat-input-area{padding:12px;border-top:1px solid var(--border);display:flex;gap:8px;}
+.chat-input{flex:1;background:var(--surface-2);border:1px solid var(--border);color:var(--text);padding:10px 14px;border-radius:var(--radius-sm);font-size:13.5px;font-family:var(--font);outline:none;transition:border-color 0.15s;}
+.chat-input:focus{border-color:var(--accent-border);}
+.chat-input::placeholder{color:var(--text-muted);}
+
+/* ── LOADING SKELETON ── */
+.skeleton{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;height:14px;}
+@keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+::-webkit-scrollbar-thumb:hover{background:var(--text-muted);}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:10px 16px;border-radius:8px;font-size:13px;z-index:9999;opacity:0;transform:translateY(10px);transition:all 0.3s;pointer-events:none;}
+#toast.show{opacity:1;transform:translateY(0);}
+#toast.toast-error{border-color:rgba(239,68,68,0.5);color:var(--red);}
+#toast.toast-ok{border-color:rgba(34,197,94,0.5);color:var(--green);}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+
+<header class="topbar">
+  <div class="topbar-brand">
+    <img class="brand-logo" src="/devopsarg-logo.png" alt="DevOps ARG" />
+    <div class="brand-text">
+      <span class="brand-name">FinOps Intelligence</span>
+      <span class="brand-sub">by DevOps ARG</span>
+    </div>
+  </div>
+  <div class="topbar-center">
+    <!-- reserved for search or breadcrumb -->
+  </div>
+  <div class="topbar-right">
+    <div id="mode-badge" class="mode-badge mode-loading">connecting</div>
+    <a href="https://www.devopsarg.com/en/blog/" class="topbar-btn" target="_blank" title="DevOps ARG blog">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10l6 6v8a2 2 0 0 1-2 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+      <span>Blog</span>
+    </a>
+    <a href="https://www.devopsarg.com" class="topbar-btn" target="_blank" title="DevOps ARG website">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+      <span>devopsarg.com</span>
+    </a>
+    <button class="topbar-btn alerts-btn" id="alerts-btn" title="Anomalies detected">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+      <span id="alert-count" class="alert-count-badge">0</span>
+    </button>
+  </div>
+</header>
+
+<div class="app-layout">
+  <nav class="sidebar">
+    <div class="nav-section">
+      <div class="nav-section-label">Analytics</div>
+      <button class="nav-btn active" data-tab="overview">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+        Overview
+      </button>
+      <button class="nav-btn" data-tab="services">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        Services
+      </button>
+      <button class="nav-btn" data-tab="optimizer">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+        Optimizer
+      </button>
+    </div>
+    <div class="nav-section">
+      <div class="nav-section-label">Operations</div>
+      <button class="nav-btn" data-tab="infrastructure">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
+        Infrastructure
+      </button>
+      <button class="nav-btn" data-tab="chat">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        AI Assistant
+      </button>
+    </div>
+    <div class="sidebar-footer">
+      <div style="padding:10px 12px;background:var(--surface);border:1px solid var(--accent-border);border-radius:var(--radius-sm);margin-bottom:12px;">
+        <div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:4px;">Built by DevOps ARG</div>
+        <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;">Argentina-based DevOps &amp; SRE consultancy for fast-growing startups.</div>
+        <a href="https://www.devopsarg.com/en/#contact" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Work with us →</a>
+      </div>
+      <div class="sidebar-links">
+        <a href="https://www.devopsarg.com" target="_blank">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          Main site
+        </a>
+        <a href="https://www.devopsarg.com/en/blog/" target="_blank">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10l6 6v8a2 2 0 0 1-2 2z"/></svg>
+          Case studies &amp; blog
+        </a>
+        <a href="https://www.devopsarg.com/en/blog/aws-cost-optimization-case-study/" target="_blank">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          AWS cost case study
+        </a>
+        <a href="https://www.devopsarg.com/en/blog/karpenter-spot-scale-to-zero/" target="_blank">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+          Karpenter + Spot case
+        </a>
+        <a href="https://www.devopsarg.com/en/blog/finops-dashboard-grafana-prometheus/" target="_blank">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          FinOps dashboard post
+        </a>
+        <a href="https://www.devopsarg.com/en/#contact" target="_blank">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Contact / hire us
+        </a>
+      </div>
+      <div class="sidebar-version">FinOps Platform · v2.0 · <a href="https://www.devopsarg.com" target="_blank" style="color:var(--text-muted);text-decoration:none;">devopsarg.com</a></div>
+    </div>
+  </nav>
+
+  <main class="main-content">
+
+    <!-- ── OVERVIEW TAB ── -->
+    <div id="tab-overview" class="tab-panel active">
+      <div class="page-header">
+        <h1 class="page-title">Cost Overview</h1>
+        <div class="page-meta" id="report-meta">Loading report...</div>
+        <button class="btn-secondary" id="refresh-btn">↻ Refresh</button>
+      </div>
+      <div class="kpi-grid">
+        <div class="kpi-card kpi-gold">
+          <div class="kpi-label">Last 7 Days</div>
+          <div class="kpi-value" id="kpi-last-week">—</div>
+          <div class="kpi-delta" id="kpi-delta"><span class="delta-neutral">Loading...</span></div>
+        </div>
+        <div class="kpi-card kpi-cyan">
+          <div class="kpi-label">Monthly Projection</div>
+          <div class="kpi-value" id="kpi-projection">—</div>
+          <div class="kpi-delta"><span class="delta-neutral">4-week extrapolation</span></div>
+        </div>
+        <div class="kpi-card kpi-green">
+          <div class="kpi-label">Savings Identified</div>
+          <div class="kpi-value" id="kpi-savings">—</div>
+          <div class="kpi-delta" id="kpi-savings-sub"><span class="delta-neutral">analyzing...</span></div>
+        </div>
+        <div class="kpi-card kpi-purple">
+          <div class="kpi-label">Active Services</div>
+          <div class="kpi-value" id="kpi-services">—</div>
+          <div class="kpi-delta" id="kpi-top-svc"><span class="delta-neutral">—</span></div>
+        </div>
+      </div>
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">Weekly Cost Trend</span>
+            <span class="chart-badge" id="trend-label">Loading...</span>
+          </div>
+          <canvas id="trend-chart"></canvas>
+        </div>
+        <div class="chart-card">
+          <div class="chart-header">
+            <span class="chart-title">By Service</span>
+          </div>
+          <canvas id="donut-chart" width="160" height="160"></canvas>
+          <div id="donut-legend" class="donut-legend"></div>
+        </div>
+      </div>
+      <div class="cards-row">
+        <div class="info-card">
+          <div class="info-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>Anomalies</span>
+            <span class="info-count" id="anomaly-count">0</span>
+          </div>
+          <div id="anomalies-list" class="info-list"><div class="skeleton" style="height:60px"></div></div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-header">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#C9A227" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+            <span>Quick Insights</span>
+          </div>
+          <div id="insights-list" class="info-list"><div class="skeleton" style="height:60px"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SERVICES TAB ── -->
+    <div id="tab-services" class="tab-panel">
+      <div class="page-header">
+        <h1 class="page-title">Service Breakdown</h1>
+        <div class="page-meta">Cost per AWS service — last 4 weeks</div>
+      </div>
+      <div id="services-grid" class="services-grid"></div>
+    </div>
+
+    <!-- ── OPTIMIZER TAB ── -->
+    <div id="tab-optimizer" class="tab-panel">
+      <div class="page-header">
+        <h1 class="page-title">Cost Optimizer</h1>
+        <div class="page-meta">Savings opportunities ranked by impact</div>
+        <a href="https://www.devopsarg.com/en/#contact" target="_blank" class="btn-primary" style="text-decoration:none;">Implement with DevOps ARG →</a>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--accent-border);border-radius:var(--radius);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:16px;">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div style="flex:1;font-size:13px;color:var(--text-secondary);line-height:1.5">
+          <strong style="color:var(--text)">Need help implementing these?</strong>
+          DevOps ARG has shipped <a href="https://www.devopsarg.com/en/blog/aws-cost-optimization-case-study/" target="_blank" style="color:var(--accent);text-decoration:none">$237K/year in AWS savings</a> for Series A/B fintechs. Karpenter migrations, Graviton, NAT reduction, Savings Plans.
+        </div>
+        <a href="https://www.devopsarg.com/en/#contact" target="_blank" class="btn-secondary" style="white-space:nowrap;text-decoration:none;">Book a call</a>
+      </div>
+      <div class="optimizer-layout">
+        <div>
+          <div class="score-card">
+            <div class="score-label">Savings Score</div>
+            <canvas id="gauge-chart" width="180" height="110"></canvas>
+            <div class="score-number" id="savings-score">—</div>
+            <div class="score-sub">out of 100</div>
+          </div>
+          <div class="savings-total-card">
+            <div class="savings-total-label">Total Identified</div>
+            <div class="savings-total-value" id="total-savings">—</div>
+            <div class="savings-total-period">per month</div>
+          </div>
+        </div>
+        <div id="recommendations-list" class="recommendations-list"></div>
+      </div>
+    </div>
+
+    <!-- ── INFRASTRUCTURE TAB ── -->
+    <div id="tab-infrastructure" class="tab-panel">
+      <div class="page-header">
+        <h1 class="page-title">Infrastructure Health</h1>
+        <div class="page-meta" id="infra-meta">Loading...</div>
+        <select id="region-select" class="region-select" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:12px;font-family:var(--mono);cursor:pointer;min-width:160px">
+          <option value="">Loading regions...</option>
+        </select>
+      </div>
+      <div id="infra-grid" class="infra-grid"></div>
+    </div>
+
+    <!-- ── CHAT TAB ── -->
+    <div id="tab-chat" class="tab-panel chat-layout">
+      <div class="chat-sidebar">
+        <div class="chat-sidebar-title">Quick Insights</div>
+        <div class="chat-queries">
+          <button class="query-btn" data-q="What's our biggest cost driver this week and how much of it is it?">Biggest cost driver this week</button>
+          <button class="query-btn" data-q="What's our projected monthly AWS spend based on current trend?">Projected monthly spend</button>
+          <button class="query-btn" data-q="Break down costs by region — where is most of our spend happening?">Cost breakdown by region</button>
+          <button class="query-btn" data-q="Any cost anomalies detected in the last 30 days? Explain root causes.">Anomalies last 30 days</button>
+        </div>
+
+        <div class="chat-sidebar-title" style="margin-top:14px">Networking & Data Transfer</div>
+        <div class="chat-queries">
+          <button class="query-btn" data-q="How much are we paying for NAT Gateway data processing? Typical savings from VPC endpoints?">NAT Gateway cost + VPC endpoint savings</button>
+          <button class="query-btn" data-q="Analyze our data transfer costs — cross-AZ, cross-region, and internet egress. Which is worst?">Data transfer breakdown (AZ, region, egress)</button>
+          <button class="query-btn" data-q="Do we have VPC endpoints for S3, ECR, STS, CloudWatch? What would we save by adding them?">VPC endpoints: S3, ECR, STS, CloudWatch</button>
+          <button class="query-btn" data-q="How much traffic is flowing between AZs through NAT Gateway instead of stayng within AZ? Topology-aware routing opportunity?">Cross-AZ traffic via NAT (topology-aware)</button>
+          <button class="query-btn" data-q="What's our inter-region replication cost? Is the data really needed in all regions?">Inter-region replication cost</button>
+        </div>
+
+        <div class="chat-sidebar-title" style="margin-top:14px">Compute Optimization</div>
+        <div class="chat-queries">
+          <button class="query-btn" data-q="Which EC2 instances are candidates for rightsizing? Use Compute Optimizer data.">EC2 rightsizing candidates</button>
+          <button class="query-btn" data-q="What percentage of our EC2 fleet is on Spot? Where could we safely increase Spot usage?">Spot instance coverage</button>
+          <button class="query-btn" data-q="Are dev and staging clusters running 24/7? Scale-to-zero opportunity outside business hours?">Dev/staging scale-to-zero</button>
+          <button class="query-btn" data-q="Migrate x86 instances to Graviton (ARM) — which workloads are safe and what's the saving?">Graviton migration savings</button>
+        </div>
+
+        <div class="chat-sidebar-title" style="margin-top:14px">Commitments</div>
+        <div class="chat-queries">
+          <button class="query-btn" data-q="What's our Savings Plans / Reserved Instance coverage? Recommend a 1-year Compute Savings Plan commitment.">Savings Plans coverage + recommendation</button>
+          <button class="query-btn" data-q="Reserved Instance opportunities for RDS and ElastiCache — what's the savings potential?">RI potential: RDS + ElastiCache</button>
+          <button class="query-btn" data-q="What percentage of our baseline compute is on-demand vs committed (RI/SP)?">On-demand vs committed baseline</button>
+        </div>
+
+        <div class="chat-sidebar-title" style="margin-top:14px">Storage & Databases</div>
+        <div class="chat-queries">
+          <button class="query-btn" data-q="Any orphaned EBS volumes or old snapshots we could delete?">Orphaned EBS / snapshots</button>
+          <button class="query-btn" data-q="Our S3 lifecycle policies — which buckets lack lifecycle rules? Intelligent-Tiering opportunities?">S3 lifecycle + Intelligent-Tiering</button>
+          <button class="query-btn" data-q="Any RDS instances with low CPU utilization that could be downsized or switched to Aurora Serverless?">RDS downsize / Aurora Serverless</button>
+          <button class="query-btn" data-q="Migrate gp2 EBS volumes to gp3 — how much would we save on EBS storage + IOPS?">Migrate EBS gp2 → gp3</button>
+        </div>
+
+        <div class="chat-sidebar-title" style="margin-top:14px">Real-Time Workloads</div>
+        <div class="chat-queries">
+          <button class="query-btn" data-q="What's our biggest cost driver this week and is it over-provisioned? Analyze utilization.">Top cost driver utilization</button>
+          <button class="query-btn" data-q="WebSocket and long-lived connection costs — are we holding idle connections we could drop after inactivity?">WebSocket idle connections</button>
+          <button class="query-btn" data-q="Can we pre-scale capacity based on known event schedules instead of keeping warm fleet 24/7?">Event-based pre-scaling</button>
+        </div>
+
+        <div class="chat-sidebar-title" style="margin-top:14px">Predictive Scaling</div>
+        <div class="chat-queries">
+          <button class="query-btn" data-q="What's our baseline pod count vs peak? Could we reduce baseline with predictive pre-scaling (KEDA + Karpenter)?">Predictive pre-scaling opportunity</button>
+          <button class="query-btn" data-q="At what Spot interruption threshold does Spot become too risky for our high-traffic workloads? Current Spot coverage?">Spot interruption risk analysis</button>
+          <button class="query-btn" data-q="Could we forecast when RDS read replicas will hit max_connections under peak load? Avoid emergency scaling costs.">RDS connection forecasting</button>
+        </div>
+
+        <div class="chat-sidebar-title" style="margin-top:14px">AI Ops & Automation</div>
+        <div class="chat-queries">
+          <button class="query-btn" data-q="What's the $ value of MTTR reduction through AI-driven incident response? Fewer SLA breaches + less engineer time.">AI ops ROI (MTTR → $)</button>
+          <button class="query-btn" data-q="LLM token costs for agent operations — could we route simple queries to Haiku and only escalate complex ones to Sonnet?">LLM cost optimization (Haiku vs Sonnet)</button>
+        </div>
+
+        <div class="chat-sidebar-title" style="margin-top:14px">Observability & Logs</div>
+        <div class="chat-queries">
+          <button class="query-btn" data-q="Are CloudWatch Logs costs growing? Could we move to S3 + Athena or Loki to reduce observability spend?">CloudWatch Logs cost trend</button>
+          <button class="query-btn" data-q="Break down costs by tag — Environment, Team, Service. Which team is spending the most and why?">Cost by team/tag</button>
+          <button class="query-btn" data-q="How much of our Cloudflare WAF cost comes from false positive blocking vs actual attack mitigation?">Cloudflare WAF false positives</button>
+        </div>
+      </div>
+      <div class="chat-main">
+        <div class="chat-messages" id="chat-messages">
+          <div class="chat-welcome">
+            <img src="/devopsarg-logo.png" alt="DevOps ARG" style="width:56px;height:56px;border-radius:50%;margin:0 auto 16px;display:block;" />
+            <div class="chat-welcome-title">FinOps AI Agent</div>
+            <div class="chat-welcome-sub">Built by <a href="https://www.devopsarg.com" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500">DevOps ARG</a> · powered with Claude<br>Ask anything about your AWS costs, infrastructure health, or optimization opportunities.</div>
+          </div>
+        </div>
+        <div class="chat-input-area">
+          <input type="text" class="chat-input" id="chat-input" placeholder="Ask about costs, anomalies, rightsizing...">
+          <button class="btn-primary" id="chat-send">Send</button>
+        </div>
+      </div>
+
+      <aside class="trace-sidebar">
+        <div class="trace-sidebar-header">
+          <div class="trace-status-dot" id="trace-status-dot"></div>
+          <div class="trace-sidebar-title">Reasoning Trace</div>
+          <div style="margin-left:auto;font-size:10px;color:var(--text-muted)" id="trace-status-label">idle</div>
+        </div>
+        <div class="trace-items-list" id="trace-items">
+          <div style="font-size:11px;color:var(--text-muted);padding:10px 4px;text-align:center">Ask a question to watch the agent reason in real time.</div>
+        </div>
+      </aside>
+    </div>
+
+  </main>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+// CONFIG + STATE
+// ════════════════════════════════════════════════════════
+const API = '';
+const SVC_COLORS = ['#C9A227','#06b6d4','#8b5cf6','#22c55e','#f97316','#ec4899','#64748b'];
+const SVG = {
+  bolt: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+  db: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+  search: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+  cache: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7"/><ellipse cx="12" cy="5" rx="8" ry="3"/></svg>',
+  bucket: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>',
+  transfer: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>',
+  k8s: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/></svg>',
+  chart: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>',
+  key: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>',
+  dns: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>',
+  cloud: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"/></svg>',
+};
+const SVC_ICONS = {
+  'Amazon EC2': SVG.bolt, 'Amazon RDS': SVG.db, 'Amazon OpenSearch Service': SVG.search,
+  'Amazon ElastiCache': SVG.cache, 'Amazon S3': SVG.bucket, 'AWS Data Transfer': SVG.transfer,
+  'Amazon EKS': SVG.k8s, 'Amazon CloudWatch': SVG.chart, 'AWS Secrets Manager': SVG.key,
+  'Amazon Route 53': SVG.dns,
+};
+
+const state = {
+  report: null, infra: null, optimize: null,
+  sessionId: null, loading: { report: true, infra: true, optimize: true },
+  chartsDrawn: false,
+};
+
+// ════════════════════════════════════════════════════════
+// INIT
+// ════════════════════════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  setupNavigation();
+  setupChat();
+  setupRefresh();
+  init();
+});
+
+async function init() {
+  try {
+    const health = await fetchJSON('/api/health');
+    updateModeBadge(health);
+  } catch (e) {
+    updateModeBadge(null);
+    toast('Backend offline — is the server running on :8000?', 'error');
+  }
+  // Load all data in parallel
+  Promise.all([loadReport(), loadInfra(), loadOptimize()]);
+}
+
+async function fetchJSON(path) {
+  const r = await fetch(API + path);
+  if (!r.ok) throw new Error(`HTTP ${r.status} from ${path}`);
+  return r.json();
+}
+
+// ════════════════════════════════════════════════════════
+// DATA LOADERS
+// ════════════════════════════════════════════════════════
+async function loadReport() {
+  try {
+    const data = await fetchJSON('/api/report');
+    state.report = data;
+    state.loading.report = false;
+    renderOverview();
+    renderServices();
+    // Start live ticker based on last week's cost
+    startLiveTicker(data.summary.lastWeekCost);
+    // Update alert badge
+    const anomalyCount = (data.anomalies || []).length;
+    document.getElementById('alert-count').textContent = anomalyCount;
+  } catch (e) {
+    console.error('Report load failed:', e);
+    document.getElementById('report-meta').textContent = 'Failed to load — is backend running?';
+  }
+}
+
+async function loadInfra(region) {
+  try {
+    const meta = document.getElementById('infra-meta');
+    if (meta) meta.textContent = `Loading ${region ? region : 'default region'}...`;
+    const qs = region ? `?region=${encodeURIComponent(region)}` : '';
+    const data = await fetchJSON('/api/infrastructure' + qs);
+    state.infra = data;
+    state.loading.infra = false;
+    renderInfrastructure();
+    populateRegionSelector(data);
+    if (meta) {
+      const scanned = (data.regions_scanned || []).join(', ');
+      meta.textContent = data.scan_mode === 'all'
+        ? `Scanned ${(data.regions_scanned||[]).length} regions`
+        : `Region: ${scanned || 'default'}`;
+    }
+  } catch (e) { console.error('Infra load failed:', e); }
+}
+
+function populateRegionSelector(data) {
+  const sel = document.getElementById('region-select');
+  if (!sel || !data.available_regions) return;
+  const current = (data.regions_scanned && data.regions_scanned[0]) || data.default_region || '';
+  const allMode = data.scan_mode === 'all';
+  const regions = data.available_regions;
+  sel.innerHTML = `
+    <option value="">${data.default_region || 'default'} (from .env)</option>
+    <option value="all" ${allMode ? 'selected' : ''}>— ALL REGIONS (slow) —</option>
+    ${regions.map(r => `<option value="${r}" ${r === current && !allMode ? 'selected' : ''}>${r}</option>`).join('')}
+  `;
+  if (!sel.dataset.wired) {
+    sel.addEventListener('change', () => loadInfra(sel.value));
+    sel.dataset.wired = '1';
+  }
+}
+
+async function loadOptimize() {
+  try {
+    const data = await fetchJSON('/api/optimize');
+    state.optimize = data;
+    state.loading.optimize = false;
+    renderOptimizer();
+    // Update savings KPI once we have both report and optimizer data
+    if (state.report) updateSavingsKPI();
+  } catch (e) { console.error('Optimizer load failed:', e); }
+}
+
+// ════════════════════════════════════════════════════════
+// TAB NAVIGATION
+// ════════════════════════════════════════════════════════
+function setupNavigation() {
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+  });
+}
+
+function switchTab(id) {
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${id}`));
+  // Redraw charts after the panel becomes visible (canvas needs to be in DOM)
+  if (id === 'overview') setTimeout(redrawCharts, 30);
+  if (id === 'optimizer' && state.optimize) setTimeout(() => drawGauge(state.optimize.score), 30);
+}
+
+function setupRefresh() {
+  document.getElementById('refresh-btn').addEventListener('click', async () => {
+    toast('Refreshing report...');
+    try {
+      await fetchJSON('/api/report/refresh');
+      await loadReport();
+      toast('Report refreshed', 'ok');
+    } catch (e) { toast('Refresh failed', 'error'); }
+  });
+}
+
+// ════════════════════════════════════════════════════════
+// OVERVIEW TAB
+// ════════════════════════════════════════════════════════
+function renderOverview() {
+  const r = state.report;
+  if (!r) return;
+  const s = r.summary;
+
+  // Meta
+  const gen = new Date(r.generated);
+  document.getElementById('report-meta').textContent = `Generated ${gen.toLocaleString()} · ${r.mode}`;
+
+  // KPIs with count-up
+  countUp(document.getElementById('kpi-last-week'), s.lastWeekCost, v => '$' + fmt(v));
+  countUp(document.getElementById('kpi-projection'), s.monthlyProjection, v => '$' + fmt(v));
+  countUp(document.getElementById('kpi-services'), s.activeServices, v => Math.round(v).toString());
+
+  // Delta indicator
+  const deltaEl = document.getElementById('kpi-delta');
+  const cls = s.weeklyChange > 0 ? 'delta-up' : s.weeklyChange < 0 ? 'delta-down' : 'delta-neutral';
+  const sign = s.weeklyChange > 0 ? '▲' : s.weeklyChange < 0 ? '▼' : '';
+  deltaEl.innerHTML = `<span class="${cls}">${sign} ${Math.abs(s.weeklyChange)}% vs prior week</span>`;
+
+  // Top service
+  document.getElementById('kpi-top-svc').innerHTML = `<span class="delta-neutral">Top: ${s.topService}</span>`;
+
+  // Anomalies
+  renderAnomalies(r.anomalies || []);
+
+  // Insights
+  renderInsights(r, s);
+
+  // Charts
+  setTimeout(redrawCharts, 60);
+}
+
+function updateSavingsKPI() {
+  if (!state.optimize) return;
+  const monthly = state.optimize.totalMonthlySavings ?? state.optimize.total_monthly_savings_identified ?? 0;
+  countUp(document.getElementById('kpi-savings'), monthly, v => '$' + fmt(v));
+  document.getElementById('kpi-savings-sub').innerHTML =
+    `<span class="delta-down">▼ ${state.optimize.recommendations.length} actions identified</span>`;
+}
+
+function redrawCharts() {
+  if (!state.report) return;
+  drawTrendChart(state.report.weeklyTrend || []);
+  drawDonutChart(state.report.byService || []);
+}
+
+function renderAnomalies(anomalies) {
+  const el = document.getElementById('anomalies-list');
+  document.getElementById('anomaly-count').textContent = anomalies.length;
+  if (!anomalies.length) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">No anomalies detected this period.</div>';
+    return;
+  }
+  el.innerHTML = anomalies.map(a => `
+    <div class="anomaly-item">
+      <div class="anomaly-service">${a.service} · ${a.status === 'resolved' ? 'RESOLVED' : 'ACTIVE'}</div>
+      <div class="anomaly-desc">${a.root_cause || a.description || a.explanation || ''}</div>
+      <div class="anomaly-cost">+$${fmt(a.impact || a.cost || a.excess_cost || 0)} excess (+${a.impact_pct || 0}%)</div>
+    </div>`).join('');
+}
+
+function renderInsights(report, summary) {
+  const el = document.getElementById('insights-list');
+  const insights = [
+    `4-week average spend: <strong>$${fmt(summary.fourWeekAvg)}/week</strong>`,
+    `Top service: <strong>${summary.topService}</strong> — highest cost driver`,
+    `${summary.activeAccounts} account${summary.activeAccounts !== 1 ? 's' : ''} active across ${summary.activeServices} services`,
+    summary.weeklyChange > 5 ? `Cost increasing — up <strong>${summary.weeklyChange}%</strong> week-over-week` :
+      summary.weeklyChange < -5 ? `Cost trending down — <strong>${Math.abs(summary.weeklyChange)}%</strong> reduction` :
+        `Costs stable — within ±5% week-over-week`,
+  ];
+  el.innerHTML = insights.map(t => `
+    <div class="insight-item">
+      <svg class="insight-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      <span class="insight-text">${t}</span>
+    </div>`).join('');
+}
+
+// ════════════════════════════════════════════════════════
+// TREND CHART (Canvas line chart)
+// ════════════════════════════════════════════════════════
+function drawTrendChart(weeklyTrend) {
+  const canvas = document.getElementById('trend-chart');
+  if (!canvas || !weeklyTrend.length) return;
+  canvas.width = canvas.offsetWidth || 600;
+  canvas.height = 200;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const P = { t: 16, r: 16, b: 38, l: 64 };
+  const vals = weeklyTrend.map(d => d.cost);
+  const minV = Math.min(...vals) * 0.92;
+  const maxV = Math.max(...vals) * 1.08;
+  const xS = i => P.l + i * (W - P.l - P.r) / Math.max(vals.length - 1, 1);
+  const yS = v => H - P.b - ((v - minV) / (maxV - minV)) * (H - P.t - P.b);
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Grid
+  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const y = H - P.b - i * (H - P.t - P.b) / 4;
+    ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(W - P.r, y); ctx.stroke();
+    const v = minV + i * (maxV - minV) / 4;
+    ctx.fillStyle = '#64748b'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
+    ctx.fillText('$' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(0)), P.l - 6, y + 4);
+  }
+
+  // X labels
+  weeklyTrend.forEach((d, i) => {
+    ctx.fillStyle = '#64748b'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
+    ctx.fillText(d.week, xS(i), H - P.b + 16);
+  });
+
+  // Gradient fill
+  const grad = ctx.createLinearGradient(0, P.t, 0, H - P.b);
+  grad.addColorStop(0, 'rgba(201,162,39,0.25)');
+  grad.addColorStop(1, 'rgba(201,162,39,0.02)');
+  ctx.beginPath();
+  ctx.moveTo(xS(0), yS(vals[0]));
+  weeklyTrend.forEach((d, i) => ctx.lineTo(xS(i), yS(d.cost)));
+  ctx.lineTo(xS(vals.length - 1), H - P.b);
+  ctx.lineTo(xS(0), H - P.b);
+  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+
+  // Line
+  ctx.beginPath(); ctx.strokeStyle = '#C9A227'; ctx.lineWidth = 2.5;
+  ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  weeklyTrend.forEach((d, i) => i === 0 ? ctx.moveTo(xS(i), yS(d.cost)) : ctx.lineTo(xS(i), yS(d.cost)));
+  ctx.stroke();
+
+  // Dots
+  weeklyTrend.forEach((d, i) => {
+    ctx.beginPath(); ctx.fillStyle = '#C9A227';
+    ctx.arc(xS(i), yS(d.cost), 4, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#070e1c'; ctx.lineWidth = 2; ctx.stroke();
+  });
+
+  // Label on last dot
+  if (vals.length > 0) {
+    const li = vals.length - 1;
+    ctx.fillStyle = '#C9A227'; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'left';
+    ctx.fillText('$' + fmt(vals[li]), xS(li) + 8, yS(vals[li]) + 4);
+  }
+
+  // Update label
+  const tl = document.getElementById('trend-label');
+  if (tl) tl.textContent = `${weeklyTrend.length} weeks · ${weeklyTrend[0]?.week} → ${weeklyTrend[weeklyTrend.length-1]?.week}`;
+}
+
+// ════════════════════════════════════════════════════════
+// DONUT CHART (Canvas)
+// ════════════════════════════════════════════════════════
+function drawDonutChart(byService) {
+  const canvas = document.getElementById('donut-chart');
+  if (!canvas || !byService.length) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 10, r = R * 0.55;
+
+  // Get last week costs
+  const items = byService.slice(0, 6).map((s, i) => {
+    const costs = Object.values(s.costs || {});
+    const lastCost = costs[costs.length - 1] || 0;
+    return { name: s.name, cost: lastCost, color: SVC_COLORS[i] };
+  });
+  const total = items.reduce((a, b) => a + b.cost, 0);
+  if (total === 0) return;
+
+  ctx.clearRect(0, 0, W, H);
+  let angle = -Math.PI / 2;
+  items.forEach(item => {
+    const sweep = (item.cost / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, R, angle, angle + sweep);
+    ctx.closePath();
+    ctx.fillStyle = item.color;
+    ctx.fill();
+    ctx.strokeStyle = '#070e1c';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    angle += sweep;
+  });
+
+  // Hole
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = '#0d1d35';
+  ctx.fill();
+
+  // Center label
+  ctx.fillStyle = '#C9A227'; ctx.font = 'bold 13px monospace'; ctx.textAlign = 'center';
+  ctx.fillText('$' + fmt(total), cx, cy + 4);
+  ctx.fillStyle = '#64748b'; ctx.font = '9px monospace';
+  ctx.fillText('last week', cx, cy + 16);
+
+  // Legend
+  const legend = document.getElementById('donut-legend');
+  if (legend) {
+    legend.innerHTML = items.map(item => `
+      <div class="legend-item">
+        <div class="legend-dot" style="background:${item.color}"></div>
+        <span class="legend-name">${item.name.replace('Amazon ','').replace('AWS ','')}</span>
+        <span class="legend-val">$${fmt(item.cost)}</span>
+        <span class="legend-pct">${((item.cost/total)*100).toFixed(0)}%</span>
+      </div>`).join('');
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// SERVICES TAB
+// ════════════════════════════════════════════════════════
+function renderServices() {
+  const r = state.report;
+  const el = document.getElementById('services-grid');
+  if (!r || !el) return;
+
+  const byService = r.byService || [];
+  const weeks = r.weeks || [];
+  const totalLastWeek = (r.weeklyTrend || []).slice(-1)[0]?.cost || 1;
+
+  el.innerHTML = byService.map((svc, idx) => {
+    const costs = weeks.map(w => svc.costs[w] || 0);
+    const lastCost = costs[costs.length - 1] || 0;
+    const prevCost = costs[costs.length - 2] || 0;
+    const pct = prevCost ? ((lastCost - prevCost) / prevCost * 100).toFixed(1) : '0';
+    const barPct = Math.min((lastCost / totalLastWeek) * 100, 100).toFixed(1);
+    const color = SVC_COLORS[idx % SVC_COLORS.length];
+    const trendUp = lastCost > prevCost;
+    const deltaClass = trendUp ? 'delta-up' : 'delta-down';
+    const deltaSign = trendUp ? '▲' : '▼';
+
+    return `
+    <div class="service-card">
+      <div class="svc-icon" style="background:${color}20;border:1px solid ${color}40;color:${color}">
+        ${SVC_ICONS[svc.name] || SVG.cloud}
+      </div>
+      <div class="svc-info">
+        <div class="svc-name">${svc.name}</div>
+        <div class="svc-costs">
+          <div class="svc-cost-item">
+            <span class="svc-cost-label">Last Week</span>
+            <span class="svc-cost-val" style="color:${color}">$${fmt(lastCost)}</span>
+          </div>
+          <div class="svc-cost-item">
+            <span class="svc-cost-label">Monthly est.</span>
+            <span class="svc-cost-val">$${fmt(lastCost * 4.33)}</span>
+          </div>
+          <div class="svc-cost-item">
+            <span class="svc-cost-label">Trend</span>
+            <span class="svc-cost-val ${deltaClass}">${deltaSign}${Math.abs(pct)}%</span>
+          </div>
+        </div>
+        <div class="svc-bar-wrap">
+          <div class="svc-bar" style="width:${barPct}%;background:${color}"></div>
+        </div>
+      </div>
+      <canvas class="svc-sparkline" width="60" height="32" data-idx="${idx}"></canvas>
+    </div>`;
+  }).join('');
+
+  // Draw sparklines
+  byService.forEach((svc, idx) => {
+    const canvas = el.querySelector(`canvas[data-idx="${idx}"]`);
+    if (!canvas) return;
+    const costs = weeks.map(w => svc.costs[w] || 0);
+    drawSparkline(canvas, costs, SVC_COLORS[idx % SVC_COLORS.length]);
+  });
+}
+
+function drawSparkline(canvas, data, color) {
+  if (!data.length) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const min = Math.min(...data), max = Math.max(...data);
+  const range = max - min || 1;
+  const xS = i => i * (W - 1) / Math.max(data.length - 1, 1);
+  const yS = v => H - 4 - ((v - min) / range) * (H - 8);
+  ctx.clearRect(0, 0, W, H);
+  ctx.beginPath(); ctx.strokeStyle = color; ctx.lineWidth = 1.5;
+  data.forEach((v, i) => i === 0 ? ctx.moveTo(xS(i), yS(v)) : ctx.lineTo(xS(i), yS(v)));
+  ctx.stroke();
+  // Last point dot
+  const li = data.length - 1;
+  ctx.beginPath(); ctx.fillStyle = color;
+  ctx.arc(xS(li), yS(data[li]), 2.5, 0, Math.PI * 2); ctx.fill();
+}
+
+// ════════════════════════════════════════════════════════
+// OPTIMIZER TAB
+// ════════════════════════════════════════════════════════
+function renderOptimizer() {
+  const opt = state.optimize;
+  const el = document.getElementById('recommendations-list');
+  if (!opt || !el) return;
+
+  // Support both key naming conventions from the API
+  const score = opt.score ?? opt.savings_score ?? 0;
+  const totalSavings = opt.totalMonthlySavings ?? opt.total_monthly_savings_identified ?? 0;
+
+  document.getElementById('savings-score').textContent = score || '—';
+  const totalEl = document.getElementById('total-savings');
+  if (totalEl) countUp(totalEl, totalSavings, v => '$' + fmt(v));
+  drawGauge(score);
+
+  // Recommendations
+  const priorityColors = { P1: 'priority-p1', P2: 'priority-p2', P3: 'priority-p3' };
+  el.innerHTML = (opt.recommendations || []).map(rec => {
+    const savings = rec.monthlySavings ?? rec.monthly_savings ?? 0;
+    const category = rec.category ?? rec.service ?? '';
+    const desc = rec.description ?? rec.detail ?? '';
+    const effort = rec.effort ? rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1) : '';
+    const titleEsc = (rec.title || '').replace(/'/g, "\\'");
+    return `
+    <div class="rec-card">
+      <div class="rec-header">
+        <span class="priority-badge ${priorityColors[rec.priority] || 'priority-p3'}">${rec.priority}</span>
+        <span class="rec-category">${category}</span>
+        <span class="rec-savings">-$${fmt(savings)}/mo</span>
+      </div>
+      <div class="rec-title">${rec.title || ''}</div>
+      <div class="rec-desc">${desc}</div>
+      <div class="rec-footer">
+        <span class="rec-effort">Effort: ${effort}</span>
+        <span style="flex:1"></span>
+        <button class="btn-secondary" style="font-size:11px;padding:4px 10px" onclick="askAbout('${titleEsc}')">Ask AI →</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Also update savings KPI
+  updateSavingsKPI();
+}
+
+function drawGauge(score) {
+  const canvas = document.getElementById('gauge-chart');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W / 2, cy = H - 14;
+  const R = Math.min(W, H) * 0.75;
+  const startAngle = Math.PI, endAngle = 2 * Math.PI;
+  const scoreAngle = startAngle + (score / 100) * Math.PI;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Background arc
+  ctx.beginPath(); ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 14; ctx.lineCap = 'round';
+  ctx.arc(cx, cy, R - 7, startAngle, endAngle); ctx.stroke();
+
+  // Colored arc
+  const g = ctx.createLinearGradient(cx - R, cy, cx + R, cy);
+  g.addColorStop(0, '#ef4444'); g.addColorStop(0.5, '#f97316'); g.addColorStop(1, '#22c55e');
+  ctx.beginPath(); ctx.strokeStyle = g; ctx.lineWidth = 14; ctx.lineCap = 'round';
+  ctx.arc(cx, cy, R - 7, startAngle, scoreAngle); ctx.stroke();
+
+  // Tick mark at current score
+  const tx = cx + (R - 7) * Math.cos(scoreAngle);
+  const ty = cy + (R - 7) * Math.sin(scoreAngle);
+  ctx.beginPath(); ctx.fillStyle = '#fff'; ctx.arc(tx, ty, 5, 0, Math.PI * 2); ctx.fill();
+}
+
+// ════════════════════════════════════════════════════════
+// INFRASTRUCTURE TAB
+// ════════════════════════════════════════════════════════
+function renderInfrastructure() {
+  const infra = state.infra;
+  const el = document.getElementById('infra-grid');
+  if (!infra || !el) return;
+
+  const res = infra.resources || infra;
+  const svgIcons = {
+    ec2: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
+    rds: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
+    eks: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>',
+    elasticache: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
+    opensearch: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
+    s3: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>',
+  };
+
+  const sections = [
+    { key: 'ec2', title: 'EC2 Compute', data: res.ec2 },
+    { key: 'rds', title: 'RDS Databases', data: res.rds },
+    { key: 'eks', title: 'EKS Clusters', data: res.eks },
+    { key: 'elasticache', title: 'ElastiCache Redis', data: res.elasticache },
+    { key: 'opensearch', title: 'OpenSearch', data: res.opensearch },
+    { key: 's3', title: 'S3 Storage', data: res.s3 },
+  ].filter(s => s.data);
+
+  el.innerHTML = sections.map(sec => {
+    const d = sec.data;
+    const statusCls = d.status === 'healthy' ? 'status-healthy' : d.status === 'warning' ? 'status-warning' : 'status-error';
+    const statusLabel = d.status ? d.status.charAt(0).toUpperCase() + d.status.slice(1) : 'Unknown';
+
+    let metricsHtml = '';
+    if (d.avg_cpu_pct !== undefined) metricsHtml += metricBar('CPU', d.avg_cpu_pct);
+    if (d.avg_memory_pct !== undefined) metricsHtml += metricBar('MEM', d.avg_memory_pct);
+    if (d.hit_rate_pct !== undefined) metricsHtml += metricBar('HIT', d.hit_rate_pct, 'fill-green');
+    if (d.storage_used_gb && d.storage_allocated_gb) metricsHtml += metricBar('STO', Math.round(d.storage_used_gb / d.storage_allocated_gb * 100), 'fill-cyan');
+    if (d.storage_used_gb && d.storage_total_gb) metricsHtml += metricBar('STO', Math.round(d.storage_used_gb / d.storage_total_gb * 100), 'fill-cyan');
+
+    let statsHtml = '';
+    if (sec.key === 'ec2') statsHtml = `<div class="resource-meta-grid"><span>${d.running || 0} running</span><span>${d.stopped || 0} stopped</span><span>${Object.entries(d.instance_types || {}).map(([t,n]) => `${n}x ${t}`).join(', ')}</span></div>`;
+    if (sec.key === 'rds') statsHtml = `<div class="resource-meta-grid"><span>${d.engine || ''}</span><span>${d.instances || 0} instances</span><span>${d.connections_active || 0}/${d.connections_max || 0} conns</span></div>`;
+    if (sec.key === 'eks') statsHtml = `<div class="resource-meta-grid"><span>${(d.cluster_names || []).join(', ')}</span><span>${d.pods_running || 0} pods running</span><span>${d.node_provisioner || ''}</span></div>`;
+    if (sec.key === 'elasticache') statsHtml = `<div class="resource-meta-grid"><span>${d.engine || ''}</span><span>${d.instance_type || ''}</span><span>${d.memory_used_gb || 0}/${d.memory_total_gb || 0} GB</span></div>`;
+    if (sec.key === 'opensearch') statsHtml = `<div class="resource-meta-grid"><span>${d.engine_version || ''}</span><span>${d.nodes || 0} nodes · ${d.shards || 0} shards</span><span>${d.storage_used_gb || 0}/${d.storage_total_gb || 0} GB</span></div>`;
+    if (sec.key === 's3') {
+      const bucketsHtml = (d.buckets || []).map(b => `
+        <div class="resource-row">
+          <div class="status-dot ${b.lifecycle ? 'status-healthy' : 'status-warning'}"></div>
+          <span class="resource-name">${b.name}</span>
+          <span class="resource-meta">${b.size_gb >= 1000 ? (b.size_gb/1000).toFixed(1)+' TB' : b.size_gb+' GB'} · ${(b.objects || b.objects_count || 0).toLocaleString()} obj</span>
+        </div>`).join('');
+      statsHtml = `<div class="resource-meta-grid"><span>${d.total_buckets || 0} buckets</span><span>${((d.total_size_gb||0)/1000).toFixed(1)} TB total</span></div>${bucketsHtml}`;
+    }
+
+    return `
+    <div class="infra-section">
+      <div class="infra-section-header">
+        ${svgIcons[sec.key] || ''}
+        <span class="infra-section-title">${sec.title}</span>
+        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
+          <div class="status-dot ${statusCls}"></div>
+          <span style="font-size:11px;color:var(--text-muted)">${statusLabel}</span>
+          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--gold)">$${fmt(d.monthly_cost || 0)}/mo</span>
+        </div>
+      </div>
+      ${metricsHtml}
+      ${statsHtml}
+      ${d.warning ? `<div style="margin-top:8px;font-size:11px;color:var(--orange);background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:5px;padding:6px 10px">${d.warning}</div>` : ''}
+      ${d.detail ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">${d.detail}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function statusDot(status) {
+  const cls = status === 'running' || status === 'available' || status === 'active' || status === 'Active' ? 'status-healthy' :
+              status === 'stopped' || status === 'Stopped' ? 'status-stopped' :
+              status === 'warning' ? 'status-warning' : 'status-healthy';
+  return `<div class="status-dot ${cls}"></div>`;
+}
+
+function metricBar(label, pct, color='fill-cyan') {
+  const cls = pct > 80 ? 'fill-red' : pct > 60 ? 'fill-orange' : color;
+  return `<div class="metric-bar-row">
+    <span class="metric-label">${label}</span>
+    <div class="metric-bar"><div class="metric-fill ${cls}" style="width:${pct}%"></div></div>
+    <span class="metric-val">${pct}%</span>
+  </div>`;
+}
+
+function renderEC2Row(inst) {
+  return `<div class="resource-row">
+    ${statusDot(inst.state)}
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="resource-name">${inst.name || inst.id}</span>
+        <span class="resource-type">${inst.type}</span>
+      </div>
+      ${inst.cpu_pct !== undefined ? metricBar('CPU', inst.cpu_pct) : ''}
+    </div>
+    <div class="resource-meta">${inst.environment || ''}</div>
+  </div>`;
+}
+
+function renderRDSRow(db) {
+  return `<div class="resource-row">
+    ${statusDot(db.status)}
+    <div style="flex:1;min-width:0">
+      <div style="display:flex;align-items:center;gap:6px">
+        <span class="resource-name">${db.identifier || db.id}</span>
+        <span class="resource-type">${db.instance_class || db.class}</span>
+      </div>
+      ${db.cpu_percent !== undefined ? metricBar('CPU', db.cpu_percent) : ''}
+      ${db.storage_used_pct !== undefined ? metricBar('STO', db.storage_used_pct, 'fill-green') : ''}
+    </div>
+    <div class="resource-meta">${db.engine || ''}</div>
+  </div>`;
+}
+
+function renderEKSRow(cluster) {
+  return `<div class="resource-row">
+    ${statusDot(cluster.status || 'active')}
+    <div style="flex:1;min-width:0">
+      <span class="resource-name">${cluster.name}</span>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${cluster.node_count} nodes · k8s ${cluster.version}</div>
+    </div>
+    <div class="resource-meta">${cluster.node_type || ''}</div>
+  </div>`;
+}
+
+function renderCacheRow(cluster) {
+  return `<div class="resource-row">
+    ${statusDot(cluster.status)}
+    <div style="flex:1;min-width:0">
+      <span class="resource-name">${cluster.cluster_id || cluster.id}</span>
+      ${cluster.hit_rate !== undefined ? `<div style="font-size:11px;color:var(--green);margin-top:2px">Hit rate: ${cluster.hit_rate}%</div>` : ''}
+    </div>
+    <div class="resource-meta">${cluster.node_type || ''}</div>
+  </div>`;
+}
+
+function renderOSRow(domain) {
+  return `<div class="resource-row">
+    ${statusDot(domain.status || 'active')}
+    <div style="flex:1;min-width:0">
+      <span class="resource-name">${domain.domain_name || domain.name}</span>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${domain.instance_type || ''} · ${domain.instance_count || ''} nodes</div>
+    </div>
+    <div class="resource-meta">${domain.storage_gb ? domain.storage_gb+'GB' : ''}</div>
+  </div>`;
+}
+
+function renderS3Row(bucket) {
+  const size = bucket.size_gb >= 1000
+    ? (bucket.size_gb / 1000).toFixed(1) + ' TB'
+    : (bucket.size_gb || 0).toFixed(0) + ' GB';
+  return `<div class="resource-row">
+    <div class="status-dot status-healthy"></div>
+    <div style="flex:1;min-width:0">
+      <span class="resource-name">${bucket.name}</span>
+      <div style="font-size:11px;color:var(--text-muted);margin-top:2px">${(bucket.objects_count || 0).toLocaleString()} objects</div>
+    </div>
+    <div class="resource-meta">${size}</div>
+  </div>`;
+}
+
+// ════════════════════════════════════════════════════════
+// CHAT TAB
+// ════════════════════════════════════════════════════════
+function setupChat() {
+  const input = document.getElementById('chat-input');
+  const sendBtn = document.getElementById('chat-send');
+
+  sendBtn.addEventListener('click', () => sendMessage());
+  input.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) sendMessage(); });
+
+  document.querySelectorAll('.query-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      input.value = btn.dataset.q;
+      sendMessage();
+      // Switch to chat tab if not already there
+      switchTab('chat');
+    });
+  });
+}
+
+function askAbout(topic) {
+  switchTab('chat');
+  document.getElementById('chat-input').value = `Tell me more about: ${topic}`;
+  sendMessage();
+}
+
+let isSending = false;
+async function sendMessage() {
+  if (isSending) return;
+  const input = document.getElementById('chat-input');
+  const msg = input.value.trim();
+  if (!msg) return;
+
+  isSending = true;
+  input.value = '';
+  document.getElementById('chat-send').disabled = true;
+  clearTrace();
+
+  // Remove welcome message if present
+  const welcome = document.querySelector('.chat-welcome');
+  if (welcome) welcome.remove();
+
+  appendMessage('user', msg);
+  const typingId = appendTyping();
+
+  try {
+    const body = JSON.stringify({ message: msg, session_id: state.sessionId });
+    const resp = await fetch(`${API}/api/chat/stream`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body,
+    });
+
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+    let answer = '';
+
+    removeTyping(typingId);
+    const aiMsgId = 'msg-' + Date.now();
+    appendMessageWithId('assistant', '', aiMsgId);
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+      const lines = buf.split('\n');
+      buf = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        try {
+          const event = JSON.parse(line.slice(6));
+          handleStreamEvent(event, aiMsgId);
+          if (event.type === 'session') state.sessionId = event.data?.session_id;
+          if (event.type === 'answer') answer = event.data?.content || '';
+        } catch {}
+      }
+    }
+
+    // Render final markdown
+    const el = document.getElementById(aiMsgId);
+    if (el && answer) el.innerHTML = renderMarkdown(answer);
+
+  } catch (e) {
+    removeTyping(typingId);
+    appendMessage('assistant', `Error: ${e.message}. Is the backend running?`);
+  }
+
+  isSending = false;
+  document.getElementById('chat-send').disabled = false;
+  document.getElementById('chat-input').focus();
+}
+
+function handleStreamEvent(event, msgId) {
+  const { type, data } = event;
+  if (type === 'thinking') addTrace('think', data.status);
+  if (type === 'tool_call') addTrace('tool', `→ ${data.name}(${JSON.stringify(data.parameters || {}).slice(0,60)})`);
+  if (type === 'tool_result') addTrace(data.success ? 'done' : 'tool', `← ${data.name} (${data.execution_time?.toFixed(2) || '?'}s)`);
+  if (type === 'answer') {
+    const el = document.getElementById(msgId);
+    if (el) el.innerHTML = renderMarkdown(data.content || '');
+    scrollChat();
+  }
+}
+
+function addTrace(type, text) {
+  const el = document.getElementById('trace-items');
+  if (!el) return;
+  // Remove placeholder
+  const ph = el.querySelector('div:not(.trace-item)');
+  if (ph) ph.remove();
+  const div = document.createElement('div');
+  div.className = `trace-item trace-${type}`;
+  div.textContent = text;
+  el.appendChild(div);
+  el.scrollTop = el.scrollHeight;
+}
+
+function setTraceStatus(state, label) {
+  const dot = document.getElementById('trace-status-dot');
+  const lbl = document.getElementById('trace-status-label');
+  if (dot) dot.className = 'trace-status-dot ' + (state || '');
+  if (lbl) lbl.textContent = label || '';
+}
+
+function clearTrace() {
+  const el = document.getElementById('trace-items');
+  if (el) el.innerHTML = '';
+  setTraceStatus('active', 'thinking...');
+}
+
+function appendMessage(role, content) {
+  const id = 'msg-' + Date.now() + Math.random();
+  appendMessageWithId(role, content, id);
+  return id;
+}
+
+function avatarHtml(isUser) {
+  return isUser
+    ? '<div class="msg-avatar avatar-user">U</div>'
+    : '<div class="msg-avatar avatar-ai"><img src="/devopsarg-logo.png" alt="AI"/></div>';
+}
+
+function appendMessageWithId(role, content, id) {
+  const messages = document.getElementById('chat-messages');
+  const isUser = role === 'user';
+  const div = document.createElement('div');
+  div.className = `msg-row ${isUser ? 'user' : ''}`;
+  div.innerHTML = `
+    ${avatarHtml(isUser)}
+    <div class="msg-bubble ${isUser ? 'bubble-user' : 'bubble-ai'}" id="${id}">${isUser ? escHtml(content) : (content ? renderMarkdown(content) : '<div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div>')}</div>`;
+  messages.appendChild(div);
+  scrollChat();
+}
+
+function appendTyping() {
+  const id = 'typing-' + Date.now();
+  const messages = document.getElementById('chat-messages');
+  const div = document.createElement('div');
+  div.className = 'msg-row';
+  div.id = id;
+  div.innerHTML = `${avatarHtml(false)}<div class="msg-bubble bubble-ai"><div class="typing-indicator"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>`;
+  messages.appendChild(div);
+  scrollChat();
+  return id;
+}
+
+function removeTyping(id) {
+  const el = document.getElementById(id);
+  if (el) el.remove();
+}
+
+function scrollChat() {
+  const el = document.getElementById('chat-messages');
+  if (el) el.scrollTop = el.scrollHeight;
+}
+
+// ════════════════════════════════════════════════════════
+// LIVE TICKER
+// ════════════════════════════════════════════════════════
+function startLiveTicker(weeklyUSD) {
+  // Live ticker was removed from the UI — no-op kept for API compatibility
+}
+
+// ════════════════════════════════════════════════════════
+// MODE BADGE
+// ════════════════════════════════════════════════════════
+function updateModeBadge(health) {
+  const el = document.getElementById('mode-badge');
+  if (!health) {
+    el.className = 'mode-badge mode-loading'; el.textContent = 'offline'; return;
+  }
+  // Mock data flag takes precedence visually so users know the numbers are fake
+  if (health.use_mock_data) {
+    el.className = 'mode-badge mode-localstack';
+    el.textContent = 'MOCK DATA';
+    el.title = 'USE_MOCK_DATA=true — all figures are demo data, not your AWS account';
+    return;
+  }
+  if (health.mode === 'localstack') {
+    el.className = 'mode-badge mode-localstack'; el.textContent = 'LocalStack';
+  } else {
+    el.className = 'mode-badge mode-live'; el.textContent = 'AWS Live';
+    el.title = 'Reading live AWS data via read-only IAM user';
+  }
+}
+
+// ════════════════════════════════════════════════════════
+// MARKDOWN RENDERER (lightweight)
+// ════════════════════════════════════════════════════════
+function renderMarkdown(text) {
+  // 1. Escape HTML first
+  text = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+  // 2. Code blocks (before inline code, to not interfere)
+  text = text.replace(/```[\w]*\n([\s\S]*?)```/g,
+    '<pre style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;margin:8px 0;font-family:var(--mono);font-size:11px;overflow-x:auto">$1</pre>');
+
+  // 3. Tables — process as blocks (detect contiguous pipe-prefixed lines)
+  text = text.replace(/((?:^\|[^\n]*\|[ \t]*\n?)+)/gm, block => {
+    const lines = block.trim().split('\n').filter(l => l.trim().startsWith('|'));
+    if (lines.length < 2) return block;
+
+    // Detect separator row (|---|---|--- or |:--|:--:|)
+    const isSeparator = l => /^\|[\s\-:|]+\|$/.test(l.trim());
+    let headerIdx = 0, bodyStart = 1;
+    if (isSeparator(lines[1])) {
+      // Standard markdown table: header, separator, body
+      bodyStart = 2;
+    } else if (lines.every(l => !isSeparator(l))) {
+      // No separator — first row is still header
+      bodyStart = 1;
+    }
+
+    const splitCells = row => row.split('|').slice(1, -1).map(c => c.trim());
+    const headerCells = splitCells(lines[headerIdx]);
+    const bodyRows = lines.slice(bodyStart).filter(l => !isSeparator(l));
+
+    const thead = '<thead><tr>' + headerCells.map(c =>
+      `<th style="background:var(--surface);border:1px solid var(--border);padding:6px 10px;text-align:left;font-weight:600;font-size:12px;color:var(--gold)">${c}</th>`
+    ).join('') + '</tr></thead>';
+
+    const tbody = '<tbody>' + bodyRows.map(r => {
+      const cells = splitCells(r);
+      return '<tr>' + cells.map(c =>
+        `<td style="border:1px solid var(--border);padding:6px 10px;font-size:12px">${c}</td>`
+      ).join('') + '</tr>';
+    }).join('') + '</tbody>';
+
+    return `\n<table style="width:100%;border-collapse:collapse;margin:10px 0;font-size:12px">${thead}${tbody}</table>\n`;
+  });
+
+  // 4. Inline formatting
+  text = text
+    .replace(/`([^`]+)`/g,'<code style="background:var(--bg);padding:1px 5px;border-radius:3px;font-family:var(--mono);font-size:11px">$1</code>')
+    .replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*([^*]+)\*/g,'<em>$1</em>');
+
+  // 5. Headers
+  text = text
+    .replace(/^### (.+)$/gm,'<h4 style="color:var(--gold);margin:10px 0 5px;font-size:13px">$1</h4>')
+    .replace(/^## (.+)$/gm,'<h3 style="color:var(--gold);margin:12px 0 6px;font-size:14px">$1</h3>')
+    .replace(/^# (.+)$/gm,'<h2 style="color:var(--gold);margin:14px 0 8px;font-size:15px">$1</h2>');
+
+  // 6. Lists
+  text = text
+    .replace(/^[-*] (.+)$/gm,'<li style="margin:3px 0">$1</li>')
+    .replace(/^\d+\. (.+)$/gm,'<li style="margin:3px 0">$1</li>')
+    .replace(/(<li[\s\S]*?<\/li>\n?)+/g, m => `<ul style="padding-left:18px;margin:6px 0">${m}</ul>`);
+
+  // 7. Line breaks — but NOT inside tables or other HTML blocks
+  text = text
+    .replace(/\n\n+/g,'<br><br>')
+    .replace(/(<\/(?:table|ul|ol|pre|h2|h3|h4)>)<br><br>/g, '$1')
+    .replace(/<br><br>(<(?:table|ul|ol|pre|h2|h3|h4))/g, '$1')
+    .replace(/\n/g,'<br>')
+    .replace(/(<\/(?:tr|thead|tbody|table)>)<br>/g, '$1')
+    .replace(/<br>(<(?:tr|thead|tbody|table))/g, '$1');
+
+  return text;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ════════════════════════════════════════════════════════
+// UTILS
+// ════════════════════════════════════════════════════════
+function fmt(n) {
+  const v = Math.round(n);
+  if (v >= 1000000) return (v/1000000).toFixed(2)+'M';
+  if (v >= 10000) return (v/1000).toFixed(1)+'k';
+  return v.toLocaleString('en-US');
+}
+
+function countUp(el, target, formatter, duration=1400) {
+  if (!el) return;
+  const start = performance.now();
+  const step = now => {
+    const p = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = formatter(target * ease);
+    if (p < 1) requestAnimationFrame(step);
+    else el.textContent = formatter(target);
+  };
+  requestAnimationFrame(step);
+}
+
+function toast(msg, type='') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className = 'show' + (type ? ` toast-${type}` : '');
+  setTimeout(() => el.className = '', 3000);
+}
+
+// ════════════════════════════════════════════════════════
+// WINDOW RESIZE — redraw charts
+// ════════════════════════════════════════════════════════
+let resizeTimer;
+window.addEventListener('resize', () => {
+  clearTimeout(resizeTimer);
+  resizeTimer = setTimeout(redrawCharts, 200);
+});
+</script>
+</body>
+</html>
