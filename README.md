@@ -3,7 +3,7 @@
 **Built by [DevOps ARG](https://www.devopsarg.com) · powered with Claude**
 
 <p align="center">
-  <img src="docs/screenshots/logo.png" alt="DevOps ARG" width="140" />
+  <img src="docs/screenshots/logo.webp" alt="DevOps ARG" width="140" />
 </p>
 
 An AI-powered FinOps agent that analyzes AWS cloud costs and infrastructure using
@@ -19,32 +19,46 @@ Optimization Hub, Compute Optimizer, Rightsizing, Savings Plans) to answer them.
 
 ## 🖼 Screenshots
 
-### Conversational chat with live reasoning trace
-The main entry point. Users ask questions in plain English; the right-hand panel streams the reasoning — every tool call, every intermediate result, and the final synthesis.
+### 1. Conversational chat with live reasoning trace
+The main entry point. Users ask questions in plain English; the right-hand panel streams the reasoning — every tool call, every intermediate result, and the final synthesis. The sidebar on the left holds the 27 preset questions grouped by category.
 
 <p align="center">
-  <img src="docs/screenshots/chat.png" alt="Chat interface with reasoning trace" width="900" />
+  <img src="docs/screenshots/chat.webp" alt="Chat interface with reasoning trace — user asks 'What's our biggest cost driver this week?' and the agent responds with a structured breakdown" width="900" />
 </p>
 
-### Weekly cost report dashboard
-Auto-generated from Cost Explorer — breakdown by service, account, region, environment, and team tags. Pulls last 4 weeks by default, configurable via `REPORT_WEEKS`.
+### 2. Deep-dive chat example — NAT Gateway traffic analysis
+A layered question ("how much traffic is flowing between AZs through NAT Gateway instead of staying within AZ?") produces a multi-round response: the agent queries Cost Explorer by usage type, correlates with the traffic pattern data, quantifies the optimization opportunity ($2,893/month), and recommends the concrete fix (AWS PrivateLink endpoints).
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-report.png" alt="Weekly cost report" width="900" />
+  <img src="docs/screenshots/chat-nat-analysis.webp" alt="Chat showing cross-AZ and NAT Gateway cost analysis with savings recommendation" width="900" />
 </p>
 
-### Live infrastructure view
-EC2 / RDS / EKS / ElastiCache / S3 health. Single-region by default; `region=all` fans out to every enabled region in parallel (~20s round-trip on an 18-region account).
+### 3. Cost Overview dashboard
+Landing page of the dashboard tab — last-7-days spend, monthly projection, savings-identified counter, active-services count, a 4-week trend line, service-breakdown donut, and the latest cost anomalies detected by the AWS Cost Anomaly Detection integration.
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-infra.png" alt="Infrastructure health view" width="900" />
+  <img src="docs/screenshots/dashboard-report.webp" alt="Cost Overview dashboard: $6,500 last 7 days, $29.5k monthly projection, $4,470 savings identified, 13 active services, weekly trend chart, by-service donut, anomalies panel" width="900" />
 </p>
 
-### Optimization recommendations
-Real savings numbers pulled from AWS **Cost Optimization Hub** — rightsizing, Savings Plans, Compute Optimizer, idle detection. The agent explains each recommendation in context during chat.
+### 4. Services breakdown
+Per-service grid view — every active AWS service with last-week / this-week / monthly projection, and a mini sparkline for the 4-week trend. Clicking any service drills into that service's cost detail on the chat tab.
 
 <p align="center">
-  <img src="docs/screenshots/dashboard-optimize.png" alt="Optimization recommendations" width="900" />
+  <img src="docs/screenshots/dashboard-services.webp" alt="Services breakdown grid showing EC2, RDS, ElastiCache, OpenSearch, S3, Data Transfer, EKS, CloudWatch, MSK, Lambda, Route 53, Secrets Manager, WAF with weekly costs and trend sparklines" width="900" />
+</p>
+
+### 5. Live infrastructure health
+EC2 / RDS / EKS / ElastiCache / OpenSearch / S3 cards, each showing monthly $ + health indicator (OK / warning / critical). Single-region by default; `region=all` fans out to every enabled region in parallel (~20s round-trip on an 18-region account). Warnings surface the exact issue — "Primary at 80% CPU, downsize candidate", "2 clusters missing system metrics on 2% data upload".
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-infra.webp" alt="Infrastructure Health view with EC2, RDS, EKS, ElastiCache, OpenSearch, S3 cards — each with monthly cost, status, and warnings for CPU/memory/storage issues" width="900" />
+</p>
+
+### 6. Optimization recommendations
+Cost Optimization Hub results ranked by monthly savings. Each card explains WHAT to change, the estimated monthly $ savings, a difficulty tag (easy / medium / hard), and an "Ask AI →" button that opens the chat with the recommendation as context — so you can ask *"why this specific instance class?"* or *"what's the risk of this migration?"* before executing.
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-optimize.webp" alt="Cost Optimizer view: Savings Score 62/100, $4,470/month identified across 5 recommendations — RDS downsize -$520, VPC endpoints -$450, Savings Plans -$870, Graviton migration -$320, more — each with Ask AI button" width="900" />
 </p>
 
 ---
@@ -79,10 +93,6 @@ The sidebar ships with **27 high-value FinOps questions across 9 categories**, a
 | 🤖 **AI Ops** | *"What's the ROI of reducing MTTR?"* | Knowledge-base lookup for past incident ARR impact + recent cost burst patterns |
 
 Every preset question in the sidebar has a hover tooltip explaining which tools it triggers — a nice teaching moment for anyone new to FinOps.
-
-<p align="center">
-  <img src="docs/screenshots/sidebar-questions.png" alt="Sidebar with the 27 preset questions" width="320" />
-</p>
 
 ## Architecture
 
@@ -198,7 +208,7 @@ real numbers.
 6. **Final synthesis** — structured markdown with **real numbers**, formatted tables, and next-step recommendations. If a tool returned no data (empty account, no RIs, etc.), the agent states that explicitly rather than hallucinating.
 
 <p align="center">
-  <img src="docs/screenshots/reasoning-trace.png" alt="Reasoning trace panel showing round-by-round tool calls" width="420" />
+  <img src="docs/screenshots/reasoning-trace.webp" alt="Reasoning trace panel showing round-by-round tool calls — Round 1 get_current_date, Round 2 query_aws_costs, Round 3 ..." width="420" />
 </p>
 
 ### SSE event types (live streaming)
@@ -242,9 +252,7 @@ Most "chat with your data" demos use a single tool call and hope for the best. F
 
 Re-running the script **rotates the access keys** — deletes old, creates new, rewrites `.env` and `~/.aws/credentials`. Safe to run on a schedule.
 
-<p align="center">
-  <img src="docs/screenshots/readonly-setup.png" alt="Output of create-read-only.sh showing the 403 verification step" width="780" />
-</p>
+<!-- readonly-setup screenshot pending — show your ./create-read-only.sh terminal output with the 403 verification step after redacting account IDs -->
 
 ### Recommended rotation cadence
 
