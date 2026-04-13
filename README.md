@@ -2,6 +2,10 @@
 
 **Built by [DevOps ARG](https://www.devopsarg.com) · powered with Claude**
 
+<p align="center">
+  <img src="docs/screenshots/logo.png" alt="DevOps ARG" width="140" />
+</p>
+
 An AI-powered FinOps agent that analyzes AWS cloud costs and infrastructure using
 conversational AI. Ask questions in natural language — the agent reasons across
 Cost Explorer, infrastructure metrics, and AWS's native recommendation APIs (Cost
@@ -11,20 +15,74 @@ Optimization Hub, Compute Optimizer, Rightsizing, Savings Plans) to answer them.
 > `ReadOnlyAccess` policy. It can't create, modify, or delete anything in your
 > account — it reads metrics and suggests changes that you apply yourself.
 
+---
+
+## 🖼 Screenshots
+
+### Conversational chat with live reasoning trace
+The main entry point. Users ask questions in plain English; the right-hand panel streams the reasoning — every tool call, every intermediate result, and the final synthesis.
+
+<p align="center">
+  <img src="docs/screenshots/chat.png" alt="Chat interface with reasoning trace" width="900" />
+</p>
+
+### Weekly cost report dashboard
+Auto-generated from Cost Explorer — breakdown by service, account, region, environment, and team tags. Pulls last 4 weeks by default, configurable via `REPORT_WEEKS`.
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-report.png" alt="Weekly cost report" width="900" />
+</p>
+
+### Live infrastructure view
+EC2 / RDS / EKS / ElastiCache / S3 health. Single-region by default; `region=all` fans out to every enabled region in parallel (~20s round-trip on an 18-region account).
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-infra.png" alt="Infrastructure health view" width="900" />
+</p>
+
+### Optimization recommendations
+Real savings numbers pulled from AWS **Cost Optimization Hub** — rightsizing, Savings Plans, Compute Optimizer, idle detection. The agent explains each recommendation in context during chat.
+
+<p align="center">
+  <img src="docs/screenshots/dashboard-optimize.png" alt="Optimization recommendations" width="900" />
+</p>
+
+---
+
+## 📖 Table of contents
+
+- [What it answers](#what-it-answers) — the 27 preset questions and what tools they trigger
+- [Architecture](#architecture) — services, data flow, diagram
+- [Quick start](#quick-start) — mock mode + live AWS mode
+- [Feature flags](#feature-flags-env) — all `.env` variables
+- [Endpoints](#endpoints) — HTTP API reference
+- [The reasoning engine](#the-reasoning-engine) — multi-round loop, reflection, SSE events
+- [The read-only setup script](#the-read-only-setup-script) — IAM provisioning + write-block verification
+- [Project structure](#project-structure)
+- [Security posture](#security-posture)
+- [Want help running it in production?](#want-help-running-it-in-production)
+
 ## What it answers
 
-The sidebar ships with 27 high-value FinOps questions across 9 categories, all
-drawn from real DevOps ARG case studies:
+The sidebar ships with **27 high-value FinOps questions across 9 categories**, all drawn from real DevOps ARG case studies. Pick one with a click, or ask your own in free-form text.
 
-- **Quick insights** — biggest cost driver, projected spend, anomalies, cost by region
-- **Networking & data transfer** — NAT Gateway cost, VPC endpoints, cross-AZ, inter-region
-- **Compute optimization** — EC2 rightsizing, Spot coverage, Graviton migration, scale-to-zero
-- **Commitments** — Savings Plans coverage, RI opportunities for RDS/ElastiCache
-- **Storage & databases** — orphaned EBS, S3 lifecycle, RDS downsize, gp2→gp3
-- **Observability** — CloudWatch Logs cost trend, cost by team/tag
-- **Real-time workloads** — WebSocket connections, event-based pre-scaling
-- **Predictive scaling** — baseline reduction, Spot risk, RDS connection forecasting
-- **AI Ops** — MTTR→$ ROI, LLM cost optimization (Haiku vs Sonnet routing)
+| Category | Example question | What it does under the hood |
+|----------|-------------------|-----------------------------|
+| ⚡ **Quick insights** | *"What's driving my AWS bill this month?"* | `get_current_date` → `query_aws_costs` grouped by service → ranks top 10 by $ |
+| 🌐 **Networking & data transfer** | *"How much am I spending on NAT Gateway?"* | Cost Explorer filter on `AWS Data Transfer` + NAT usage type → summarizes by AZ |
+| 🖥 **Compute optimization** | *"Which EC2 instances are oversized?"* | Queries `get_rightsizing_recommendations` + `get_compute_optimizer_recommendations` → annotates with monthly savings |
+| 💸 **Commitments** | *"What's my Savings Plans coverage?"* | `get_savings_plans_coverage` → compares covered vs on-demand, flags gaps |
+| 💾 **Storage & databases** | *"Do I have orphaned EBS volumes?"* | `list_ebs_volumes` → filters unattached/available → sums monthly $ at gp2/gp3 rates |
+| 📊 **Observability** | *"How is my CloudWatch Logs cost trending?"* | Cost Explorer filter on `AWS CloudWatch` service + Logs usage type, 4-week series |
+| 🔄 **Real-time workloads** | *"How many WebSocket connections am I running?"* | `describe_load_balancers` + CloudWatch active connections metric |
+| 📈 **Predictive scaling** | *"What's my safe baseline with Spot?"* | `get_spot_instance_price_history` + EC2 inventory → spot interruption risk per family |
+| 🤖 **AI Ops** | *"What's the ROI of reducing MTTR?"* | Knowledge-base lookup for past incident ARR impact + recent cost burst patterns |
+
+Every preset question in the sidebar has a hover tooltip explaining which tools it triggers — a nice teaching moment for anyone new to FinOps.
+
+<p align="center">
+  <img src="docs/screenshots/sidebar-questions.png" alt="Sidebar with the 27 preset questions" width="320" />
+</p>
 
 ## Architecture
 
@@ -86,9 +144,9 @@ being used:
 ```
 ============================================================
 AWS IDENTITY CHECK
-  Account: 620309325636
-  ARN:     arn:aws:iam::620309325636:user/finops-agent-readonly
-  UserId:  AIDAZA3KRE5CCMX2VXP63
+  Account: <your-aws-account-id>
+  ARN:     arn:aws:iam::<your-aws-account-id>:user/finops-agent-readonly
+  UserId:  <IAM-user-unique-id>
 ============================================================
 ```
 
@@ -125,18 +183,40 @@ real numbers.
 
 ## The reasoning engine
 
-`backend/reasoning/engine.py` runs a multi-round loop:
+`backend/reasoning/engine.py` runs a **multi-round agentic loop** — not a single prompt with a canned answer. This is what lets the agent adapt when the first query doesn't return enough data, or when a user asks a layered question (e.g. "compare this month vs last month and tell me what changed").
 
-1. User query arrives
-2. LLM sees SYSTEM_PROMPT + conversation history + 14 tool definitions
-3. **Round 1**: LLM calls tools (typically `get_current_date` → `query_aws_costs`)
-4. **Reflection**: engine injects "do you have enough data?"
-5. **Rounds 2-4**: additional tool calls if needed
-6. **Final synthesis**: structured markdown with real numbers
+### Flow
 
-SSE events: `thinking`, `tool_call`, `tool_result`, `answer`, `done`, `error`.
-The frontend renders them in the **Reasoning Trace** panel on the right of the
-chat tab, in real time as they fire.
+1. **User query arrives** over `/api/chat/stream`.
+2. LLM (Claude Sonnet 4 by default) sees:
+   - `SYSTEM_PROMPT` — role, constraints, conversational tone
+   - Full conversation history (for follow-ups)
+   - **14 tool definitions** — each with JSON schema and usage hints
+3. **Round 1** — the LLM calls one or more tools. Typical trajectory: `get_current_date` → `query_aws_costs` → maybe `get_cost_forecast`.
+4. **Reflection step** — the engine injects a short system message asking *"do you have enough data to answer? If not, what would you call next?"*. This is the hook that catches incomplete reasoning.
+5. **Rounds 2-4** — up to 3 additional tool-call rounds if the LLM decides it needs more. Hard cap at 4 total rounds to control cost.
+6. **Final synthesis** — structured markdown with **real numbers**, formatted tables, and next-step recommendations. If a tool returned no data (empty account, no RIs, etc.), the agent states that explicitly rather than hallucinating.
+
+<p align="center">
+  <img src="docs/screenshots/reasoning-trace.png" alt="Reasoning trace panel showing round-by-round tool calls" width="420" />
+</p>
+
+### SSE event types (live streaming)
+
+| Event | When fired | Payload |
+|-------|------------|---------|
+| `thinking` | LLM generates a `<thinking>` block | `{text}` |
+| `tool_call` | LLM decides to call a tool | `{name, args}` |
+| `tool_result` | Backend returns tool output | `{name, result}` |
+| `answer` | LLM produces final markdown | `{text}` (streamed token-by-token) |
+| `done` | Conversation turn ends | `{rounds, total_tokens}` |
+| `error` | Any failure | `{message, retriable}` |
+
+The frontend renders these in the **Reasoning Trace** panel on the right of the chat tab, colored by type, in real time. No spinner theater — if the agent is on round 3 of 4, the user sees exactly which tool is running.
+
+### Why this matters
+
+Most "chat with your data" demos use a single tool call and hope for the best. FinOps questions often need cross-referencing: *cost by service* then *instances in that service* then *rightsizing recs for those instances*. A multi-round loop with reflection lets the agent plan, execute, check, and re-plan — which is why the answers cite specific instance IDs and real dollar figures instead of vague strategies.
 
 ### How multi-region scan works
 
@@ -149,19 +229,28 @@ chat tab, in real time as they fire.
 
 ## The read-only setup script
 
-`create-read-only.sh` is the safety moat. It:
+`create-read-only.sh` is the **safety moat**. You run it once with an admin AWS profile; it provisions everything the agent needs and proves the agent can't write:
 
-1. Creates an IAM user `finops-agent-readonly` using your admin profile
-2. Attaches the AWS-managed `ReadOnlyAccess` policy (covers `ce:*`, `ec2:Describe*`,
-   `rds:Describe*`, all the `*List*` and `*Get*`)
-3. Generates access keys and writes them to:
-   - `.env` (for the backend container)
-   - `~/.aws/credentials` as profile `finops` (for your shell)
-4. Tests `sts get-caller-identity` to verify read access works
-5. **Tests that `s3 mb` fails** — if the user can create a bucket, the script
-   aborts with a security warning
+1. **Creates IAM user** `finops-agent-readonly` using your admin profile
+2. **Attaches** the AWS-managed `ReadOnlyAccess` policy (covers `ce:*`, `ec2:Describe*`, `rds:Describe*`, all the `*List*` / `*Get*` — plus `coh:*` for Cost Optimization Hub)
+3. **Generates access keys** and writes them to:
+   - `.env` (for the backend container — `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
+   - `~/.aws/credentials` as profile `finops` (for your shell / debugging)
+4. **Verifies read works** — runs `aws sts get-caller-identity` using the new keys
+5. **Verifies writes are BLOCKED** — runs `aws s3 mb s3://devopsarg-finops-verify-readonly` with the new keys; expects HTTP 403 Forbidden. If the bucket gets created, the script **aborts with a security warning** and rolls back.
+6. **Prints the ARN** for audit (redacted in public output — see `AWS IDENTITY CHECK` block below)
 
-Re-running the script rotates the access keys (deletes old, creates new).
+Re-running the script **rotates the access keys** — deletes old, creates new, rewrites `.env` and `~/.aws/credentials`. Safe to run on a schedule.
+
+<p align="center">
+  <img src="docs/screenshots/readonly-setup.png" alt="Output of create-read-only.sh showing the 403 verification step" width="780" />
+</p>
+
+### Recommended rotation cadence
+
+- Dev machines: every 30 days
+- Shared demo boxes: every 7 days
+- CI runners: per-run (the script takes ~15 seconds end to end)
 
 ## Project structure
 
