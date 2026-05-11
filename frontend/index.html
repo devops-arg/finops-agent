@@ -46,8 +46,8 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
 
 /* ── TOPBAR (Linear/Vercel style) ── */
 .topbar{position:fixed;top:0;left:0;right:0;height:var(--topbar-h);background:var(--bg);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;z-index:100;gap:20px;}
-.topbar-brand{display:flex;align-items:center;gap:12px;min-width:260px;}
-.brand-logo{width:32px;height:32px;flex-shrink:0;border-radius:50%;}
+.topbar-brand{display:flex;align-items:center;gap:10px;min-width:260px;}
+.brand-logo{width:36px;height:36px;flex-shrink:0;border-radius:8px;}
 .brand-text{display:flex;flex-direction:column;gap:0;}
 .brand-name{font-size:14px;font-weight:600;color:var(--text);letter-spacing:-0.01em;line-height:1.1;}
 .brand-sub{font-size:11px;color:var(--text-muted);font-weight:400;line-height:1.2;margin-top:2px;}
@@ -56,6 +56,18 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
 .topbar-search:hover{border-color:var(--border-strong);}
 .topbar-search svg{opacity:.5;}
 .topbar-right{display:flex;align-items:center;gap:8px;}
+.site-menu{position:relative;}
+.site-menu-btn{display:flex;align-items:center;gap:6px;padding:5px 10px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-secondary);font-size:12px;cursor:pointer;transition:all .15s;}
+.site-menu-btn:hover{border-color:var(--border-strong);color:var(--text);}
+.site-menu-btn svg{opacity:.7;}
+.site-dropdown{position:absolute;top:calc(100% + 8px);right:0;min-width:220px;background:var(--surface);border:1px solid var(--border);border-radius:10px;box-shadow:0 12px 40px rgba(0,0,0,.5);padding:6px;z-index:200;display:none;}
+.site-dropdown.open{display:block;}
+.site-dropdown-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;color:var(--text-secondary);font-size:12px;text-decoration:none;transition:background .12s;}
+.site-dropdown-item:hover{background:var(--surface-2);color:var(--text);}
+.site-dropdown-item svg{flex-shrink:0;opacity:.6;}
+.site-dropdown-item.highlight{color:var(--accent);}
+.site-dropdown-item.highlight svg{opacity:1;}
+.site-dropdown-divider{height:1px;background:var(--border);margin:4px 0;}
 .mode-badge{font-size:11px;font-weight:500;padding:4px 10px;border-radius:6px;display:flex;align-items:center;gap:6px;font-family:var(--mono);}
 .mode-badge::before{content:'';width:6px;height:6px;border-radius:50%;}
 .mode-localstack{background:rgba(167,139,250,0.08);color:#a78bfa;border:1px solid rgba(167,139,250,0.25);}
@@ -64,6 +76,19 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
 .mode-live::before{background:var(--green);box-shadow:0 0 8px rgba(16,185,129,0.6);}
 .mode-loading{background:var(--surface);color:var(--text-muted);border:1px solid var(--border);}
 .mode-loading::before{background:var(--text-muted);}
+
+/* ── DATA TOGGLE (mock/live) ── */
+.data-toggle{display:flex;align-items:center;gap:8px;padding:4px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);}
+.data-toggle__label{font-size:10px;font-weight:600;letter-spacing:0.05em;font-family:var(--mono);color:var(--text-muted);transition:color .2s;}
+.data-toggle__label.active{color:var(--text);}
+.data-toggle__switch{position:relative;width:36px;height:20px;background:var(--border);border-radius:10px;border:none;cursor:pointer;transition:background .2s;flex-shrink:0;}
+.data-toggle__thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;background:var(--text-muted);border-radius:50%;transition:transform .2s,background .2s;}
+.data-toggle__switch[aria-checked="false"] .data-toggle__thumb{transform:translateX(16px);background:var(--green);}
+.data-toggle__switch[aria-checked="false"]{background:rgba(16,185,129,0.25);}
+.data-toggle__switch[aria-checked="true"] .data-toggle__thumb{background:var(--purple);}
+.data-toggle__switch[aria-checked="true"]{background:rgba(167,139,250,0.25);}
+.data-toggle.loading .data-toggle__switch{opacity:.5;pointer-events:none;}
+
 .topbar-btn{display:flex;align-items:center;gap:6px;background:transparent;border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 12px;color:var(--text-secondary);cursor:pointer;font-size:13px;font-family:var(--font);transition:all .15s;text-decoration:none;}
 .topbar-btn:hover{background:var(--surface);border-color:var(--border-strong);color:var(--text);}
 .topbar-btn svg{opacity:.7;}
@@ -126,6 +151,10 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
 .chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
 .chart-title{font-size:13px;font-weight:600;color:var(--text);}
 .chart-badge{font-size:10px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);padding:3px 8px;border-radius:4px;}
+.period-selector{display:flex;gap:2px;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:2px;}
+.period-btn{font-size:10px;font-weight:600;font-family:var(--mono);color:var(--text-muted);background:transparent;border:none;cursor:pointer;padding:3px 8px;border-radius:4px;transition:all .15s;}
+.period-btn:hover{color:var(--text);background:var(--surface-hover);}
+.period-btn.active{color:var(--bg);background:var(--accent);}
 #trend-chart{width:100%;height:200px;display:block;}
 #donut-chart{display:block;margin:0 auto;}
 .donut-legend{margin-top:10px;display:flex;flex-direction:column;gap:5px;}
@@ -151,19 +180,148 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
 .insight-text{font-size:12px;color:var(--text-muted);line-height:1.5;}
 
 /* ── SERVICES TAB ── */
+/* ── SERVICES TAB v2 ── */
+.svc-period-bar{display:flex;gap:4px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:3px;}
+.svc-period-btn{background:none;border:none;color:var(--text-muted);font-size:11px;font-weight:600;font-family:var(--mono);padding:4px 10px;border-radius:4px;cursor:pointer;transition:all .15s;}
+.svc-period-btn.active{background:var(--accent);color:#0a0a0b;}
+.svc-period-btn:hover:not(.active){background:var(--surface-hover);color:var(--text);}
+.svc-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.svc-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
+.svc-kpi-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;font-weight:500;}
+.svc-kpi-val{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--text);}
+.svc-chart-wrap{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:20px;}
+.svc-spinner{width:22px;height:22px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg)}}
+.svc-chart-title{font-size:13px;font-weight:600;color:var(--text);margin-bottom:14px;}
+.svc-chart-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;}
+.svc-legend-item{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);cursor:default;}
+.svc-legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.svc-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;}
+.svc-select{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);cursor:pointer;}
+.svc-search{flex:1;max-width:240px;background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);outline:none;}
+.svc-search:focus{border-color:var(--border-strong);}
+.services-grid-v2{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
+.svc-card-v2{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:0;overflow:hidden;transition:all .15s;display:flex;flex-direction:column;}
+.svc-card-v2:hover{border-color:var(--border-strong);background:var(--surface-hover);}
+.svc-card-top{display:flex;align-items:center;gap:12px;padding:16px 18px 10px;}
+.svc-rank{font-size:10px;font-weight:700;font-family:var(--mono);color:var(--text-muted);width:16px;text-align:center;flex-shrink:0;}
+.svc-icon{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:15px;flex-shrink:0;}
+.svc-name{font-size:13px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.svc-name-short{font-size:10px;color:var(--text-muted);font-weight:400;margin-top:1px;}
+.svc-card-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);}
+.svc-stat{padding:10px 14px;display:flex;flex-direction:column;border-right:1px solid var(--border);}
+.svc-stat:last-child{border-right:none;}
+.svc-stat-label{font-size:9px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;}
+.svc-stat-val{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text);}
+.svc-stat-val.up{color:#ef4444;}
+.svc-stat-val.down{color:#22c55e;}
+.svc-card-bar-row{padding:10px 18px 6px;display:flex;align-items:center;gap:10px;}
+.svc-pct-label{font-size:10px;font-family:var(--mono);color:var(--text-muted);min-width:32px;text-align:right;}
+.svc-bar-wrap{flex:1;background:var(--surface-2,#1a1a1e);border-radius:3px;height:5px;overflow:hidden;}
+.svc-bar{height:100%;border-radius:3px;transition:width 1s ease-out;}
+.svc-card-chart{padding:6px 14px 8px;border-top:1px solid var(--border);}
+.svc-sparkline{display:block;width:100%;}
+.svc-card-actions{padding:8px 18px 14px;display:flex;justify-content:flex-end;}
+.svc-ask-btn{font-size:10px;font-weight:600;font-family:var(--mono);color:var(--accent);background:rgba(201,162,39,.08);border:1px solid rgba(201,162,39,.2);border-radius:4px;padding:3px 9px;cursor:pointer;transition:all .15s;white-space:nowrap;}
+.svc-ask-btn:hover{background:rgba(201,162,39,.2);border-color:var(--accent);}
+/* legacy card kept for overview sparklines */
 .services-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;}
 .service-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;display:flex;align-items:center;gap:14px;transition:all 0.15s;}
 .service-card:hover{background:var(--surface-hover);border-color:var(--border-strong);}
-.svc-icon{width:40px;height:40px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .svc-info{flex:1;min-width:0;}
-.svc-name{font-size:13px;font-weight:600;color:var(--text);margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .svc-costs{display:flex;gap:12px;margin-bottom:6px;}
 .svc-cost-item{display:flex;flex-direction:column;}
 .svc-cost-label{font-size:10px;color:var(--text-muted);text-transform:uppercase;}
 .svc-cost-val{font-family:var(--mono);font-size:14px;font-weight:700;color:var(--text);}
-.svc-bar-wrap{background:var(--surface2);border-radius:2px;height:4px;overflow:hidden;}
-.svc-bar{height:100%;border-radius:2px;transition:width 1s ease-out;}
-.svc-sparkline{flex-shrink:0;}
+.svc-sparkline-legacy{flex-shrink:0;}
+
+/* ── WASTE DETECTOR TAB ── */
+.waste-section-tabs{display:flex;gap:0;margin-bottom:20px;border-bottom:1px solid var(--border);}
+.waste-section-tab{background:none;border:none;border-bottom:2px solid transparent;padding:10px 20px;color:var(--text-muted);cursor:pointer;font-size:13px;font-weight:500;font-family:var(--font);transition:all .15s;display:flex;align-items:center;gap:8px;margin-bottom:-1px;}
+.waste-section-tab.active{color:var(--text);border-bottom-color:var(--accent);}
+.waste-section-tab .wsec-badge{font-size:10px;padding:2px 7px;border-radius:10px;font-family:var(--mono);font-weight:700;}
+.wsec-badge-cleanup{background:rgba(239,68,68,0.12);color:var(--red);}
+.wsec-badge-rightsize{background:rgba(245,158,11,0.12);color:var(--orange);}
+.waste-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px;}
+.waste-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
+.waste-kpi-label{font-size:11px;color:var(--text-muted);font-weight:500;margin-bottom:8px;text-transform:uppercase;letter-spacing:.05em;}
+.waste-kpi-value{font-size:22px;font-weight:700;font-family:var(--mono);color:var(--text);margin-bottom:4px;}
+.waste-kpi-sub{font-size:11px;color:var(--text-muted);}
+.waste-filters{display:flex;align-items:center;gap:10px;margin-bottom:18px;flex-wrap:wrap;}
+.waste-filters select,.waste-filter-search{background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:var(--radius-sm);font-size:12px;font-family:var(--font);cursor:pointer;}
+.waste-filter-search{flex:1;min-width:180px;max-width:280px;outline:none;}
+.waste-filter-search:focus{border-color:var(--border-strong);}
+.waste-service-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:14px;overflow:hidden;}
+.waste-service-header{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;user-select:none;transition:background .15s;}
+.waste-service-header:hover{background:var(--surface-hover);}
+.waste-service-icon{font-size:18px;width:28px;text-align:center;}
+.waste-service-name{font-size:14px;font-weight:600;color:var(--text);flex:1;}
+.waste-service-meta{display:flex;align-items:center;gap:12px;}
+.waste-service-count{font-size:12px;color:var(--text-muted);}
+.waste-service-savings{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--green);}
+.waste-sev-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.waste-sev-critical{background:var(--red);}
+.waste-sev-warning{background:var(--orange);}
+.waste-sev-info{background:var(--blue);}
+.waste-chevron{color:var(--text-muted);transition:transform .2s;font-size:16px;}
+.waste-chevron.open{transform:rotate(90deg);}
+.waste-service-body{display:none;border-top:1px solid var(--border);}
+.waste-service-body.open{display:block;}
+.waste-table{width:100%;border-collapse:collapse;font-size:12px;}
+.waste-table th{padding:10px 14px;text-align:left;font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--border);background:var(--surface-2);}
+.waste-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);vertical-align:middle;}
+.waste-table tr:last-child td{border-bottom:none;}
+.waste-table tr:hover td{background:var(--surface-hover);}
+.waste-resource-id{font-family:var(--mono);font-size:11px;color:var(--text);}
+.waste-idle-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-family:var(--mono);}
+.waste-savings-cell{font-family:var(--mono);font-weight:700;}
+.sev-badge{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;font-family:var(--mono);}
+.sev-critical{background:rgba(239,68,68,0.12);color:var(--red);}
+.sev-warning{background:rgba(245,158,11,0.12);color:var(--orange);}
+.sev-info{background:rgba(59,130,246,0.12);color:var(--blue);}
+.waste-actions{display:flex;gap:6px;align-items:center;}
+.waste-ask-btn{background:var(--accent-dim);border:1px solid var(--accent-border);color:var(--accent);padding:4px 10px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--font);transition:all .15s;white-space:nowrap;}
+.waste-ask-btn:hover{background:var(--accent);color:#0a0a0b;}
+.waste-fix-btn{display:inline-flex;align-items:center;gap:4px;background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);color:#22c55e;padding:4px 9px;border-radius:4px;cursor:pointer;font-size:11px;font-weight:600;font-family:var(--mono);transition:all .15s;white-space:nowrap;}
+.waste-fix-btn:hover{background:rgba(34,197,94,0.18);border-color:rgba(34,197,94,0.5);}
+.waste-fix-btn:active{transform:scale(.96);}
+.waste-fix-icon{font-size:12px;}
+.waste-fix-none{color:var(--border);font-size:13px;}
+.waste-devopsarg-tip{background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:0 0 var(--radius) var(--radius);padding:12px 18px;display:flex;align-items:flex-start;gap:10px;font-size:12px;color:var(--text-secondary);line-height:1.5;}
+.waste-devopsarg-tip strong{color:var(--accent);}
+.waste-devopsarg-tip a{color:var(--accent);text-decoration:none;font-weight:600;}
+.waste-devopsarg-tip a:hover{text-decoration:underline;}
+.waste-banner{background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:var(--radius);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;}
+.waste-banner-text{flex:1;font-size:13px;color:var(--text-secondary);line-height:1.5;}
+.waste-banner-text strong{color:var(--text);}
+.waste-banner-actions{display:flex;gap:8px;flex-shrink:0;}
+.waste-footer{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 20px;margin-top:20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;}
+.waste-footer-text{flex:1;font-size:13px;color:var(--text-secondary);line-height:1.5;}
+.waste-sticky-bar{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--accent-border);padding:10px 20px;display:flex;align-items:center;gap:16px;z-index:10;font-size:12px;flex-wrap:wrap;}
+.waste-sticky-stat{display:flex;align-items:center;gap:6px;color:var(--text-muted);}
+.waste-sticky-stat strong{color:var(--text);font-family:var(--mono);}
+.waste-sticky-divider{color:var(--border-strong);}
+.waste-detail-panel{position:fixed;top:56px;right:0;bottom:0;width:360px;background:var(--surface);border-left:1px solid var(--border);z-index:200;overflow-y:auto;transform:translateX(100%);transition:transform .25s ease;display:flex;flex-direction:column;}
+.waste-detail-panel.open{transform:translateX(0);}
+.waste-detail-header{padding:20px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.waste-detail-close{background:none;border:1px solid var(--border);color:var(--text-muted);width:28px;height:28px;border-radius:4px;cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.waste-detail-close:hover{background:var(--surface-hover);color:var(--text);}
+.waste-detail-body{padding:20px;flex:1;}
+.waste-detail-field{margin-bottom:14px;}
+.waste-detail-field-label{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;}
+.waste-detail-field-value{font-size:13px;color:var(--text);}
+.waste-detail-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+.waste-detail-tag{font-size:11px;background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:2px 8px;font-family:var(--mono);}
+.waste-detail-tip{background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:var(--radius-sm);padding:14px;margin:14px 0;font-size:12px;color:var(--text-secondary);line-height:1.6;}
+.waste-detail-tip strong{color:var(--accent);}
+.waste-detail-tip a{color:var(--accent);text-decoration:none;font-weight:600;}
+.waste-detail-actions{display:flex;flex-direction:column;gap:8px;margin-top:16px;}
+.waste-detail-actions a,.waste-detail-actions button{display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:var(--radius-sm);font-size:13px;font-weight:500;text-decoration:none;transition:all .15s;cursor:pointer;border:1px solid var(--border);background:var(--surface);color:var(--text-secondary);font-family:var(--font);}
+.waste-detail-actions a:hover,.waste-detail-actions button:hover{background:var(--surface-hover);color:var(--text);}
+.waste-detail-actions .btn-ask-ai{background:var(--accent-dim);border-color:var(--accent-border);color:var(--accent);}
+.waste-detail-actions .btn-ask-ai:hover{background:var(--accent);color:#0a0a0b;}
+.waste-detail-actions .btn-devopsarg{background:rgba(201,162,39,0.08);border-color:var(--accent-border);color:var(--accent);}
+.waste-nav-badge{display:inline-flex;align-items:center;justify-content:center;min-width:18px;height:18px;padding:0 5px;border-radius:9px;font-size:9px;font-weight:700;font-family:var(--mono);background:var(--red);color:#fff;margin-left:auto;}
 
 /* ── OPTIMIZER TAB ── */
 .optimizer-layout{display:grid;grid-template-columns:240px 1fr;gap:20px;}
@@ -192,9 +350,43 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
 .rec-effort{font-size:11px;padding:3px 8px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;color:var(--text-muted);}
 
 /* ── INFRASTRUCTURE TAB ── */
+/* ── INFRASTRUCTURE TAB (redesign) ── */
+.infra-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:22px;}
+.infra-kpi{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;}
+.infra-kpi-label{font-size:11px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:5px;}
+.infra-kpi-val{font-size:22px;font-weight:700;color:var(--text);font-family:var(--mono);letter-spacing:-0.02em;}
+.infra-kpi-sub{font-size:11px;color:var(--text-muted);margin-top:4px;}
 .infra-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
-.infra-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;transition:all 0.15s;}
-.infra-section:hover{background:var(--surface-hover);border-color:var(--border-strong);}
+.infra-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:border-color .15s;}
+.infra-card:hover{border-color:var(--border-strong);}
+.infra-card.expanded{border-color:var(--accent-border);}
+.infra-card-top{padding:18px 20px 14px;cursor:pointer;}
+.infra-card-header{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.infra-card-icon{width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.infra-card-name{font-size:14px;font-weight:600;color:var(--text);}
+.infra-card-sub{font-size:11px;color:var(--text-muted);margin-top:1px;}
+.infra-card-status{margin-left:auto;display:flex;align-items:center;gap:5px;font-size:11px;color:var(--text-muted);}
+.infra-card-cost-row{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px;}
+.infra-card-cost{font-size:28px;font-weight:700;color:var(--text);font-family:var(--mono);letter-spacing:-0.03em;line-height:1;}
+.infra-card-cost-sub{font-size:11px;color:var(--text-muted);}
+.infra-card-pct{font-size:13px;font-weight:600;color:var(--text-muted);font-family:var(--mono);}
+.infra-spend-bar{height:4px;background:var(--surface-2);border-radius:2px;margin-bottom:12px;overflow:hidden;}
+.infra-spend-fill{height:100%;border-radius:2px;transition:width .5s ease;}
+.infra-card-chips{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:10px;}
+.infra-chip{font-size:11px;color:var(--text-secondary);background:var(--surface-2);border:1px solid var(--border);border-radius:4px;padding:2px 7px;font-family:var(--mono);}
+.infra-card-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;padding-top:10px;border-top:1px solid var(--border);}
+.infra-expand-btn{font-size:11px;color:var(--text-muted);background:none;border:none;cursor:pointer;display:flex;align-items:center;gap:4px;font-family:var(--font);padding:0;}
+.infra-expand-btn:hover{color:var(--text);}
+.infra-detail{display:none;padding:0 20px 20px;border-top:1px solid var(--border);}
+.infra-detail.open{display:block;}
+.infra-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px;}
+.infra-detail-box{background:var(--surface-2);border:1px solid var(--border);border-radius:6px;padding:12px 14px;}
+.infra-detail-box-title{font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px;}
+.infra-res-row{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.infra-res-row:last-child{border-bottom:none;}
+.infra-waste-pill{font-size:10px;font-weight:600;background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.25);border-radius:3px;padding:1px 6px;white-space:nowrap;}
+/* legacy kept for metric bars */
+.infra-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
 .infra-section-header{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
 .infra-section-title{font-size:13px;font-weight:600;color:var(--text);}
 .infra-section-count{font-size:11px;color:var(--text-muted);margin-left:auto;}
@@ -274,6 +466,12 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
 /* ── LOADING SKELETON ── */
 .skeleton{background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:4px;height:14px;}
 @keyframes shimmer{0%{background-position:200% 0;}100%{background-position:-200% 0;}}
+/* Generic tab loading placeholder */
+.tab-loading-wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;min-height:220px;width:100%;color:var(--text-muted);}
+.tab-loading-spinner{width:28px;height:28px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;}
+.tab-loading-label{font-size:12px;font-family:var(--mono);color:var(--text-muted);}
+.tab-skel-row{height:13px;border-radius:4px;background:linear-gradient(90deg,var(--surface) 25%,var(--surface2) 50%,var(--surface) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;margin-bottom:10px;}
+.tab-skel-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 20px;margin-bottom:12px;}
 
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:5px;height:5px;}
@@ -286,6 +484,70 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
 #toast.show{opacity:1;transform:translateY(0);}
 #toast.toast-error{border-color:rgba(239,68,68,0.5);color:var(--red);}
 #toast.toast-ok{border-color:rgba(34,197,94,0.5);color:var(--green);}
+
+/* ── COST BY TAG CARD (home overview) ── */
+.tag-breakdown-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px 22px;margin-bottom:24px;}
+.tag-breakdown-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.tag-breakdown-title{font-size:14px;font-weight:600;color:var(--text);display:flex;align-items:center;gap:8px;}
+.tag-breakdown-subtitle{font-size:12px;color:var(--text-muted);}
+.tag-donuts-row{display:flex;gap:16px;flex-wrap:wrap;}
+.tag-donut-block{flex:1;min-width:280px;background:var(--surface-2);border:1px solid var(--border);border-radius:10px;padding:16px 18px;}
+.tag-donut-key{font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:14px;font-family:var(--mono);display:flex;align-items:center;gap:6px;}
+.tag-donut-key::before{content:'';display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);}
+.tag-donut-inner{display:flex;align-items:center;gap:20px;}
+.tag-donut-canvas-wrap{position:relative;flex-shrink:0;}
+.tag-donut-legend{display:flex;flex-direction:column;gap:7px;flex:1;min-width:0;}
+.tag-legend-row{display:flex;align-items:center;gap:8px;}
+.tag-legend-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;}
+.tag-legend-name{font-size:12px;color:var(--text-secondary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;}
+.tag-legend-right{display:flex;align-items:center;gap:6px;flex-shrink:0;}
+.tag-legend-bar-wrap{width:48px;height:4px;background:var(--border);border-radius:2px;overflow:hidden;}
+.tag-legend-bar-fill{height:100%;border-radius:2px;}
+.tag-legend-pct{font-size:11px;color:var(--text-muted);font-family:var(--mono);width:28px;text-align:right;}
+.tag-legend-amt{font-size:11px;font-family:var(--mono);color:var(--text);width:44px;text-align:right;}
+.tag-legend-row.is-untagged .tag-legend-name{color:var(--red);}
+.tag-legend-row.is-untagged .tag-legend-amt{color:var(--red);}
+.tag-legend-row.is-untagged .tag-legend-pct{color:var(--red);}
+/* Discovery callout banner */
+.discovery-banner{background:linear-gradient(135deg,rgba(201,162,39,.06) 0%,rgba(16,185,129,.06) 100%);border:1px solid rgba(201,162,39,.18);border-radius:var(--radius);padding:16px 20px;margin-bottom:24px;display:flex;gap:16px;align-items:flex-start;}
+.discovery-banner-icon{font-size:24px;flex-shrink:0;margin-top:2px;}
+.discovery-banner-body{flex:1;}
+.discovery-banner-title{font-size:13px;font-weight:700;color:var(--accent);margin-bottom:4px;}
+.discovery-banner-desc{font-size:12px;color:var(--text-secondary);line-height:1.5;}
+.discovery-banner-pills{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.discovery-pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:600;padding:4px 10px;border-radius:20px;cursor:pointer;border:none;text-decoration:none;transition:opacity .15s;}
+.discovery-pill:hover{opacity:.8;}
+.discovery-pill.waste{background:rgba(239,68,68,.12);color:var(--red);}
+.discovery-pill.insights{background:rgba(201,162,39,.12);color:var(--accent);}
+.discovery-pill.optimizer{background:rgba(16,185,129,.12);color:var(--green);}
+
+/* ── INSIGHT CARDS ── */
+.insight-section{margin-bottom:28px;}
+.insight-section-header{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid var(--border);}
+.insight-section-title{font-size:13px;font-weight:600;color:var(--text-secondary);letter-spacing:0.04em;text-transform:uppercase;}
+.insight-section-count{font-size:11px;color:var(--text-muted);background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:1px 7px;}
+.insight-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:12px;}
+.insight-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px 18px;display:flex;flex-direction:column;gap:8px;transition:border-color .15s;position:relative;}
+.insight-card:hover{border-color:var(--border-strong);}
+.insight-card.status-critical{border-left:3px solid var(--red);}
+.insight-card.status-warning{border-left:3px solid var(--orange);}
+.insight-card.status-ok{border-left:3px solid var(--green);opacity:0.8;}
+.insight-card.status-info{border-left:3px solid var(--blue);}
+.insight-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;}
+.insight-card-title{font-size:13px;font-weight:600;color:var(--text);line-height:1.35;flex:1;}
+.insight-status-badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
+.badge-critical{background:rgba(239,68,68,0.12);color:var(--red);border:1px solid rgba(239,68,68,0.25);}
+.badge-warning{background:rgba(245,158,11,0.12);color:var(--orange);border:1px solid rgba(245,158,11,0.25);}
+.badge-info{background:rgba(59,130,246,0.12);color:var(--blue);border:1px solid rgba(59,130,246,0.25);}
+.badge-ok{background:rgba(16,185,129,0.12);color:var(--green);border:1px solid rgba(16,185,129,0.25);}
+.insight-value{font-size:18px;font-weight:700;color:var(--text);font-family:var(--mono);letter-spacing:-0.02em;}
+.insight-detail{font-size:12px;color:var(--text-secondary);line-height:1.5;}
+.insight-rec{font-size:11px;color:var(--text-muted);background:var(--surface-2);border-radius:4px;padding:6px 8px;line-height:1.4;}
+.insight-rec::before{content:"→ ";font-weight:600;color:var(--accent);}
+.insight-card-footer{display:flex;align-items:center;justify-content:space-between;margin-top:2px;}
+.insight-savings{font-size:11px;font-weight:600;color:var(--green);}
+.insight-ask-btn{font-size:11px;padding:4px 10px;background:var(--accent-dim);border:1px solid var(--accent-border);color:var(--accent);border-radius:4px;cursor:pointer;font-family:var(--font);font-weight:500;transition:all .15s;white-space:nowrap;}
+.insight-ask-btn:hover{background:var(--accent);color:#0a0a0b;}
 </style>
 </head>
 <body>
@@ -303,15 +565,30 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
     <!-- reserved for search or breadcrumb -->
   </div>
   <div class="topbar-right">
+    <div class="data-toggle" id="dataToggle" title="Switch between mock demo data and live AWS data">
+      <span class="data-toggle__label" id="toggleLabel">MOCK</span>
+      <button class="data-toggle__switch" id="toggleSwitch" role="switch" aria-checked="true">
+        <span class="data-toggle__thumb"></span>
+      </button>
+      <span class="data-toggle__label" id="toggleLabelRight">LIVE</span>
+    </div>
     <div id="mode-badge" class="mode-badge mode-loading">connecting</div>
-    <a href="https://www.devopsarg.com/en/blog/" class="topbar-btn" target="_blank" title="DevOps ARG blog">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10l6 6v8a2 2 0 0 1-2 2z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/></svg>
+    <a href="https://www.devopsarg.com/en/blog/" class="topbar-btn" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10l6 6v8a2 2 0 0 1-2 2z"/><polyline points="14 2 14 8 20 8"/></svg>
       <span>Blog</span>
     </a>
-    <a href="https://www.devopsarg.com" class="topbar-btn" target="_blank" title="DevOps ARG website">
+    <a href="https://www.devopsarg.com/en/#contact" class="topbar-btn" target="_blank">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+      <span>Get support</span>
+    </a>
+    <a href="https://www.devopsarg.com" class="topbar-btn" target="_blank" style="background:rgba(201,162,39,.08);border-color:rgba(201,162,39,.3);color:var(--accent);">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
       <span>devopsarg.com</span>
     </a>
+    <button class="topbar-btn" id="export-report-btn" onclick="exportReport()" title="Download HTML cost report" style="background:rgba(201,162,39,.08);border-color:rgba(201,162,39,.3);color:var(--accent);">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg>
+      <span>Export Report</span>
+    </button>
     <button class="topbar-btn alerts-btn" id="alerts-btn" title="Anomalies detected">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
       <span id="alert-count" class="alert-count-badge">0</span>
@@ -335,9 +612,19 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
         Optimizer
       </button>
+      <button class="nav-btn" data-tab="insights">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        Insights
+        <span class="waste-nav-badge" id="insights-nav-badge" style="display:none">0</span>
+      </button>
     </div>
     <div class="nav-section">
       <div class="nav-section-label">Operations</div>
+      <button class="nav-btn" data-tab="waste">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+        Waste Detector
+        <span class="waste-nav-badge" id="waste-nav-badge" style="display:none">0</span>
+      </button>
       <button class="nav-btn" data-tab="infrastructure">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><line x1="6" y1="6" x2="6.01" y2="6"/><line x1="6" y1="18" x2="6.01" y2="18"/></svg>
         Infrastructure
@@ -348,9 +635,15 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
       </button>
     </div>
     <div class="sidebar-footer">
-      <div style="padding:10px 12px;background:var(--surface);border:1px solid var(--accent-border);border-radius:var(--radius-sm);margin-bottom:12px;">
-        <div style="font-size:11px;color:var(--accent);font-weight:600;margin-bottom:4px;">Built by DevOps ARG</div>
-        <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;">Argentina-based DevOps &amp; SRE consultancy for fast-growing startups.</div>
+      <div style="padding:12px;background:var(--surface);border:1px solid var(--accent-border);border-radius:var(--radius-sm);margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+          <img src="/devopsarg-logo.png" alt="DevOps ARG" style="width:72px;height:72px;border-radius:14px;flex-shrink:0;" />
+          <div>
+            <div style="font-size:12px;color:var(--accent);font-weight:700;line-height:1.2;">DevOps ARG</div>
+            <div style="font-size:10px;color:var(--text-muted);margin-top:1px;">devopsarg.com</div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;">We help you cut cloud costs and scale with confidence.</div>
         <a href="https://www.devopsarg.com/en/#contact" target="_blank" style="display:inline-block;margin-top:8px;font-size:11px;color:var(--accent);text-decoration:none;font-weight:500;">Work with us →</a>
       </div>
       <div class="sidebar-links">
@@ -417,19 +710,60 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
       <div class="charts-row">
         <div class="chart-card">
           <div class="chart-header">
-            <span class="chart-title">Weekly Cost Trend</span>
+            <span class="chart-title" id="trend-title">Cost Trend</span>
+            <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+              <div class="period-selector" id="period-selector">
+                <button class="period-btn" data-period="3d">3D</button>
+                <button class="period-btn" data-period="1w">1W</button>
+                <button class="period-btn active" data-period="1m">1M</button>
+                <button class="period-btn" data-period="3m">3M</button>
+                <button class="period-btn" data-period="1y">1Y</button>
+              </div>
             <span class="chart-badge" id="trend-label">Loading...</span>
           </div>
+          </div>
+          <div style="position:relative">
           <canvas id="trend-chart"></canvas>
+            <div id="chart-tooltip" style="display:none;position:absolute;background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:11px;font-family:var(--mono);pointer-events:none;white-space:nowrap;z-index:10"></div>
+            <div id="trend-chart-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;gap:8px;flex-direction:column">
+              <div class="tab-loading-spinner"></div>
+              <div class="tab-loading-label">Loading trend…</div>
+            </div>
+          </div>
         </div>
         <div class="chart-card">
           <div class="chart-header">
             <span class="chart-title">By Service</span>
           </div>
+          <div style="position:relative">
           <canvas id="donut-chart" width="160" height="160"></canvas>
+            <div id="donut-chart-loading" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">
+              <div class="tab-loading-spinner"></div>
+            </div>
+          </div>
           <div id="donut-legend" class="donut-legend"></div>
         </div>
       </div>
+      <!-- Cost by Tag breakdown -->
+      <div class="tag-breakdown-card" id="tag-breakdown-card">
+        <div class="tag-breakdown-header">
+          <div>
+            <div class="tag-breakdown-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+              Cost by Tag
+            </div>
+            <div class="tag-breakdown-subtitle" id="tag-breakdown-subtitle">Loading breakdown…</div>
+          </div>
+          <a href="#insights" onclick="switchTab('insights');return false;" style="font-size:11px;color:var(--accent);text-decoration:none;opacity:.8;white-space:nowrap;">See all insights →</a>
+        </div>
+        <div id="tag-breakdown-body">
+          <div class="skeleton" style="height:120px;border-radius:6px;"></div>
+        </div>
+      </div>
+
+      <!-- Discovery callout banner (populated by JS) -->
+      <div id="discovery-banner" style="display:none"></div>
+
       <div class="cards-row">
         <div class="info-card">
           <div class="info-card-header">
@@ -453,9 +787,49 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
     <div id="tab-services" class="tab-panel">
       <div class="page-header">
         <h1 class="page-title">Service Breakdown</h1>
-        <div class="page-meta">Cost per AWS service — last 4 weeks</div>
+        <div class="page-meta" id="services-meta">Cost per AWS service</div>
+        <!-- Period selector -->
+        <div class="svc-period-bar" id="svc-period-bar">
+          <button class="svc-period-btn" data-period="3d">3D</button>
+          <button class="svc-period-btn" data-period="1w">1W</button>
+          <button class="svc-period-btn active" data-period="1m">1M</button>
+          <button class="svc-period-btn" data-period="3m">3M</button>
+          <button class="svc-period-btn" data-period="1y">1Y</button>
       </div>
-      <div id="services-grid" class="services-grid"></div>
+      </div>
+
+      <!-- Summary KPIs -->
+      <div class="svc-kpis" id="svc-kpis">
+        <div class="svc-kpi"><div class="svc-kpi-label">Total Spend</div><div class="svc-kpi-val" id="svc-kpi-total">—</div></div>
+        <div class="svc-kpi"><div class="svc-kpi-label">Daily Average</div><div class="svc-kpi-val" id="svc-kpi-daily">—</div></div>
+        <div class="svc-kpi"><div class="svc-kpi-label">Top Service</div><div class="svc-kpi-val" id="svc-kpi-top" style="font-size:13px">—</div></div>
+        <div class="svc-kpi"><div class="svc-kpi-label">Services tracked</div><div class="svc-kpi-val" id="svc-kpi-count">—</div></div>
+      </div>
+
+      <!-- Stacked bar chart -->
+      <div class="svc-chart-wrap" style="position:relative">
+        <div class="svc-chart-title">Spend over time <span id="svc-chart-subtitle" style="font-weight:400;color:var(--text-muted);font-size:11px"></span></div>
+        <canvas id="svc-stacked-chart" height="140"></canvas>
+        <div id="svc-chart-legend" class="svc-chart-legend"></div>
+        <!-- Loading overlay -->
+        <div id="svc-loading-overlay" style="display:none;position:absolute;inset:0;background:rgba(10,10,11,.72);border-radius:var(--radius);align-items:center;justify-content:center;gap:10px;flex-direction:column;backdrop-filter:blur(2px);">
+          <div class="svc-spinner"></div>
+          <div class="svc-loading-text" style="color:var(--text-muted);font-size:12px;font-family:var(--mono)">Loading data…</div>
+        </div>
+      </div>
+
+      <!-- Sort + filter row -->
+      <div class="svc-toolbar">
+        <select id="svc-sort" class="svc-select">
+          <option value="cost">Sort: Cost ↓</option>
+          <option value="pct">Sort: Share % ↓</option>
+          <option value="daily">Sort: Daily Avg ↓</option>
+          <option value="name">Sort: Name A–Z</option>
+        </select>
+        <input type="text" id="svc-search" class="svc-search" placeholder="🔍 Filter services...">
+      </div>
+
+      <div id="services-grid" class="services-grid-v2"></div>
     </div>
 
     <!-- ── OPTIMIZER TAB ── -->
@@ -487,19 +861,244 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
             <div class="savings-total-period">per month</div>
           </div>
         </div>
+        <div style="display:flex;flex-direction:column;gap:0;min-width:0">
+          <!-- Optimizer filters -->
+          <div style="display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center">
+            <select id="opt-filter-type" onchange="renderOptimizer()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;cursor:pointer">
+              <option value="">All types</option>
+              <option value="savings">💳 Savings Plans</option>
+              <option value="reserved">🔒 Reserved Instances</option>
+              <option value="rightsize">⚡ Rightsizing</option>
+              <option value="other">🔧 Other</option>
+            </select>
+            <select id="opt-filter-effort" onchange="renderOptimizer()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;cursor:pointer">
+              <option value="">Any effort</option>
+              <option value="low">Low effort</option>
+              <option value="medium">Medium effort</option>
+              <option value="high">High effort</option>
+            </select>
+            <select id="opt-filter-savings" onchange="renderOptimizer()" style="background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:6px 10px;color:var(--text);font-size:12px;cursor:pointer">
+              <option value="0">Any savings</option>
+              <option value="100">Min $100/mo</option>
+              <option value="500">Min $500/mo</option>
+              <option value="1000">Min $1,000/mo</option>
+            </select>
+            <span id="opt-filter-count" style="font-size:12px;color:var(--text-muted);margin-left:4px"></span>
+        </div>
         <div id="recommendations-list" class="recommendations-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── WASTE DETECTOR TAB ── -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <!-- INSIGHTS TAB                                                       -->
+    <!-- ══════════════════════════════════════════════════════════════════ -->
+    <div id="tab-insights" class="tab-panel">
+      <div class="page-header">
+        <h1 class="page-title">Billing Insights</h1>
+        <div class="page-meta" id="insights-meta">20 automated billing checks — no LLM required</div>
+        <button class="btn-secondary" id="insights-refresh-btn">↻ Refresh</button>
+      </div>
+
+      <!-- KPI row -->
+      <div class="kpi-grid" id="insights-kpi-grid" style="grid-template-columns:repeat(5,1fr);">
+        <div class="kpi-card"><div class="kpi-label">Total Checks</div><div class="kpi-value" id="ins-kpi-total">—</div><div class="kpi-delta">billing checks</div></div>
+        <div class="kpi-card"><div class="kpi-label" style="color:var(--red)">🔴 High</div><div class="kpi-value" id="ins-kpi-critical" style="color:var(--red)">—</div><div class="kpi-delta">require action</div></div>
+        <div class="kpi-card"><div class="kpi-label" style="color:var(--orange)">🟡 Medium</div><div class="kpi-value" id="ins-kpi-warning" style="color:var(--orange)">—</div><div class="kpi-delta">attention needed</div></div>
+        <div class="kpi-card"><div class="kpi-label" style="color:var(--green)">OK</div><div class="kpi-value" id="ins-kpi-ok" style="color:var(--green)">—</div><div class="kpi-delta">within range</div></div>
+        <div class="kpi-card" style="border-color:var(--accent-border)"><div class="kpi-label" style="color:var(--accent)">Est. Savings</div><div class="kpi-value" id="ins-kpi-savings" style="color:var(--accent)">—</div><div class="kpi-delta">identified /mo</div></div>
+      </div>
+
+      <!-- devopsarg.com banner -->
+      <div style="background:linear-gradient(135deg,rgba(201,162,39,0.08),rgba(201,162,39,0.03));border:1px solid var(--accent-border);border-radius:var(--radius);padding:14px 20px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between;gap:16px;">
+        <div>
+          <div style="font-size:13px;font-weight:600;color:var(--accent);margin-bottom:3px;">devopsarg.com recommends: let us fix these for you</div>
+          <div style="font-size:12px;color:var(--text-secondary);">Our team implements these optimizations in &lt;2 weeks — zero downtime, safety snapshots, post-change monitoring.</div>
+        </div>
+        <a href="https://www.devopsarg.com/en/#contact" target="_blank" class="btn-primary" style="white-space:nowrap;text-decoration:none;font-size:12px;padding:7px 14px;">Contact us →</a>
+      </div>
+
+      <!-- Loading skeleton -->
+      <div id="insights-loading" style="display:none;">
+        <div class="tab-loading-wrap" style="min-height:200px;"><div class="tab-loading-spinner"></div><div style="color:var(--text-muted);font-size:13px;margin-top:12px;">Running 20 billing checks...</div></div>
+      </div>
+
+      <!-- Insights by category -->
+      <div id="insights-content">
+        <div id="insights-empty" style="display:none;text-align:center;padding:60px 20px;color:var(--text-muted);">
+          <div style="font-size:32px;margin-bottom:12px;">📊</div>
+          <div style="font-size:15px;font-weight:500;color:var(--text-secondary);margin-bottom:6px;">No insights yet</div>
+          <div style="font-size:13px;">Click <strong>↻ Refresh</strong> to run all 20 billing checks against your AWS account.</div>
+        </div>
+        <div id="insights-categories"></div>
+      </div>
+    </div>
+
+    <div id="tab-waste" class="tab-panel">
+      <div class="page-header">
+        <h1 class="page-title">Waste Detector</h1>
+        <div class="page-meta" id="waste-meta">Loading scan results...</div>
+        <button class="btn-secondary" id="waste-refresh-btn">↻ Scan Now</button>
+      </div>
+
+      <!-- Stale data warning banner -->
+      <div id="waste-stale-banner" style="display:none;background:rgba(251,191,36,0.08);border:1px solid rgba(251,191,36,0.3);border-radius:var(--radius);padding:14px 18px;margin-bottom:16px;"></div>
+
+      <!-- DevOps ARG top banner -->
+      <div class="waste-banner">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="flex-shrink:0"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+        <div class="waste-banner-text">
+          <strong>devopsarg.com recommends:</strong> Fixing these issues could save you
+          <strong id="waste-banner-savings">$X,XXX</strong>/mo. Our team delivers it in under 2 weeks —
+          zero-downtime, safety snapshots and post-change monitoring included.
+        </div>
+        <div class="waste-banner-actions">
+          <a href="https://www.devopsarg.com/en/blog/aws-cost-optimization-case-study/" target="_blank" class="btn-secondary" style="text-decoration:none">Case studies →</a>
+          <a href="https://www.devopsarg.com/en/#contact" target="_blank" class="btn-primary" style="text-decoration:none">Contact us</a>
+        </div>
+      </div>
+
+      <!-- KPIs -->
+      <div class="waste-kpis">
+        <div class="waste-kpi">
+          <div class="waste-kpi-label">Total Findings</div>
+          <div class="waste-kpi-value" id="wkpi-total">—</div>
+          <div class="waste-kpi-sub"><span id="wkpi-critical" style="color:var(--red)">0 high</span> · <span id="wkpi-warning" style="color:var(--orange)">0 medium</span></div>
+        </div>
+        <div class="waste-kpi">
+          <div class="waste-kpi-label">🗑 To Delete</div>
+          <div class="waste-kpi-value" id="wkpi-cleanup">—</div>
+          <div class="waste-kpi-sub">zombie / orphaned resources</div>
+        </div>
+        <div class="waste-kpi">
+          <div class="waste-kpi-label">⚡ To Rightsize</div>
+          <div class="waste-kpi-value" id="wkpi-rightsize">—</div>
+          <div class="waste-kpi-sub">oversized resources</div>
+        </div>
+        <div class="waste-kpi" style="border-color:var(--green);background:rgba(16,185,129,0.05)">
+          <div class="waste-kpi-label" style="color:var(--green)">💰 Potential Savings</div>
+          <div class="waste-kpi-value" id="wkpi-savings" style="color:var(--green)">—</div>
+          <div class="waste-kpi-sub">per month identified</div>
+        </div>
+      </div>
+
+      <!-- Section tabs: Cleanup / Rightsize -->
+      <div class="waste-section-tabs">
+        <button class="waste-section-tab active" data-wsec="cleanup">
+          🗑 Cleanup
+          <span class="wsec-badge wsec-badge-cleanup" id="wsec-badge-cleanup">0</span>
+        </button>
+        <button class="waste-section-tab" data-wsec="rightsize">
+          ⚡ Rightsizing
+          <span class="wsec-badge wsec-badge-rightsize" id="wsec-badge-rightsize">0</span>
+        </button>
+      </div>
+
+      <!-- Filters -->
+      <div class="waste-filters">
+        <select id="waste-filter-service">
+          <option value="">All services</option>
+        </select>
+        <select id="waste-filter-severity">
+          <option value="">Any severity</option>
+          <option value="critical">🔴 High</option>
+          <option value="warning">🟡 Medium</option>
+          <option value="info">🔵 Low</option>
+        </select>
+        <select id="waste-filter-savings">
+          <option value="0">Any savings</option>
+          <option value="50">Min $50/mo</option>
+          <option value="100">Min $100/mo</option>
+          <option value="200">Min $200/mo</option>
+          <option value="500">Min $500/mo</option>
+        </select>
+        <input type="text" class="waste-filter-search" id="waste-filter-search" placeholder="🔍 Search resource ID...">
+      </div>
+
+      <!-- Findings grid -->
+      <div id="waste-findings-grid"></div>
+
+      <!-- Footer DevOps ARG -->
+      <div class="waste-footer">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2" style="flex-shrink:0"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <div class="waste-footer-text">
+          <strong style="color:var(--text)">DevOps ARG</strong> helped save
+          <a href="https://www.devopsarg.com/en/blog/aws-cost-optimization-case-study/" target="_blank" style="color:var(--accent);text-decoration:none">$237K/year on AWS</a>
+          for a Series A fintech. Karpenter migrations, Graviton, NAT reduction, RDS rightsizing.
+          Want the same results?
+        </div>
+        <div style="display:flex;gap:8px;flex-shrink:0">
+          <a href="https://www.devopsarg.com/en/blog/aws-cost-optimization-case-study/" target="_blank" class="btn-secondary" style="text-decoration:none;font-size:12px">Read case study →</a>
+          <a href="https://www.devopsarg.com/en/#contact" target="_blank" class="btn-primary" style="text-decoration:none;font-size:12px">Book a free call</a>
+        </div>
+      </div>
+
+      <!-- Sticky bottom bar -->
+      <div class="waste-sticky-bar" id="waste-sticky-bar" style="display:none">
+        <div class="waste-sticky-stat">🗑 <strong id="wsticky-cleanup">0</strong> to delete</div>
+        <span class="waste-sticky-divider">|</span>
+        <div class="waste-sticky-stat">⚡ <strong id="wsticky-rightsize">0</strong> to rightsize</div>
+        <span class="waste-sticky-divider">|</span>
+        <div class="waste-sticky-stat">💰 <strong id="wsticky-savings">$0</strong>/mo potential</div>
+        <span class="waste-sticky-divider" style="flex:1"></span>
+        <span style="font-size:12px;color:var(--text-muted)">devopsarg.com can implement everything in &lt; 2 weeks</span>
+        <a href="https://www.devopsarg.com/en/#contact" target="_blank" class="btn-primary" style="text-decoration:none;font-size:12px;padding:6px 12px">Contact us →</a>
+      </div>
+    </div>
+
+    <!-- Detail slide-in panel -->
+    <div class="waste-detail-panel" id="waste-detail-panel">
+      <div class="waste-detail-header">
+        <div>
+          <div id="wdetail-resource-id" style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--text)"></div>
+          <div id="wdetail-title" style="font-size:12px;color:var(--text-muted);margin-top:3px"></div>
+        </div>
+        <button class="waste-detail-close" onclick="closeWasteDetail()">×</button>
+      </div>
+      <div class="waste-detail-body">
+        <div class="waste-detail-field">
+          <div class="waste-detail-field-label">Severity</div>
+          <div id="wdetail-severity"></div>
+        </div>
+        <div class="waste-detail-field">
+          <div class="waste-detail-field-label">Cost Estimate</div>
+          <div id="wdetail-cost-breakdown"></div>
+        </div>
+        <div class="waste-detail-field" id="wdetail-idle-row">
+          <div class="waste-detail-field-label">Idle for</div>
+          <div class="waste-detail-field-value" id="wdetail-idle"></div>
+        </div>
+        <div class="waste-detail-field">
+          <div class="waste-detail-field-label">Region</div>
+          <div class="waste-detail-field-value" id="wdetail-region"></div>
+        </div>
+        <div class="waste-detail-field" id="wdetail-tags-row">
+          <div class="waste-detail-field-label">Tags</div>
+          <div class="waste-detail-tags" id="wdetail-tags"></div>
+        </div>
+        <div class="waste-detail-field">
+          <div class="waste-detail-field-label">Description</div>
+          <div class="waste-detail-field-value" id="wdetail-description" style="color:var(--text-muted);line-height:1.5"></div>
+        </div>
+        <div class="waste-detail-tip" id="wdetail-tip"></div>
+        <div class="waste-detail-actions" id="wdetail-actions"></div>
       </div>
     </div>
 
     <!-- ── INFRASTRUCTURE TAB ── -->
     <div id="tab-infrastructure" class="tab-panel">
       <div class="page-header">
-        <h1 class="page-title">Infrastructure Health</h1>
+        <h1 class="page-title">Infrastructure</h1>
         <div class="page-meta" id="infra-meta">Loading...</div>
-        <select id="region-select" class="region-select" style="background:var(--surface2);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:12px;font-family:var(--mono);cursor:pointer;min-width:160px">
+        <select id="region-select" class="region-select" style="background:var(--surface);border:1px solid var(--border);color:var(--text);padding:6px 12px;border-radius:6px;font-size:12px;font-family:var(--mono);cursor:pointer;min-width:160px">
           <option value="">Loading regions...</option>
         </select>
+        <button class="btn-secondary" id="infra-refresh-btn" onclick="loadInfra()">↻ Refresh</button>
       </div>
+      <!-- Summary KPIs -->
+      <div class="infra-summary" id="infra-summary" style="display:none"></div>
+      <!-- Service cards -->
       <div id="infra-grid" class="infra-grid"></div>
     </div>
 
@@ -576,10 +1175,14 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
       <div class="chat-main">
         <div class="chat-messages" id="chat-messages">
           <div class="chat-welcome">
-            <img src="/devopsarg-logo.png" alt="DevOps ARG" style="width:56px;height:56px;border-radius:50%;margin:0 auto 16px;display:block;" />
+            <img src="/devopsarg-logo.png" alt="DevOps ARG" style="width:160px;height:160px;border-radius:24px;margin:0 auto 18px;display:block;box-shadow:0 0 0 1px var(--border);" />
             <div class="chat-welcome-title">FinOps AI Agent</div>
             <div class="chat-welcome-sub">Built by <a href="https://www.devopsarg.com" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500">DevOps ARG</a> · powered with Claude<br>Ask anything about your AWS costs, infrastructure health, or optimization opportunities.</div>
           </div>
+        </div>
+        <div id="chat-mock-banner" style="display:none;margin:0 16px 8px;padding:8px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:12px;color:#f59e0b;display:flex;align-items:center;gap:8px">
+          <span>⚠️</span>
+          <span><strong>Demo mode</strong> — AI is using simulated data, not your real AWS account. <a href="#" onclick="toggleDataSource();return false" style="color:#f59e0b;text-decoration:underline">Switch to Live</a> to connect real AWS.</span>
         </div>
         <div class="chat-input-area">
           <input type="text" class="chat-input" id="chat-input" placeholder="Ask about costs, anomalies, rightsizing...">
@@ -629,9 +1232,11 @@ const SVC_ICONS = {
 };
 
 const state = {
-  report: null, infra: null, optimize: null,
+  report: null, infra: null, optimize: null, trendData: null,
   sessionId: null, loading: { report: true, infra: true, optimize: true },
   chartsDrawn: false,
+  findings: null, wasteSection: 'cleanup',
+  wasteSummary: null, insightsSummary: null,
 };
 
 // ════════════════════════════════════════════════════════
@@ -641,8 +1246,62 @@ window.addEventListener('DOMContentLoaded', () => {
   setupNavigation();
   setupChat();
   setupRefresh();
+  setupWaste();
+  setupInsights();
+  setupPeriodSelector();
+  // Route to the correct tab based on initial URL hash
+  if (window.location.hash) _routeFromHash();
   init();
 });
+
+// ════════════════════════════════════════════════════════
+// UNIVERSAL TAB LOADING SKELETON
+// ════════════════════════════════════════════════════════
+/**
+ * Show a spinner + skeleton rows inside `el` (DOM element or ID string).
+ * Pass rows=0 to show only the spinner (for smaller containers).
+ */
+function showTabLoading(elOrId, label = 'Loading…', rows = 4) {
+  const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+  if (!el) return;
+  const widths = ['60%', '85%', '45%', '70%', '55%', '80%'];
+  const skelRows = rows > 0 ? Array.from({length: rows}, (_, i) =>
+    `<div class="tab-skel-row" style="width:${widths[i % widths.length]}"></div>`
+  ).join('') : '';
+  el.innerHTML = `
+    <div class="tab-loading-wrap">
+      <div class="tab-loading-spinner"></div>
+      <div class="tab-loading-label">${label}</div>
+      ${rows > 0 ? `<div style="width:100%;max-width:480px">${skelRows}</div>` : ''}
+    </div>`;
+}
+
+/** Remove loading skeleton if it's still the only content */
+function clearTabLoading(elOrId) {
+  const el = typeof elOrId === 'string' ? document.getElementById(elOrId) : elOrId;
+  if (!el) return;
+  if (el.querySelector('.tab-loading-wrap')) el.innerHTML = '';
+}
+
+function setupPeriodSelector() {
+  // Overview chart period selector
+  document.getElementById('period-selector')?.addEventListener('click', e => {
+    const btn = e.target.closest('.period-btn');
+    if (!btn) return;
+    loadTrend(btn.dataset.period);
+  });
+  // Services tab period selector
+  document.getElementById('svc-period-bar')?.addEventListener('click', e => {
+    const btn = e.target.closest('.svc-period-btn');
+    if (!btn) return;
+    document.querySelectorAll('.svc-period-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    loadTrend(btn.dataset.period);
+  });
+  // Services sort/search
+  document.getElementById('svc-sort')?.addEventListener('change', () => renderServicesTrend(state.trendData));
+  document.getElementById('svc-search')?.addEventListener('input', () => renderServicesTrend(state.trendData));
+}
 
 async function init() {
   try {
@@ -653,7 +1312,7 @@ async function init() {
     toast('Backend offline — is the server running on :8000?', 'error');
   }
   // Load all data in parallel
-  Promise.all([loadReport(), loadInfra(), loadOptimize()]);
+  Promise.all([loadReport(), loadInfra(), loadOptimize(), loadFindings(), loadCostByTags()]);
 }
 
 async function fetchJSON(path) {
@@ -672,21 +1331,108 @@ async function loadReport() {
     state.loading.report = false;
     renderOverview();
     renderServices();
-    // Start live ticker based on last week's cost
     startLiveTicker(data.summary.lastWeekCost);
-    // Update alert badge
-    const anomalyCount = (data.anomalies || []).length;
+    // Anomaly count: if report has none, try pulling from insights store
+    let anomalyCount = (data.anomalies || []).length;
+    if (!anomalyCount) {
+      _enrichAnomaliesFromInsights();
+    } else {
     document.getElementById('alert-count').textContent = anomalyCount;
+    }
   } catch (e) {
     console.error('Report load failed:', e);
     document.getElementById('report-meta').textContent = 'Failed to load — is backend running?';
   }
 }
 
+async function _enrichAnomaliesFromInsights() {
+  try {
+    const ins = await fetchJSON('/api/insights');
+    const anomalyInsight = (ins.insights || []).find(i => i.check_id === 'cost_anomalies');
+    if (!anomalyInsight || anomalyInsight.status === 'ok') return;
+    // Build synthetic anomaly objects from the insight detail string
+    const detail = anomalyInsight.detail || '';
+    const impactMatch = detail.match(/Largest:\s*([^,]+),\s*\$([\d.]+)/);
+    const countMatch  = detail.match(/(\d+)\s+anomal/i);
+    const count = countMatch ? parseInt(countMatch[1]) : 1;
+    const svc   = impactMatch ? impactMatch[1].trim() : 'AWS services';
+    const totalImpact = anomalyInsight.savings_usd || 0;
+    const anomalies = [{ service: svc, total_impact: totalImpact, status: 'open', start_date: '', end_date: '' }];
+    // Backfill more entries if count > 1
+    for (let i = 1; i < count; i++) anomalies.push({ service: 'Other services', total_impact: 0, status: 'open' });
+    if (state.report) state.report.anomalies = anomalies;
+    renderAnomalies(anomalies);
+  } catch (_) {}
+}
+
+async function loadTrend(period) {
+  const tl = document.getElementById('trend-label');
+  if (tl) tl.textContent = 'Loading...';
+  // Update active button
+  document.querySelectorAll('.period-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.period === period);
+  });
+
+  // Show loading state in services tab
+  _setSvcLoading(true, period);
+
+  try {
+    const data = await fetchJSON(`/api/report/trend?period=${period}`);
+    state.trendData = data;
+    drawTrendChart(data.trend, period);
+    renderServicesTrend(data);
+  } catch (e) {
+    console.error('Trend load failed:', e);
+    if (tl) tl.textContent = 'Error loading trend';
+    _setSvcLoading(false);
+    _setSvcError('Failed to load data. Please try again.');
+  } finally {
+    _setSvcLoading(false);
+  }
+}
+
+function _setSvcLoading(on, period) {
+  const periodLabels = { '3d':'3 Days','1w':'1 Week','1m':'1 Month','3m':'3 Months','1y':'1 Year' };
+  const bar = document.getElementById('svc-period-bar');
+  const overlay = document.getElementById('svc-loading-overlay');
+  // disable / enable period buttons
+  if (bar) bar.querySelectorAll('.svc-period-btn').forEach(b => b.disabled = on);
+  if (on) {
+    // Dim the KPIs
+    ['svc-kpi-total','svc-kpi-daily','svc-kpi-top','svc-kpi-count'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) { el.style.opacity = '0.35'; el.style.transition = 'opacity .2s'; }
+    });
+    // Show overlay over the chart
+    if (overlay) {
+      overlay.style.display = 'flex';
+      const lbl = overlay.querySelector('.svc-loading-text');
+      if (lbl && period) lbl.textContent = `Loading ${periodLabels[period] || period} data…`;
+    }
+    // Clear chart legend
+    const legend = document.getElementById('svc-chart-legend');
+    if (legend) legend.style.opacity = '0.3';
+  } else {
+    ['svc-kpi-total','svc-kpi-daily','svc-kpi-top','svc-kpi-count'].forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.style.opacity = '1';
+    });
+    if (overlay) overlay.style.display = 'none';
+    const legend = document.getElementById('svc-chart-legend');
+    if (legend) legend.style.opacity = '1';
+  }
+}
+
+function _setSvcError(msg) {
+  const grid = document.getElementById('services-grid');
+  if (grid) grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted);font-size:13px">${msg}</div>`;
+}
+
 async function loadInfra(region) {
   try {
     const meta = document.getElementById('infra-meta');
     if (meta) meta.textContent = `Loading ${region ? region : 'default region'}...`;
+    showTabLoading('infra-grid', 'Scanning infrastructure…', 3);
     const qs = region ? `?region=${encodeURIComponent(region)}` : '';
     const data = await fetchJSON('/api/infrastructure' + qs);
     state.infra = data;
@@ -721,6 +1467,7 @@ function populateRegionSelector(data) {
 
 async function loadOptimize() {
   try {
+    showTabLoading('recommendations-list', 'Loading optimization recommendations…', 5);
     const data = await fetchJSON('/api/optimize');
     state.optimize = data;
     state.loading.optimize = false;
@@ -728,6 +1475,174 @@ async function loadOptimize() {
     // Update savings KPI once we have both report and optimizer data
     if (state.report) updateSavingsKPI();
   } catch (e) { console.error('Optimizer load failed:', e); }
+}
+
+async function loadCostByTags() {
+  try {
+    const data = await fetchJSON('/api/cost-by-tags');
+    if (data.ok && data.insight) {
+      renderCostByTags(data.insight);
+    } else {
+      document.getElementById('tag-breakdown-body').innerHTML =
+        `<div style="color:var(--text-muted);font-size:12px;padding:8px 0;">${data.error || 'No tag data available.'}</div>`;
+      document.getElementById('tag-breakdown-subtitle').textContent = 'unavailable';
+    }
+  } catch (e) {
+    document.getElementById('tag-breakdown-body').innerHTML =
+      `<div style="color:var(--text-muted);font-size:12px;padding:8px 0;">Could not load tag breakdown.</div>`;
+  }
+}
+
+const TAG_DONUT_COLORS = ['#C9A227','#10b981','#38bdf8','#a78bfa','#f97316','#ec4899','#64748b'];
+const TAG_UNTAGGED_COLOR = '#ef4444';
+const TAG_DONUT_MAX_SLICES = 5; // top N + untagged
+
+function _drawTagDonut(canvasId, entries, total) {
+  const canvas = document.getElementById(canvasId);
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const W = canvas.width, H = canvas.height;
+  const cx = W/2, cy = H/2, R = Math.min(W,H)/2 - 3, r = R * 0.56;
+  ctx.clearRect(0, 0, W, H);
+  let angle = -Math.PI/2;
+  entries.forEach(([, cost, color]) => {
+    const sweep = (cost / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, angle, angle + sweep);
+    ctx.arc(cx, cy, r, angle + sweep, angle, true);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+    angle += sweep;
+  });
+  // Subtle separator ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI*2);
+  ctx.fillStyle = '#111c2e';
+  ctx.fill();
+  // Total label
+  const totalStr = total >= 1000 ? `$${(total/1000).toFixed(1)}K` : `$${Math.round(total)}`;
+  ctx.fillStyle = '#e2e8f0'; ctx.font = 'bold 12px monospace'; ctx.textAlign = 'center';
+  ctx.fillText(totalStr, cx, cy + 4);
+}
+
+function renderCostByTags(insight) {
+  const ictx = insight.context || {};
+  const breakdowns = ictx.breakdowns || {};
+  const tagKeys = ictx.tag_keys || ['env'];
+
+  // subtitle: first tag's untagged %
+  const firstKey = tagKeys[0];
+  const firstBreakdown = breakdowns[firstKey] || {};
+  const firstTotal = Object.values(firstBreakdown).reduce((a,b)=>a+b,0);
+  const untaggedCost = firstBreakdown['untagged'] || firstBreakdown[''] || 0;
+  const untaggedPct = firstTotal ? Math.round(untaggedCost/firstTotal*100) : 0;
+  document.getElementById('tag-breakdown-subtitle').textContent =
+    `Month-to-date · tags: ${tagKeys.join(', ')}${untaggedPct ? ` · ${untaggedPct}% untagged (${firstKey})` : ''}`;
+
+  let blocksHtml = '';
+  const canvasIds = [];
+
+  tagKeys.forEach((key, ki) => {
+    const byVal = breakdowns[key] || {};
+    const total = Object.values(byVal).reduce((a,b)=>a+b,0);
+    if (!total) return;
+
+    // Sort: top N by cost (exclude untagged), then untagged at end
+    const tagged = Object.entries(byVal)
+      .filter(([k,v]) => k !== 'untagged' && k !== '' && v > 1)
+      .sort(([,a],[,b]) => b-a)
+      .slice(0, TAG_DONUT_MAX_SLICES);
+    const untagged = byVal['untagged'] || byVal[''] || 0;
+
+    const slices = [];
+    tagged.forEach(([name, cost], i) => slices.push([name, cost, TAG_DONUT_COLORS[i % TAG_DONUT_COLORS.length]]));
+    if (untagged > 1) slices.push(['untagged', untagged, TAG_UNTAGGED_COLOR]);
+
+    const sliceTotal = slices.reduce((s,[,c])=>s+c, 0);
+    const cid = `tag-donut-canvas-${ki}`;
+    canvasIds.push({ id: cid, slices, total: sliceTotal });
+
+    const legendRows = slices.map(([name, cost, color]) => {
+      const pct = Math.round(cost/total*100);
+      const isUt = name === 'untagged';
+      const amtStr = cost >= 1000 ? `$${(cost/1000).toFixed(1)}K` : `$${Math.round(cost)}`;
+      return `<div class="tag-legend-row${isUt?' is-untagged':''}">
+        <div class="tag-legend-dot" style="background:${color}"></div>
+        <div class="tag-legend-name">${name}</div>
+        <div class="tag-legend-right">
+          <div class="tag-legend-bar-wrap"><div class="tag-legend-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+          <div class="tag-legend-pct">${pct}%</div>
+          <div class="tag-legend-amt">${amtStr}</div>
+        </div>
+      </div>`;
+    }).join('');
+
+    blocksHtml += `
+      <div class="tag-donut-block">
+        <div class="tag-donut-key">${key}</div>
+        <div class="tag-donut-inner">
+          <div class="tag-donut-legend">${legendRows}</div>
+        </div>
+      </div>`;
+  });
+
+  document.getElementById('tag-breakdown-body').innerHTML = blocksHtml
+    ? `<div class="tag-donuts-row">${blocksHtml}</div>`
+    : '<div style="color:var(--text-muted);font-size:12px">No tagged spend found for the configured keys.</div>';
+
+  // Draw donuts after DOM update
+  requestAnimationFrame(() => {
+    canvasIds.forEach(({ id, slices, total }) => _drawTagDonut(id, slices, total));
+  });
+}
+
+function renderDiscoveryBanner() {
+  const banner = document.getElementById('discovery-banner');
+  if (!banner) return;
+
+  const wasteSummary  = state.wasteSummary  || null;
+  const insightsSummary = state.insightsSummary || null;
+
+  // Need at least one data source
+  if (!wasteSummary && !insightsSummary) return;
+
+  const wasteSavings   = wasteSummary   ? (wasteSummary.total_savings || 0) : 0;
+  const wasteCount     = wasteSummary   ? (wasteSummary.total || 0)         : 0;
+  const insightWarnings = insightsSummary ? (insightsSummary.warnings || 0) : 0;
+  const insightSavings  = insightsSummary ? (insightsSummary.savings  || 0) : 0;
+  const criticalCount  = wasteSummary   ? (wasteSummary.critical || 0)     : 0;
+
+  if (!wasteCount && !insightWarnings) return;
+
+  const totalSavings = wasteSavings + insightSavings;
+  const savingsStr   = totalSavings >= 1000
+    ? `$${(totalSavings/1000).toFixed(1)}K`
+    : `$${Math.round(totalSavings)}`;
+
+  const parts = [];
+  if (wasteCount)       parts.push(`<strong>${wasteCount} waste findings</strong> (${criticalCount} critical) across your infrastructure`);
+  if (insightWarnings)  parts.push(`<strong>${insightWarnings} billing alerts</strong> that need attention`);
+  const descText = parts.join(' and ');
+
+  banner.style.display = 'flex';
+  banner.innerHTML = `
+    <div class="discovery-banner-icon">🔍</div>
+    <div class="discovery-banner-body">
+      <div class="discovery-banner-title">devopsarg.com found potential savings of ${savingsStr}/mo in your account</div>
+      <div class="discovery-banner-desc">We detected ${descText}. Addressing these can reduce your AWS bill significantly.</div>
+      <div class="discovery-banner-pills">
+        ${wasteCount ? `<button class="discovery-pill waste" onclick="switchTab('waste')">
+          🗑 ${wasteCount} Waste Findings — $${Math.round(wasteSavings)}/mo →
+        </button>` : ''}
+        ${insightWarnings ? `<button class="discovery-pill insights" onclick="switchTab('insights')">
+          💡 ${insightWarnings} Billing Alerts →
+        </button>` : ''}
+        <button class="discovery-pill optimizer" onclick="switchTab('optimizer')">
+          ⚡ View Optimization Recommendations →
+        </button>
+      </div>
+    </div>`;
 }
 
 // ════════════════════════════════════════════════════════
@@ -739,13 +1654,47 @@ function setupNavigation() {
   });
 }
 
-function switchTab(id) {
+const VALID_TABS = new Set(['overview','services','optimizer','insights','waste','infrastructure','chat']);
+
+function switchTab(id, updateUrl = true) {
+  if (!VALID_TABS.has(id)) id = 'overview';
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === id));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === `tab-${id}`));
-  // Redraw charts after the panel becomes visible (canvas needs to be in DOM)
+  if (updateUrl) history.pushState(null, '', '#' + id);
   if (id === 'overview') setTimeout(redrawCharts, 30);
-  if (id === 'optimizer' && state.optimize) setTimeout(() => drawGauge(state.optimize.score), 30);
+  if (id === 'optimizer') {
+    if (state.optimize) setTimeout(() => { renderOptimizer(); drawGauge(state.optimize.score); }, 30);
+    else renderOptimizer();
+  }
+  if (id === 'infrastructure') {
+    if (state.infra) renderInfrastructure();
+    else showTabLoading('infra-grid', 'Scanning infrastructure…', 3);
+  }
+  if (id === 'waste') { closeWasteDetail(); renderWaste(); if (!state.findings && !_pollTimer) loadFindings(); }
+  if (id === 'insights') { loadInsights(); }
+  if (id === 'services') {
+    if (state.trendData) setTimeout(() => renderServicesTrend(state.trendData), 30);
+    else { renderServicesTrend(null); loadTrend('1m'); }
+  }
 }
+
+// ── Hash-based routing ─────────────────────────────────
+function _routeFromHash(hash) {
+  const raw = (hash || window.location.hash).replace(/^#/, '');
+  const [tab, param] = raw.split('/');
+  const resolvedTab = VALID_TABS.has(tab) ? tab : 'overview';
+  switchTab(resolvedTab, false); // don't push another history entry
+  if (resolvedTab === 'waste' && param) {
+    // Try to open the finding — if data isn't loaded yet, queue it
+    if (_wasteFindingMap[param]) {
+      openWasteDetail(param, false);
+    } else {
+      _pendingFindingHash = param;
+    }
+  }
+}
+let _pendingFindingHash = null;
+window.addEventListener('popstate', () => _routeFromHash());
 
 function setupRefresh() {
   document.getElementById('refresh-btn').addEventListener('click', async () => {
@@ -757,6 +1706,689 @@ function setupRefresh() {
     } catch (e) { toast('Refresh failed', 'error'); }
   });
 }
+
+// ════════════════════════════════════════════════════════
+// WASTE DETECTOR
+// ════════════════════════════════════════════════════════
+const SERVICE_ICONS = {
+  'EC2':'🖥️', 'EBS':'💾', 'RDS':'🗄️', 'ELB':'⚖️', 'S3':'🪣',
+  'Lambda':'λ', 'ElastiCache':'⚡', 'DynamoDB':'🏗️', 'NAT Gateway':'🌐',
+  'CloudWatch Logs':'📋', 'Route53':'🌍', 'SQS':'📨', 'SNS':'📢',
+  'Secrets Manager':'🔑', 'ECR':'📦', 'CloudFront':'☁️', 'ACM':'🔒', 'default':'🔧',
+};
+const SEV_ORDER = { critical: 0, warning: 1, info: 2 };
+
+const WASTE_TIPS = {
+  EBS: '💡 <strong>devopsarg.com recommends:</strong> Unattached EBS volumes are billed the same as in-use ones. A weekly cleanup script can save you hundreds of dollars. <a href="https://www.devopsarg.com/en/blog/aws-cost-optimization-case-study/" target="_blank">See how we do it →</a>',
+  RDS: '💡 <strong>devopsarg.com recommends:</strong> RDS sizing is the #1 waste we find in startups. An r5.2xlarge at 4% CPU can be downsized to r5.large with zero impact. We analyze load before changing anything. <a href="https://www.devopsarg.com/en/#contact" target="_blank">Consult us →</a>',
+  EC2: '💡 <strong>devopsarg.com recommends:</strong> Graviton3 is 20% cheaper and faster for compatible workloads. EKS worker migration takes less than 2 days. <a href="https://www.devopsarg.com/en/#contact" target="_blank">Calculate your savings →</a>',
+  ELB: '💡 <strong>devopsarg.com recommends:</strong> ALBs with no targets still cost $18/mo each. We inventory all your load balancers and remove the zombies. <a href="https://www.devopsarg.com/en/#contact" target="_blank">Contact us →</a>',
+  'NAT Gateway': '💡 <strong>devopsarg.com recommends:</strong> VPC Endpoints for S3 and DynamoDB eliminate NAT traffic entirely (and they\'re free). Typical savings: $100–500/mo. <a href="https://www.devopsarg.com/en/#contact" target="_blank">See how →</a>',
+  Lambda: '💡 <strong>devopsarg.com recommends:</strong> Lambdas on EOL runtimes are a security risk. We migrate them with automated test coverage. <a href="https://www.devopsarg.com/en/#contact" target="_blank">Schedule a review →</a>',
+  S3: '💡 <strong>devopsarg.com recommends:</strong> S3 Lifecycle + Intelligent-Tiering can cut storage costs by 70%. We configure it in under a day. <a href="https://www.devopsarg.com/en/#contact" target="_blank">Consult us →</a>',
+  'CloudWatch Logs': '💡 <strong>devopsarg.com recommends:</strong> Log groups without retention grow forever. 30 days is enough for debugging, 90 days for basic compliance. <a href="https://www.devopsarg.com/en/#contact" target="_blank">See how →</a>',
+  ElastiCache: '💡 <strong>devopsarg.com recommends:</strong> ElastiCache cache.r5 can be migrated to cache.r6g (Graviton) with automatic failover and zero downtime. <a href="https://www.devopsarg.com/en/#contact" target="_blank">Consult us →</a>',
+  DynamoDB: '💡 <strong>devopsarg.com recommends:</strong> DynamoDB tables with irregular load should use PAY_PER_REQUEST. We analyze your access patterns before switching. <a href="https://www.devopsarg.com/en/#contact" target="_blank">Consult us →</a>',
+};
+
+async function loadFindings() {
+  try {
+    const data = await fetchJSON('/api/findings');
+    if (data.scanning) {
+      showWasteScanning();
+      pollUntilScanDone();
+      return;
+    }
+    state.findings = data;
+    // Populate summary for discovery banner
+    const findings = data.findings || [];
+    state.wasteSummary = {
+      total: findings.length,
+      critical: findings.filter(f => f.severity === 'critical').length,
+      total_savings: findings.reduce((s,f) => s + (f.estimated_savings || 0), 0),
+    };
+    renderDiscoveryBanner();
+    updateWasteKPIs(data);
+    updateWasteNavBadge(data);
+    // Show stale banner if data is older than TTL
+    if (data.scan_stale) {
+      const days = data.scan_age_hours != null ? Math.round(data.scan_age_hours / 24) : '?';
+      showStaleBanner(days);
+    } else {
+      hideStaleBanner();
+    }
+    renderWaste();
+  } catch (e) {
+    console.error('Findings load failed:', e);
+    // Show error state in grid if waste tab is visible
+    const grid = document.getElementById('waste-findings-grid');
+    if (grid) grid.innerHTML = `
+      <div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+        <div style="font-size:32px;margin-bottom:12px">⚠️</div>
+        <div style="font-size:14px;font-weight:600;color:var(--text);margin-bottom:6px">Could not load findings</div>
+        <div style="font-size:12px">Backend may still be starting up. <a href="#" onclick="loadFindings();return false" style="color:var(--accent)">Retry</a></div>
+      </div>`;
+    const meta = document.getElementById('waste-meta');
+    if (meta) meta.textContent = 'Failed to load findings — is backend running?';
+  }
+}
+
+function showWasteScanning() {
+  const grid = document.getElementById('waste-findings-grid');
+  if (!grid) return;
+  // Hide KPIs during scan
+  document.querySelectorAll('.waste-kpi .waste-kpi-value').forEach(el => el.textContent = '—');
+  const badge = document.getElementById('waste-nav-badge');
+  if (badge) badge.style.display = 'none';
+  grid.innerHTML = `
+    <div id="waste-scanning-state" style="text-align:center;padding:72px 20px 60px">
+      <div style="display:inline-flex;align-items:center;justify-content:center;width:72px;height:72px;border-radius:50%;background:var(--accent-dim);border:2px solid var(--accent-border);margin-bottom:24px;animation:spin 2s linear infinite">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><path d="M4 7v10c0 2.21 3.58 4 8 4s8-1.79 8-4V7"/><ellipse cx="12" cy="5" rx="8" ry="3"/></svg>
+      </div>
+      <div style="font-size:18px;font-weight:700;color:var(--text);margin-bottom:10px">Analyzing your AWS infrastructure...</div>
+      <div style="font-size:13px;color:var(--text-muted);max-width:480px;margin:0 auto;line-height:1.6;margin-bottom:20px">
+        We're running <strong style="color:var(--text)">55+ checks</strong> across EC2, EBS, RDS, Lambda, S3, NAT, ElastiCache and more.
+        This only takes a few seconds.
+      </div>
+      <div style="width:100%;max-width:480px;margin:0 auto 10px">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-bottom:4px">
+          <span id="scan-progress-label">initializing...</span>
+          <span id="scan-progress-pct">0%</span>
+        </div>
+        <div style="background:var(--surface2);border-radius:4px;height:4px;overflow:hidden">
+          <div id="scan-progress-bar" style="height:100%;background:var(--accent);width:0%;transition:width .4s ease;border-radius:4px"></div>
+        </div>
+      </div>
+      <div id="waste-scan-progress" style="font-size:12px;color:var(--accent);font-family:var(--mono);background:var(--accent-dim);border:1px solid var(--accent-border);border-radius:var(--radius-sm);padding:8px 16px;display:inline-block">
+        ⟳ collecting infrastructure data...
+      </div>
+      <div style="margin-top:28px;font-size:12px;color:var(--text-muted)">
+        <a href="https://www.devopsarg.com/en/#contact" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">devopsarg.com</a> tip:
+        Run this analysis weekly to catch orphaned resources before they accumulate cost.
+      </div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+  `;
+  const meta = document.getElementById('waste-meta');
+  if (meta) meta.textContent = 'Scanning infrastructure...';
+}
+
+let _pollTimer = null;
+function pollUntilScanDone() {
+  if (_pollTimer) clearTimeout(_pollTimer);
+
+  function updateProgressUI(progress) {
+    const label = document.getElementById('scan-progress-label');
+    const pctEl = document.getElementById('scan-progress-pct');
+    const bar   = document.getElementById('scan-progress-bar');
+    const badge = document.getElementById('waste-scan-progress');
+    if (!progress || !progress.total) return;
+    const pct = progress.pct || 0;
+    const analyzerShort = (progress.analyzer || '').replace('Analyzer', '').replace(/([A-Z])/g, ' $1').trim();
+    const region = progress.region || '';
+    if (label) label.textContent = `[${region}] ${analyzerShort}`;
+    if (pctEl) pctEl.textContent = `${progress.done}/${progress.total} · ${pct}%`;
+    if (bar)   bar.style.width = pct + '%';
+    if (badge) badge.textContent = `⟳ running ${analyzerShort}...`;
+  }
+
+  let _lastFindingsCount = 0;
+
+  async function poll() {
+    try {
+      const data = await fetchJSON('/api/findings');
+
+      // Update progress UI whenever scanning
+      if (data.scan_progress && data.scan_progress.total) {
+        updateProgressUI(data.scan_progress);
+      }
+
+      // Show findings incrementally — render as soon as we have any
+      const newCount = (data.findings || []).length;
+      if (newCount > _lastFindingsCount) {
+        _lastFindingsCount = newCount;
+        state.findings = data;
+        updateWasteKPIs(data);
+        updateWasteNavBadge(data);
+        // Show partial results inline — keep the progress bar visible
+        renderWastePartial(data);
+      }
+
+      if (data.scanning) {
+        _pollTimer = setTimeout(poll, 1500);
+        return;
+      }
+
+      // Scan done
+      updateProgressUI({ analyzer: 'complete', region: '', done: 1, total: 1, pct: 100 });
+      const label = document.getElementById('scan-progress-label');
+      const badge = document.getElementById('waste-scan-progress');
+      if (label) label.textContent = 'scan complete';
+      if (badge) badge.textContent = '✓ scan complete';
+      state.findings = data;
+      updateWasteKPIs(data);
+      updateWasteNavBadge(data);
+      const scanState = document.getElementById('waste-scanning-state');
+      if (scanState) { scanState.style.transition = 'opacity .3s'; scanState.style.opacity = '0'; }
+      setTimeout(() => renderWaste(), 350);
+      toast('Scan complete — ' + (data.total_count || 0) + ' findings, $' + fmtNum(data.total_savings_usd || 0) + '/mo identified', 'ok');
+    } catch (e) {
+      _pollTimer = setTimeout(poll, 2000);
+    }
+  }
+  _pollTimer = setTimeout(poll, 1500);
+}
+
+function setupWaste() {
+  // Section tabs
+  document.querySelectorAll('.waste-section-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.waste-section-tab').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      state.wasteSection = btn.dataset.wsec;
+      renderWaste();
+    });
+  });
+  // Filters
+  ['waste-filter-service','waste-filter-severity','waste-filter-savings'].forEach(id => {
+    document.getElementById(id).addEventListener('change', renderWaste);
+  });
+  document.getElementById('waste-filter-search').addEventListener('input', renderWaste);
+  // Refresh button
+  document.getElementById('waste-refresh-btn').addEventListener('click', async () => {
+    const btn = document.getElementById('waste-refresh-btn');
+    btn.disabled = true; btn.textContent = '⟳ Scanning...';
+    try {
+      await fetch(API + '/api/findings/refresh', { method: 'POST' });
+      showWasteScanning();
+      pollUntilScanDone();
+    } catch (e) {
+      toast('Scan failed', 'error');
+    } finally {
+      btn.disabled = false; btn.textContent = '↻ Scan Now';
+    }
+  });
+}
+
+function showStaleBanner(days) {
+  let banner = document.getElementById('waste-stale-banner');
+  if (!banner) return;
+  banner.innerHTML = `
+    <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+      <span style="font-size:20px">🕐</span>
+      <div style="flex:1;min-width:220px">
+        <div style="font-weight:600;font-size:13px;color:var(--text)">Last scan was ${days} day${days !== 1 ? 's' : ''} ago</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+          Your findings may be outdated. Re-scanning checks all 55+ analyzers across your regions — takes a few minutes.
+        </div>
+      </div>
+      <button id="stale-rescan-btn" class="btn-primary" style="white-space:nowrap" onclick="triggerRescan()">
+        ↻ Re-scan now
+      </button>
+      <button onclick="hideStaleBanner()" style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:18px;padding:4px 8px" title="Dismiss">×</button>
+    </div>`;
+  banner.style.display = 'block';
+}
+
+function hideStaleBanner() {
+  const banner = document.getElementById('waste-stale-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+async function triggerRescan() {
+  const btn = document.getElementById('stale-rescan-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '⟳ Starting...'; }
+  hideStaleBanner();
+  try {
+    await fetch(API + '/api/findings/refresh', { method: 'POST' });
+    showWasteScanning();
+    pollUntilScanDone();
+  } catch (e) {
+    toast('Failed to start scan', 'error');
+  } finally {
+    const btn2 = document.getElementById('waste-refresh-btn');
+    if (btn2) { btn2.disabled = false; btn2.textContent = '↻ Scan Now'; }
+  }
+}
+
+function updateWasteKPIs(data) {
+  const s = data.summary || {};
+  setText('wkpi-total', s.findings_count ?? '—');
+  setText('wkpi-cleanup', s.cleanup_count ?? '—');
+  setText('wkpi-rightsize', s.rightsize_count ?? '—');
+  setText('wkpi-savings', s.total_savings_usd != null ? '$' + fmtNum(s.total_savings_usd) : '—');
+  setText('wkpi-critical', `${s.critical_count || 0} high`);
+  setText('wkpi-warning', `${s.warning_count || 0} medium`);
+  setText('wsec-badge-cleanup', s.cleanup_count ?? 0);
+  setText('wsec-badge-rightsize', s.rightsize_count ?? 0);
+  // Banner savings
+  const bannerSav = document.getElementById('waste-banner-savings');
+  if (bannerSav && s.total_savings_usd) bannerSav.textContent = '$' + fmtNum(s.total_savings_usd);
+  // Sticky bar
+  const sticky = document.getElementById('waste-sticky-bar');
+  if (sticky && s.findings_count > 0) {
+    sticky.style.display = 'flex';
+    setText('wsticky-cleanup', s.cleanup_count || 0);
+    setText('wsticky-rightsize', s.rightsize_count || 0);
+    setText('wsticky-savings', '$' + fmtNum(s.total_savings_usd || 0));
+  }
+  // Meta
+  const meta = document.getElementById('waste-meta');
+  if (meta) meta.textContent = s.last_scan_at
+    ? `Último scan: ${s.last_scan_at.substring(0,16).replace('T',' ')} UTC (${s.last_scan_mode || 'mock'})`
+    : 'Cargando...';
+}
+
+function updateWasteNavBadge(data) {
+  const badge = document.getElementById('waste-nav-badge');
+  if (!badge) return;
+  const critical = data.summary?.critical_count || 0;
+  if (critical > 0) {
+    badge.textContent = critical;
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderWastePartial(data) {
+  // Called during scanning to show findings as they arrive, below the progress bar.
+  const findings = data.findings || [];
+  if (!findings.length) return;
+
+  const scanState = document.getElementById('waste-scanning-state');
+  if (!scanState) return;
+
+  // Append/replace the partial results div inside the scanning state
+  let partial = document.getElementById('waste-partial-results');
+  if (!partial) {
+    partial = document.createElement('div');
+    partial.id = 'waste-partial-results';
+    partial.style.cssText = 'margin-top:24px;text-align:left;border-top:1px solid var(--border);padding-top:16px';
+    scanState.appendChild(partial);
+  }
+
+  // Count by service
+  const bySvc = {};
+  findings.forEach(f => {
+    bySvc[f.service] = bySvc[f.service] || { count: 0, savings: 0, severity: 'info' };
+    bySvc[f.service].count++;
+    bySvc[f.service].savings += f.estimated_savings_usd || 0;
+    if (f.severity === 'critical') bySvc[f.service].severity = 'critical';
+    else if (f.severity === 'warning' && bySvc[f.service].severity !== 'critical') bySvc[f.service].severity = 'warning';
+  });
+
+  const totalSavings = findings.reduce((s, f) => s + (f.estimated_savings_usd || 0), 0);
+  partial.innerHTML = `
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;font-family:var(--mono)">
+      ${findings.length} findings so far · <span style="color:var(--green)">$${fmtNum(totalSavings)}/mo</span> potential savings
+    </div>
+    <div style="display:flex;flex-wrap:wrap;gap:8px;justify-content:center">
+      ${Object.entries(bySvc).sort((a,b) => b[1].savings - a[1].savings).map(([svc, d]) => `
+        <div style="background:var(--surface2);border:1px solid var(--border);border-radius:6px;padding:8px 12px;font-size:11px;display:flex;align-items:center;gap:8px">
+          <span class="waste-sev-dot waste-sev-${d.severity}" style="display:inline-block;width:7px;height:7px;border-radius:50%;flex-shrink:0"></span>
+          <span style="font-weight:600;color:var(--text)">${esc(svc)}</span>
+          <span style="color:var(--text-muted)">${d.count} finding${d.count > 1 ? 's' : ''}</span>
+          ${d.savings > 0 ? `<span style="color:var(--green);font-family:var(--mono)">-$${fmtNum(d.savings)}/mo</span>` : ''}
+        </div>`).join('')}
+    </div>`;
+}
+
+function renderWaste() {
+  if (!state.findings) {
+    // Data not loaded yet — show skeleton so the tab never looks blank
+    const grid = document.getElementById('waste-findings-grid');
+    if (grid && !grid.querySelector('.waste-skeleton')) {
+      grid.innerHTML = `
+        <style>
+          .waste-skeleton{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;margin-bottom:14px;}
+          .waste-skeleton-bar{height:16px;border-radius:4px;background:linear-gradient(90deg,var(--surface-2) 25%,var(--surface-hover) 50%,var(--surface-2) 75%);background-size:200% 100%;animation:shimmer 1.4s infinite;}
+          @keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}
+        </style>
+        ${[1,2,3].map(() => `
+          <div class="waste-skeleton" style="padding:18px 20px">
+            <div style="display:flex;align-items:center;gap:14px">
+              <div class="waste-skeleton-bar" style="width:28px;height:28px;border-radius:50%;flex-shrink:0"></div>
+              <div style="flex:1">
+                <div class="waste-skeleton-bar" style="width:140px;height:14px;margin-bottom:8px"></div>
+                <div class="waste-skeleton-bar" style="width:220px;height:11px"></div>
+              </div>
+              <div class="waste-skeleton-bar" style="width:70px;height:20px;border-radius:10px"></div>
+            </div>
+          </div>`).join('')}
+        <div style="text-align:center;padding:16px;font-size:12px;color:var(--text-muted)">
+          <span style="animation:spin 1s linear infinite;display:inline-block;margin-right:6px">⟳</span>
+          Connecting to backend...
+        </div>`;
+    }
+    return;
+  }
+  const section = state.wasteSection;
+  const findings = state.findings.findings || [];
+  const filterService = document.getElementById('waste-filter-service')?.value || '';
+  const filterSev = document.getElementById('waste-filter-severity')?.value || '';
+  const filterSavings = parseFloat(document.getElementById('waste-filter-savings')?.value || '0');
+  const filterSearch = (document.getElementById('waste-filter-search')?.value || '').toLowerCase();
+
+  // Populate service filter dropdown
+  const services = [...new Set(findings.map(f => f.service))].sort();
+  const selSvc = document.getElementById('waste-filter-service');
+  if (selSvc && selSvc.options.length <= 1) {
+    services.forEach(s => { const o = document.createElement('option'); o.value = s; o.textContent = s; selSvc.appendChild(o); });
+  }
+
+  // Filter
+  let filtered = findings.filter(f => {
+    if (f.category !== section) return false;
+    if (filterService && f.service !== filterService) return false;
+    if (filterSev && f.severity !== filterSev) return false;
+    if (filterSavings > 0 && (f.estimated_savings_usd || 0) < filterSavings) return false;
+    if (filterSearch) {
+      const hay = `${f.resource_id} ${f.title} ${f.service} ${f.description}`.toLowerCase();
+      if (!hay.includes(filterSearch)) return false;
+    }
+    return true;
+  });
+  filtered.sort((a, b) => {
+    const sd = (SEV_ORDER[a.severity] || 2) - (SEV_ORDER[b.severity] || 2);
+    if (sd !== 0) return sd;
+    return (b.estimated_savings_usd || 0) - (a.estimated_savings_usd || 0);
+  });
+
+  // Group by service
+  const byService = {};
+  filtered.forEach(f => { (byService[f.service] = byService[f.service] || []).push(f); });
+
+  const grid = document.getElementById('waste-findings-grid');
+  if (!grid) return;
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div style="text-align:center;padding:60px 20px;color:var(--text-muted)">
+      <div style="font-size:48px;margin-bottom:16px">✅</div>
+      <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:8px">No findings</div>
+      <div style="font-size:13px">No resources found for "${section}" with the current filters.</div>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = Object.entries(byService).map(([svc, rows]) => {
+    const icon = SERVICE_ICONS[svc] || SERVICE_ICONS.default;
+    const totalSavings = rows.reduce((s, f) => s + (f.estimated_savings_usd || 0), 0);
+    const hasCritical = rows.some(f => f.severity === 'critical');
+    const hasWarning = rows.some(f => f.severity === 'warning');
+    const sevDot = hasCritical ? 'waste-sev-critical' : hasWarning ? 'waste-sev-warning' : 'waste-sev-info';
+    const tip = WASTE_TIPS[svc] || `💡 <strong>devopsarg.com recommends:</strong> Implement these fixes with zero-downtime. <a href="https://www.devopsarg.com/en/#contact" target="_blank">Book a free call →</a>`;
+    const cardId = `wsvc-${svc.replace(/\s+/g,'_')}`;
+
+    rows.forEach(f => { _wasteFindingMap[f.id] = f; });
+  // If there's a pending hash-based finding to open, do it now
+  if (_pendingFindingHash && _wasteFindingMap[_pendingFindingHash]) {
+    const id = _pendingFindingHash; _pendingFindingHash = null;
+    setTimeout(() => openWasteDetail(id, false), 100);
+  }
+    const tableRows = rows.map(f => {
+      const hasCmd = !!f.fix_command;
+      const fixCell = hasCmd
+        ? `<button class="waste-fix-btn" title="${esc(f.fix_command)}"
+              onclick="event.stopPropagation();copyFixCmd(this,'${(f.fix_command||'').replace(/'/g,"\\'").replace(/"/g,'&quot;')}',event)">
+              <span class="waste-fix-icon">⌨</span> CLI
+            </button>`
+        : `<span class="waste-fix-none" title="No direct delete command — open for details">—</span>`;
+      return `
+      <tr style="cursor:pointer" onclick="openWasteDetail('${f.id}')">
+        <td><div class="waste-resource-id">${esc(f.resource_id)}</div></td>
+        <td style="max-width:220px;font-size:12px;color:var(--text)">${esc(f.title)}</td>
+        <td>${_sevBadgeHtml(f.severity)}</td>
+        ${section === 'cleanup'
+          ? `<td><span class="waste-idle-badge">${f.idle_days != null ? '⏱ '+f.idle_days+'d' : '—'}</span></td>`
+          : `<td style="font-size:11px;color:var(--text-muted)">${esc(f.metadata?.instance_type || f.metadata?.instance_class || f.metadata?.node_type || '')}</td>`
+        }
+        <td class="waste-savings-cell">${savingsCell(f)}</td>
+        <td onclick="event.stopPropagation()">${fixCell}</td>
+        <td>
+          <div class="waste-actions">
+            <button class="waste-ask-btn" onclick="event.stopPropagation();askAboutFinding('${f.id}')">🤖 Ask AI</button>
+          </div>
+        </td>
+      </tr>`;
+    }).join('');
+
+    return `<div class="waste-service-card" id="${cardId}">
+      <div class="waste-service-header" onclick="toggleWasteServiceCard('${cardId}')">
+        <span class="waste-service-icon">${icon}</span>
+        <span class="waste-service-name">${esc(svc)}</span>
+        <div class="waste-service-meta">
+          <span class="waste-sev-dot ${sevDot}"></span>
+          <span class="waste-service-count">${rows.length} finding${rows.length > 1 ? 's' : ''}</span>
+          ${totalSavings > 0 ? `<span class="waste-service-savings">$${fmtNum(totalSavings)}/mo</span>` : ''}
+        </div>
+        <span class="waste-chevron open">›</span>
+      </div>
+      <div class="waste-service-body open">
+        <table class="waste-table">
+          <thead>
+            <tr>
+              <th>Resource ID</th>
+              <th>Description</th>
+              <th>Severity</th>
+              <th>${section === 'cleanup' ? 'Idle' : 'Type'}</th>
+              <th>Savings/mo</th>
+              <th title="AWS CLI command to delete this resource">Fix cmd</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>${tableRows}</tbody>
+        </table>
+        <div class="waste-devopsarg-tip">${tip}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleWasteServiceCard(id) {
+  const card = document.getElementById(id);
+  if (!card) return;
+  const body = card.querySelector('.waste-service-body');
+  const chev = card.querySelector('.waste-chevron');
+  if (body) body.classList.toggle('open');
+  if (chev) chev.classList.toggle('open');
+}
+
+let _currentFinding = null;
+// Map of finding id → finding object, populated when the waste tab renders.
+// Used by Ask AI buttons to avoid embedding JSON in inline onclick attributes.
+const _wasteFindingMap = {};
+
+function openWasteDetail(findingId, updateUrl = true) {
+  const f = _wasteFindingMap[findingId];
+  if (!f) return;
+  _currentFinding = f;
+  if (updateUrl) history.pushState(null, '', '#waste/' + findingId);
+  const panel = document.getElementById('waste-detail-panel');
+  if (!panel) return;
+  setText('wdetail-resource-id', f.resource_id);
+  setText('wdetail-title', f.title);
+  // Cost breakdown
+  const breakdownEl = document.getElementById('wdetail-cost-breakdown');
+  if (breakdownEl) {
+    const current = f.monthly_cost_usd || 0;
+    const savings = f.estimated_savings_usd || 0;
+    const after = Math.max(0, current - savings);
+    if (savings <= 0) {
+      breakdownEl.innerHTML = '<div style="font-size:13px;color:var(--text-muted)">No estimated savings</div>';
+    } else if (current <= 0) {
+      breakdownEl.innerHTML = `<div style="font-size:20px;font-weight:800;color:var(--green);font-family:var(--mono)">-$${fmtNum(savings)}/mo</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px">potential savings</div>`;
+    } else {
+      breakdownEl.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px">Today</div>
+            <div style="font-size:18px;font-weight:700;color:var(--red);font-family:var(--mono);text-decoration:line-through">$${fmtNum(current)}/mo</div>
+          </div>
+          <div style="font-size:20px;color:var(--text-muted)">→</div>
+          <div style="text-align:center">
+            <div style="font-size:10px;color:var(--text-muted);text-transform:uppercase;margin-bottom:3px">After fix</div>
+            <div style="font-size:18px;font-weight:700;color:var(--text);font-family:var(--mono)">$${fmtNum(after)}/mo</div>
+          </div>
+        </div>
+        <div style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.25);border-radius:6px;padding:8px 12px;display:inline-flex;align-items:center;gap:8px">
+          <span style="font-size:16px">💰</span>
+          <span style="font-size:15px;font-weight:800;color:var(--green);font-family:var(--mono)">Savings: $${fmtNum(savings)}/mo</span>
+          <span style="font-size:11px;color:var(--text-muted)">(≈ $${fmtNum(savings*12)}/year)</span>
+        </div>`;
+    }
+  }
+  setText('wdetail-region', f.region || '—');
+  setText('wdetail-description', f.description || '');
+  document.getElementById('wdetail-severity').innerHTML = _sevBadgeHtml(f.severity);
+  const idleRow = document.getElementById('wdetail-idle-row');
+  if (idleRow) { idleRow.style.display = f.idle_days != null ? 'block' : 'none'; setText('wdetail-idle', f.idle_days != null ? `${f.idle_days} days` : ''); }
+  const tagsEl = document.getElementById('wdetail-tags');
+  const tagsRow = document.getElementById('wdetail-tags-row');
+  const tags = f.tags || {};
+  if (tagsEl) {
+    const entries = Object.entries(tags);
+    tagsRow.style.display = entries.length > 0 ? 'block' : 'none';
+    tagsEl.innerHTML = entries.map(([k,v]) => `<span class="waste-detail-tag">${esc(k)}: ${esc(v)}</span>`).join('');
+  }
+  const tip = WASTE_TIPS[f.service] || `💡 <strong>devopsarg.com recommends:</strong> Implement this fix with zero-downtime and a safety snapshot first. <a href="https://www.devopsarg.com/en/#contact" target="_blank">Book a call →</a>`;
+  setText('wdetail-tip', ''); document.getElementById('wdetail-tip').innerHTML = tip;
+  const fixCmd = f.fix_command || null;
+  const shareLinkBtn = `<button onclick="copyShareLink('${f.id}')" style="justify-content:flex-start;gap:8px" title="Copy shareable link">🔗 Copy link to this finding</button>`;
+  const fixCmdBlock = fixCmd ? `
+    <div style="margin:10px 0 6px;font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em">Fix command (runs on your terminal)</div>
+    <div style="position:relative;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px 48px 10px 12px;font-family:var(--mono);font-size:11px;color:var(--text-secondary);word-break:break-all;line-height:1.5">
+      ${esc(fixCmd)}
+      <button onclick="copyFixCmd(this,'${esc(fixCmd).replace(/'/g,"\\'")}',event)" style="position:absolute;top:6px;right:6px;background:var(--surface2);border:1px solid var(--border);color:var(--text-muted);border-radius:4px;padding:3px 8px;font-size:10px;cursor:pointer" title="Copy command">Copy</button>
+    </div>` : '';
+  document.getElementById('wdetail-actions').innerHTML = `
+    ${fixCmdBlock}
+    <button class="btn-ask-ai" onclick="askAboutFinding('${f.id}')">🤖 Ask DevOps ARG AI →</button>
+    ${shareLinkBtn}
+    <a class="btn-devopsarg" href="https://www.devopsarg.com/en/#contact" target="_blank">🚀 devopsarg.com implements this in &lt;2 weeks →</a>
+  `;
+  panel.classList.add('open');
+}
+
+function copyFixCmd(btn, cmd, evt) {
+  evt && evt.stopPropagation();
+  navigator.clipboard.writeText(cmd).then(() => {
+    btn.textContent = 'Copied!';
+    btn.style.color = 'var(--green)';
+    setTimeout(() => { btn.textContent = 'Copy'; btn.style.color = ''; }, 1800);
+  });
+}
+
+function copyShareLink(findingId) {
+  const url = location.origin + location.pathname + '#waste/' + findingId;
+  navigator.clipboard.writeText(url).then(() => toast('Link copied to clipboard', 'ok'));
+}
+
+function closeWasteDetail() {
+  const panel = document.getElementById('waste-detail-panel');
+  if (panel) panel.classList.remove('open');
+  _currentFinding = null;
+  if (window.location.hash.startsWith('#waste/')) history.pushState(null, '', '#waste');
+}
+
+function askAboutFinding(findingId) {
+  const f = _wasteFindingMap[findingId];
+  if (!f) return;
+  closeWasteDetail();
+  switchTab('chat');
+
+  const after = Math.max(0, (f.monthly_cost_usd || 0) - (f.estimated_savings_usd || 0));
+  const tagsStr = f.tags && Object.keys(f.tags).length
+    ? Object.entries(f.tags).map(([k,v]) => `${k}=${v}`).join(', ')
+    : 'none';
+  const metaStr = f.metadata && Object.keys(f.metadata).length
+    ? Object.entries(f.metadata).map(([k,v]) => `${k}: ${v}`).join(', ')
+    : '';
+
+  const q = `I have a waste finding detected by the automated analyzer. Please help me understand the impact and the exact remediation steps.
+
+## Finding Details (from AWS automated scan)
+- **Resource:** ${f.resource_id}
+- **Service:** ${f.service}
+- **Type:** ${f.resource_type || '—'}
+- **Region:** ${f.region || '—'}
+- **Category:** ${f.category} (${_sevLabel(f.severity)} priority)
+- **Title:** ${f.title}
+- **Description:** ${f.description}
+${f.idle_days != null ? `- **Idle for:** ${f.idle_days} days\n` : ''}- **Current monthly cost:** $${(f.monthly_cost_usd || 0).toFixed(2)}/mo
+- **Estimated savings:** $${(f.estimated_savings_usd || 0).toFixed(2)}/mo → new cost would be ~$${after.toFixed(2)}/mo
+- **Annualized savings:** ~$${((f.estimated_savings_usd || 0) * 12).toFixed(0)}/year
+- **Tags:** ${tagsStr}
+${metaStr ? `- **Metadata:** ${metaStr}\n` : ''}
+What are the exact steps to fix this? Are there any risks or prerequisites I should know about?`;
+
+  const input = document.getElementById('chat-input');
+  if (input) { input.value = q; input.focus(); sendMessage(); }
+}
+
+function askAboutRec(idxOrObj) {
+  const r = (typeof idxOrObj === 'number') ? (window._recMap || {})[idxOrObj] : idxOrObj;
+  if (!r) return;
+  switchTab('chat');
+
+  const savings = r.estimated_monthly_savings || r.savings_monthly || 0;
+  const q = `I have a cost optimization recommendation from AWS Cost Optimization Hub. Please help me evaluate it and decide whether to act on it.
+
+## Recommendation Details (from AWS)
+- **Type:** ${r.resource_type || r.category || '—'}
+- **Title:** ${r.title || '—'}
+- **Description:** ${r.description || r.details || '—'}
+- **Region:** ${r.region || 'Global'}
+- **Estimated monthly savings:** $${savings.toFixed ? savings.toFixed(2) : savings}/mo (~$${Math.round(savings * 12)}/year)
+- **Estimated savings %:** ${r.estimated_savings_percentage || r.savings_pct || '—'}%
+- **Effort:** ${r.effort || '—'}
+- **Source:** ${r.source || 'AWS Cost Optimization Hub'}
+- **Lookback period:** ${r.lookback_period_in_days || r.lookback || '—'} days
+- **Priority:** ${r.priority || '—'}
+${r.resource_id ? `- **Resource ID:** ${r.resource_id}\n` : ''}
+Should I implement this? What are the risks, prerequisites and exact steps?`;
+
+  const input = document.getElementById('chat-input');
+  if (input) { input.value = q; input.focus(); sendMessage(); }
+}
+
+function savingsCell(f) {
+  const current = f.monthly_cost_usd || 0;
+  const savings = f.estimated_savings_usd || 0;
+  const after = Math.max(0, current - savings);
+  if (savings <= 0) return '<span style="color:var(--text-muted)">—</span>';
+  if (current <= 0) {
+    // Pure cleanup — no current cost shown (EIP, SG, etc.)
+    return `<span style="color:var(--green);font-weight:700">-$${fmtNum(savings)}/mo</span>`;
+  }
+  // Show: $current → $after  (save $savings)
+  return `<div style="line-height:1.4">
+    <div style="font-size:11px;color:var(--text-muted)">
+      <span style="text-decoration:line-through">$${fmtNum(current)}</span>
+      <span style="margin:0 3px">→</span>
+      <span style="color:var(--text)">$${fmtNum(after)}</span>
+    </div>
+    <div style="color:var(--green);font-weight:700;font-family:var(--mono)">-$${fmtNum(savings)}/mo</div>
+  </div>`;
+}
+
+function fmtNum(n) {
+  if (!n && n !== 0) return '—';
+  const num = parseFloat(n);
+  if (num >= 1000) return (num/1000).toFixed(1)+'K';
+  return num.toFixed(0);
+}
+function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+const _SEV_LABELS = { critical: 'High', warning: 'Medium', info: 'Low' };
+const _SEV_ICONS  = { critical: '🔴', warning: '🟡', info: '🔵' };
+function _sevLabel(sev) { return _SEV_LABELS[sev] || sev || '—'; }
+function _sevIcon(sev)  { return _SEV_ICONS[sev]  || ''; }
+function _sevBadgeHtml(sev) {
+  return `<span class="sev-badge sev-${sev}"><span class="waste-sev-dot waste-sev-${sev}" style="display:inline-block"></span>${_sevLabel(sev)}</span>`;
+}
+function setText(id, v) { const el = document.getElementById(id); if (el) el.textContent = v; }
 
 // ════════════════════════════════════════════════════════
 // OVERVIEW TAB
@@ -788,7 +2420,7 @@ function renderOverview() {
   renderAnomalies(r.anomalies || []);
 
   // Insights
-  renderInsights(r, s);
+  renderQuickInsights(r, s);
 
   // Charts
   setTimeout(redrawCharts, 60);
@@ -803,29 +2435,89 @@ function updateSavingsKPI() {
 }
 
 function redrawCharts() {
-  if (!state.report) return;
+  if (state.trendData) {
+    // Use the most recent period-filtered trend if available
+    drawTrendChart(state.trendData.trend, state.trendData.period);
+  } else if (state.report) {
   drawTrendChart(state.report.weeklyTrend || []);
-  drawDonutChart(state.report.byService || []);
+  }
+  if (state.report) drawDonutChart(state.report.byService || []);
 }
 
 function renderAnomalies(anomalies) {
   const el = document.getElementById('anomalies-list');
-  document.getElementById('anomaly-count').textContent = anomalies.length;
-  if (!anomalies.length) {
-    el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">No anomalies detected this period.</div>';
+  const count = (anomalies || []).length;
+  document.getElementById('anomaly-count').textContent = count;
+
+  // Update topbar alerts badge too
+  const alertBadge = document.getElementById('alert-count');
+  if (alertBadge) alertBadge.textContent = count;
+
+  if (!count) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text-muted);padding:8px 0;">No anomalies detected in the last 30 days.</div>';
     return;
   }
-  el.innerHTML = anomalies.map(a => `
-    <div class="anomaly-item">
-      <div class="anomaly-service">${a.service} · ${a.status === 'resolved' ? 'RESOLVED' : 'ACTIVE'}</div>
-      <div class="anomaly-desc">${a.root_cause || a.description || a.explanation || ''}</div>
-      <div class="anomaly-cost">+$${fmt(a.impact || a.cost || a.excess_cost || 0)} excess (+${a.impact_pct || 0}%)</div>
-    </div>`).join('');
+
+  const totalImpact = anomalies.reduce((s, a) => s + (a.total_impact || a.impact || a.cost || 0), 0);
+  const openCount   = anomalies.filter(a => a.status === 'open' || !a.end_date).length;
+
+  el.innerHTML = `
+    <div style="display:flex;gap:12px;margin-bottom:10px;">
+      <div style="flex:1;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:8px 12px;text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:var(--red);font-family:var(--mono)">$${fmt(totalImpact)}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">total impact</div>
+      </div>
+      <div style="flex:1;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);border-radius:6px;padding:8px 12px;text-align:center;">
+        <div style="font-size:18px;font-weight:700;color:${openCount>0?'var(--red)':'var(--green)'};font-family:var(--mono)">${openCount}</div>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:2px">still open</div>
+      </div>
+    </div>
+    ${anomalies.map(a => {
+      const impact = a.total_impact || a.impact || a.cost || 0;
+      const isOpen = a.status === 'open' || !a.end_date;
+      const svc = a.service || a.root_cause?.service || 'Unknown';
+      const region = a.region ? ` · ${a.region}` : '';
+      const dateRange = a.start_date ? `${a.start_date.slice(0,10)}${a.end_date?' → '+a.end_date.slice(0,10):''}` : '';
+      return `<div class="anomaly-item" style="margin-bottom:6px;cursor:pointer" onclick="_askAnomalyAI(${JSON.stringify(a).replace(/"/g,'&quot;')})">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3px;">
+          <div class="anomaly-service">${svc}${region}</div>
+          <span style="font-size:10px;font-weight:600;padding:1px 6px;border-radius:3px;
+            background:${isOpen?'rgba(239,68,68,.12)':'rgba(16,185,129,.12)'};
+            color:${isOpen?'var(--red)':'var(--green)'}">${isOpen?'OPEN':'CLOSED'}</span>
+        </div>
+        ${dateRange ? `<div style="font-size:10px;color:var(--text-muted);font-family:var(--mono);margin-bottom:3px">${dateRange}</div>` : ''}
+        <div class="anomaly-cost">$${fmt(impact)} excess cost detected</div>
+        <div style="font-size:10px;color:var(--accent);margin-top:4px">Click to investigate with AI →</div>
+      </div>`;
+    }).join('')}`;
 }
 
-function renderInsights(report, summary) {
+function _askAnomalyAI(anomaly) {
+  const svc = anomaly.service || 'Unknown';
+  const impact = anomaly.total_impact || anomaly.impact || 0;
+  const msg = `Please investigate this AWS cost anomaly detected by Cost Anomaly Detection.
+
+## Anomaly Details
+- **Service:** ${svc}
+- **Region:** ${anomaly.region || 'N/A'}
+- **Total impact:** $${impact.toFixed(2)} excess cost
+- **Period:** ${anomaly.start_date || 'N/A'} → ${anomaly.end_date || 'ongoing'}
+- **Status:** ${anomaly.status || 'unknown'}
+- **Score:** ${anomaly.score || 'N/A'}
+
+Use \`call_aws\` to investigate:
+1. Check what changed in ${svc} during this period
+2. Identify the specific resource driving the anomaly
+3. Is it still ongoing?
+4. What's the recommended action?`;
+  switchTab('chat');
+  setTimeout(() => { const inp = document.getElementById('chat-input'); if(inp){inp.value=msg;sendMessage();} }, 200);
+}
+
+function renderQuickInsights(report, summary) {
   const el = document.getElementById('insights-list');
-  const insights = [
+  if (!el) return;
+  const items = [
     `4-week average spend: <strong>$${fmt(summary.fourWeekAvg)}/week</strong>`,
     `Top service: <strong>${summary.topService}</strong> — highest cost driver`,
     `${summary.activeAccounts} account${summary.activeAccounts !== 1 ? 's' : ''} active across ${summary.activeServices} services`,
@@ -833,7 +2525,7 @@ function renderInsights(report, summary) {
       summary.weeklyChange < -5 ? `Cost trending down — <strong>${Math.abs(summary.weeklyChange)}%</strong> reduction` :
         `Costs stable — within ±5% week-over-week`,
   ];
-  el.innerHTML = insights.map(t => `
+  el.innerHTML = items.map(t => `
     <div class="insight-item">
       <svg class="insight-icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
       <span class="insight-text">${t}</span>
@@ -843,72 +2535,158 @@ function renderInsights(report, summary) {
 // ════════════════════════════════════════════════════════
 // TREND CHART (Canvas line chart)
 // ════════════════════════════════════════════════════════
-function drawTrendChart(weeklyTrend) {
+// Store chart data globally for tooltip
+let _trendChartData = [];
+let _trendChartLayout = {};
+
+function drawTrendChart(trendData, period) {
+  // Accept both old format [{week,cost}] and new [{label,cost}]
+  const data = trendData.map(d => ({ label: d.label || d.week, cost: d.cost }));
+  _trendChartData = data;
+
   const canvas = document.getElementById('trend-chart');
-  if (!canvas || !weeklyTrend.length) return;
-  canvas.width = canvas.offsetWidth || 600;
-  canvas.height = 200;
+  if (!canvas || !data.length) return;
+  // Hide loading overlay once we have data
+  const tlo = document.getElementById('trend-chart-loading');
+  if (tlo) tlo.style.display = 'none';
+  canvas.width = canvas.offsetWidth || 680;
+  canvas.height = 220;
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
-  const P = { t: 16, r: 16, b: 38, l: 64 };
-  const vals = weeklyTrend.map(d => d.cost);
-  const minV = Math.min(...vals) * 0.92;
-  const maxV = Math.max(...vals) * 1.08;
-  const xS = i => P.l + i * (W - P.l - P.r) / Math.max(vals.length - 1, 1);
-  const yS = v => H - P.b - ((v - minV) / (maxV - minV)) * (H - P.t - P.b);
+  const P = { t: 20, r: 24, b: 42, l: 68 };
+  const vals = data.map(d => d.cost);
+  const minV = Math.min(...vals) * 0.90;
+  const maxV = Math.max(...vals) * 1.10;
+  const range = maxV - minV || 1;
+  const xS = i => P.l + i * (W - P.l - P.r) / Math.max(data.length - 1, 1);
+  const yS = v => H - P.b - ((v - minV) / range) * (H - P.t - P.b);
+  _trendChartLayout = { P, W, H, xS, yS, minV, maxV };
 
   ctx.clearRect(0, 0, W, H);
 
-  // Grid
-  ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 1;
-  for (let i = 0; i <= 4; i++) {
-    const y = H - P.b - i * (H - P.t - P.b) / 4;
+  // Grid lines + Y labels (6 lines)
+  const gridLines = 6;
+  for (let i = 0; i <= gridLines; i++) {
+    const y = H - P.b - i * (H - P.t - P.b) / gridLines;
+    ctx.strokeStyle = i === 0 ? '#1e3a5f' : '#152d4a';
+    ctx.lineWidth = i === 0 ? 1 : 0.5;
+    ctx.setLineDash(i === 0 ? [] : [3, 4]);
     ctx.beginPath(); ctx.moveTo(P.l, y); ctx.lineTo(W - P.r, y); ctx.stroke();
-    const v = minV + i * (maxV - minV) / 4;
+    ctx.setLineDash([]);
+    const v = minV + i * range / gridLines;
     ctx.fillStyle = '#64748b'; ctx.font = '10px monospace'; ctx.textAlign = 'right';
     ctx.fillText('$' + (v >= 1000 ? (v/1000).toFixed(1)+'k' : v.toFixed(0)), P.l - 6, y + 4);
   }
 
-  // X labels
-  weeklyTrend.forEach((d, i) => {
+  // X labels — skip some if too many points
+  const step = data.length > 20 ? Math.ceil(data.length / 12) : 1;
+  data.forEach((d, i) => {
+    if (i % step !== 0 && i !== data.length - 1) return;
     ctx.fillStyle = '#64748b'; ctx.font = '10px monospace'; ctx.textAlign = 'center';
-    ctx.fillText(d.week, xS(i), H - P.b + 16);
+    ctx.fillText(d.label, xS(i), H - P.b + 16);
+    // Vertical tick
+    ctx.strokeStyle = '#1e3a5f'; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(xS(i), H - P.b); ctx.lineTo(xS(i), H - P.b + 4); ctx.stroke();
   });
 
-  // Gradient fill
+  // Gradient fill using bezier
   const grad = ctx.createLinearGradient(0, P.t, 0, H - P.b);
-  grad.addColorStop(0, 'rgba(201,162,39,0.25)');
-  grad.addColorStop(1, 'rgba(201,162,39,0.02)');
+  grad.addColorStop(0, 'rgba(201,162,39,0.30)');
+  grad.addColorStop(0.6, 'rgba(201,162,39,0.08)');
+  grad.addColorStop(1, 'rgba(201,162,39,0.01)');
+
+  const drawCurve = () => {
   ctx.beginPath();
   ctx.moveTo(xS(0), yS(vals[0]));
-  weeklyTrend.forEach((d, i) => ctx.lineTo(xS(i), yS(d.cost)));
-  ctx.lineTo(xS(vals.length - 1), H - P.b);
+    for (let i = 0; i < data.length - 1; i++) {
+      const cpx = (xS(i) + xS(i + 1)) / 2;
+      ctx.bezierCurveTo(cpx, yS(vals[i]), cpx, yS(vals[i + 1]), xS(i + 1), yS(vals[i + 1]));
+    }
+  };
+
+  // Fill
+  drawCurve();
+  ctx.lineTo(xS(data.length - 1), H - P.b);
   ctx.lineTo(xS(0), H - P.b);
-  ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
+  ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
 
   // Line
-  ctx.beginPath(); ctx.strokeStyle = '#C9A227'; ctx.lineWidth = 2.5;
+  drawCurve();
+  ctx.strokeStyle = '#C9A227'; ctx.lineWidth = 2.5;
   ctx.lineJoin = 'round'; ctx.lineCap = 'round';
-  weeklyTrend.forEach((d, i) => i === 0 ? ctx.moveTo(xS(i), yS(d.cost)) : ctx.lineTo(xS(i), yS(d.cost)));
   ctx.stroke();
 
-  // Dots
-  weeklyTrend.forEach((d, i) => {
+  // Dots (show all for small sets, only first/last for large)
+  const showAllDots = data.length <= 20;
+  data.forEach((d, i) => {
+    const isEnd = i === 0 || i === data.length - 1;
+    if (!showAllDots && !isEnd) return;
     ctx.beginPath(); ctx.fillStyle = '#C9A227';
-    ctx.arc(xS(i), yS(d.cost), 4, 0, Math.PI * 2); ctx.fill();
-    ctx.strokeStyle = '#070e1c'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.arc(xS(i), yS(d.cost), isEnd ? 5 : 3.5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#070e1c'; ctx.lineWidth = isEnd ? 2 : 1.5; ctx.stroke();
   });
 
-  // Label on last dot
-  if (vals.length > 0) {
-    const li = vals.length - 1;
+  // Value labels for small datasets (≤ 10 points)
+  if (data.length <= 10) {
+    data.forEach((d, i) => {
+      ctx.fillStyle = '#C9A227'; ctx.font = 'bold 10px monospace'; ctx.textAlign = 'center';
+      ctx.fillText('$' + (d.cost >= 1000 ? (d.cost/1000).toFixed(1)+'k' : d.cost.toFixed(0)), xS(i), yS(d.cost) - 10);
+    });
+  } else {
+    // Label only last dot
+    const li = data.length - 1;
     ctx.fillStyle = '#C9A227'; ctx.font = 'bold 11px monospace'; ctx.textAlign = 'left';
     ctx.fillText('$' + fmt(vals[li]), xS(li) + 8, yS(vals[li]) + 4);
   }
 
-  // Update label
+  // Period badge
+  const PERIOD_LABELS = { '3d':'3 days','1w':'7 days','1m':'30 days','3m':'3 months','1y':'1 year' };
   const tl = document.getElementById('trend-label');
-  if (tl) tl.textContent = `${weeklyTrend.length} weeks · ${weeklyTrend[0]?.week} → ${weeklyTrend[weeklyTrend.length-1]?.week}`;
+  const title = document.getElementById('trend-title');
+  if (period) {
+    if (tl) tl.textContent = `${data.length} data points · ${PERIOD_LABELS[period] || period}`;
+    if (title) title.textContent = 'Cost Trend';
+  } else {
+    if (tl) tl.textContent = `${data.length} weeks · ${data[0]?.label} → ${data[data.length-1]?.label}`;
+    if (title) title.textContent = 'Weekly Cost Trend';
+  }
+
+  // Attach hover tooltip listener (only once)
+  if (!canvas.dataset.tooltipWired) {
+    canvas.dataset.tooltipWired = '1';
+    canvas.addEventListener('mousemove', onTrendHover);
+    canvas.addEventListener('mouseleave', () => {
+      const tt = document.getElementById('chart-tooltip');
+      if (tt) tt.style.display = 'none';
+    });
+  }
+}
+
+function onTrendHover(e) {
+  const canvas = document.getElementById('trend-chart');
+  const tt = document.getElementById('chart-tooltip');
+  if (!canvas || !tt || !_trendChartData.length) return;
+  const rect = canvas.getBoundingClientRect();
+  const mx = (e.clientX - rect.left) * (canvas.width / rect.width);
+  const { P, W, xS, yS } = _trendChartLayout;
+  const n = _trendChartData.length;
+  // Find closest point
+  let closest = 0, minDist = Infinity;
+  for (let i = 0; i < n; i++) {
+    const d = Math.abs(mx - xS(i));
+    if (d < minDist) { minDist = d; closest = i; }
+  }
+  if (minDist > 40) { tt.style.display = 'none'; return; }
+  const pt = _trendChartData[closest];
+  tt.style.display = 'block';
+  tt.innerHTML = `<strong style="color:var(--accent)">$${fmt(pt.cost)}</strong> <span style="color:var(--text-muted)">${pt.label}</span>`;
+  const cx = xS(closest) * (rect.width / canvas.width);
+  const cy = yS(pt.cost) * (rect.height / canvas.height);
+  const ttW = tt.offsetWidth || 120;
+  const left = Math.min(cx + 12, rect.width - ttW - 4);
+  tt.style.left = left + 'px';
+  tt.style.top = (cy - 14) + 'px';
 }
 
 // ════════════════════════════════════════════════════════
@@ -917,6 +2695,8 @@ function drawTrendChart(weeklyTrend) {
 function drawDonutChart(byService) {
   const canvas = document.getElementById('donut-chart');
   if (!canvas || !byService.length) return;
+  const dlo = document.getElementById('donut-chart-loading');
+  if (dlo) dlo.style.display = 'none';
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
   const cx = W / 2, cy = H / 2, R = Math.min(W, H) / 2 - 10, r = R * 0.55;
@@ -974,6 +2754,9 @@ function drawDonutChart(byService) {
 // ════════════════════════════════════════════════════════
 // SERVICES TAB
 // ════════════════════════════════════════════════════════
+// Map of service name → service object, populated by renderServices / renderServicesTrend
+const _serviceMap = {};
+
 function renderServices() {
   const r = state.report;
   const el = document.getElementById('services-grid');
@@ -982,6 +2765,8 @@ function renderServices() {
   const byService = r.byService || [];
   const weeks = r.weeks || [];
   const totalLastWeek = (r.weeklyTrend || []).slice(-1)[0]?.cost || 1;
+
+  byService.forEach(s => { _serviceMap[s.name] = { ...s, _source: 'report', weeks }; });
 
   el.innerHTML = byService.map((svc, idx) => {
     const costs = weeks.map(w => svc.costs[w] || 0);
@@ -994,12 +2779,14 @@ function renderServices() {
     const deltaClass = trendUp ? 'delta-up' : 'delta-down';
     const deltaSign = trendUp ? '▲' : '▼';
 
+    const tlJson = JSON.stringify(costs.map((c,i) => ({d: weeks[i]||'', v: c})));
     return `
-    <div class="service-card">
+    <div class="service-card" style="flex-direction:column;align-items:stretch;padding:0;gap:0">
+      <div style="display:flex;align-items:center;gap:14px;padding:14px 16px 10px">
       <div class="svc-icon" style="background:${color}20;border:1px solid ${color}40;color:${color}">
         ${SVC_ICONS[svc.name] || SVG.cloud}
       </div>
-      <div class="svc-info">
+        <div class="svc-info" style="flex:1">
         <div class="svc-name">${svc.name}</div>
         <div class="svc-costs">
           <div class="svc-cost-item">
@@ -1015,21 +2802,382 @@ function renderServices() {
             <span class="svc-cost-val ${deltaClass}">${deltaSign}${Math.abs(pct)}%</span>
           </div>
         </div>
-        <div class="svc-bar-wrap">
-          <div class="svc-bar" style="width:${barPct}%;background:${color}"></div>
         </div>
       </div>
-      <canvas class="svc-sparkline" width="60" height="32" data-idx="${idx}"></canvas>
+      <div class="svc-card-chart" style="position:relative;border-top:1px solid var(--border);padding:6px 14px 8px">
+        <canvas class="svc-sparkline" data-idx="${idx}" height="80" style="width:100%;display:block"
+          data-timeline='${tlJson}' data-sparkid="ov-spark-${idx}"></canvas>
+        <div class="svc-chart-tooltip" id="tt-ov-spark-${idx}"
+          style="display:none;position:absolute;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;pointer-events:none;white-space:nowrap;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.4)"></div>
+      </div>
+      <div style="padding:8px 16px 12px;border-top:1px solid var(--border)">
+        <div class="svc-bar-wrap" style="margin-bottom:8px">
+          <div class="svc-bar" style="width:${barPct}%;background:${color}"></div>
+        </div>
+        <button class="svc-ask-btn" onclick="askAboutService(${JSON.stringify(svc.name).replace(/"/g,'&quot;')})">🤖 Ask DevOps ARG AI →</button>
+      </div>
     </div>`;
   }).join('');
 
-  // Draw sparklines
+  // Draw sparklines using rich chart
   byService.forEach((svc, idx) => {
     const canvas = el.querySelector(`canvas[data-idx="${idx}"]`);
     if (!canvas) return;
     const costs = weeks.map(w => svc.costs[w] || 0);
-    drawSparkline(canvas, costs, SVC_COLORS[idx % SVC_COLORS.length]);
+    drawServiceSparkline(canvas, costs, SVC_COLORS[idx % SVC_COLORS.length]);
   });
+}
+
+function renderServicesTrend(trendData) {
+  if (!trendData) {
+    showTabLoading('services-grid', 'Loading service breakdown…', 4);
+    return;
+  }
+  const el = document.getElementById('services-grid');
+  if (!el) return;
+
+  const PERIOD_LABELS = { '3d':'3 days','1w':'7 days','1m':'30 days','3m':'3 months','1y':'1 year' };
+  const periodLabel = PERIOD_LABELS[trendData.period] || trendData.period;
+  const total = trendData.total || 1;
+  const days = { '3d':3,'1w':7,'1m':30,'3m':90,'1y':365 }[trendData.period] || 30;
+
+  // Update meta
+  const meta = document.getElementById('services-meta');
+  if (meta) meta.textContent = `Last ${periodLabel} · $${fmt(total)} total · $${fmt(trendData.daily_avg || total/days)}/day avg`;
+
+  // Update KPIs
+  const kpiTotal = document.getElementById('svc-kpi-total');
+  const kpiDaily = document.getElementById('svc-kpi-daily');
+  const kpiTop   = document.getElementById('svc-kpi-top');
+  const kpiCount = document.getElementById('svc-kpi-count');
+  if (kpiTotal) kpiTotal.textContent = '$' + fmt(total);
+  if (kpiDaily) kpiDaily.textContent = '$' + fmt(trendData.daily_avg || total/days);
+  const topSvc = (trendData.byService || [])[0];
+  if (kpiTop && topSvc) kpiTop.textContent = topSvc.name.replace('Amazon ', '').replace('AWS ', '') + ' · ' + topSvc.pct + '%';
+  if (kpiCount) kpiCount.textContent = (trendData.byService || []).length;
+
+  // Chart subtitle
+  const sub = document.getElementById('svc-chart-subtitle');
+  if (sub) sub.textContent = `· ${trendData.start} → ${trendData.end}`;
+
+  // Draw stacked chart
+  drawStackedChart(trendData);
+
+  // Sort + filter
+  const sortBy = document.getElementById('svc-sort')?.value || 'cost';
+  const searchQ = (document.getElementById('svc-search')?.value || '').toLowerCase();
+  let byService = (trendData.byService || []).filter(s =>
+    !searchQ || s.name.toLowerCase().includes(searchQ)
+  );
+  if (sortBy === 'cost')  byService.sort((a,b) => b.cost - a.cost);
+  if (sortBy === 'pct')   byService.sort((a,b) => b.pct - a.pct);
+  if (sortBy === 'daily') byService.sort((a,b) => (b.daily_avg||0) - (a.daily_avg||0));
+  if (sortBy === 'name')  byService.sort((a,b) => a.name.localeCompare(b.name));
+
+  byService.forEach(s => { _serviceMap[s.name] = { ...s, _source: 'trend', period: trendData.period }; });
+
+  el.innerHTML = byService.map((svc, idx) => {
+    const origIdx = (trendData.byService || []).findIndex(s => s.name === svc.name);
+    const color = SVC_COLORS[origIdx % SVC_COLORS.length];
+    const barPct = Math.min((svc.cost / total) * 100, 100).toFixed(1);
+    const shortName = svc.name.replace('Amazon ', '').replace('AWS ', '');
+    const dailyAvg = svc.daily_avg || (svc.cost / days);
+    // Trend from timeline: compare first half vs second half
+    const tl = svc.timeline || [];
+    let trendHtml = '';
+    if (tl.length >= 2) {
+      const half = Math.floor(tl.length / 2);
+      const firstHalf = tl.slice(0, half).reduce((s,p) => s + p.cost, 0);
+      const secondHalf = tl.slice(half).reduce((s,p) => s + p.cost, 0);
+      const delta = firstHalf > 0 ? ((secondHalf - firstHalf) / firstHalf * 100).toFixed(1) : 0;
+      const cls = delta > 0 ? 'up' : 'down';
+      const arrow = delta > 0 ? '▲' : '▼';
+      trendHtml = `<span class="svc-stat-val ${cls}">${arrow}${Math.abs(delta)}%</span>`;
+    } else {
+      trendHtml = `<span class="svc-stat-val">—</span>`;
+    }
+    const sparkId = `svc-spark-${idx}`;
+    return `
+    <div class="svc-card-v2">
+      <div class="svc-card-top">
+        <span class="svc-rank">#${idx+1}</span>
+        <div class="svc-icon" style="background:${color}20;border:1px solid ${color}40;color:${color}">${SVC_ICONS[svc.name] || SVG.cloud}</div>
+        <div style="flex:1;min-width:0">
+          <div class="svc-name">${shortName}</div>
+          <div class="svc-name-short">${svc.name}</div>
+        </div>
+      </div>
+      <div class="svc-card-stats">
+        <div class="svc-stat">
+          <span class="svc-stat-label">Total</span>
+          <span class="svc-stat-val" style="color:${color}">$${fmt(svc.cost)}</span>
+        </div>
+        <div class="svc-stat">
+          <span class="svc-stat-label">Daily avg</span>
+          <span class="svc-stat-val">$${fmt(dailyAvg)}</span>
+        </div>
+        <div class="svc-stat">
+          <span class="svc-stat-label">Trend</span>
+          ${trendHtml}
+        </div>
+      </div>
+      <div class="svc-card-bar-row">
+        <span class="svc-pct-label">${svc.pct}%</span>
+        <div class="svc-bar-wrap"><div class="svc-bar" style="width:${barPct}%;background:${color}"></div></div>
+      </div>
+      ${tl.length ? `<div class="svc-card-chart" style="position:relative"><canvas class="${sparkId}" height="90" style="width:100%;display:block" data-sparkid="${sparkId}" data-svcidx="${origIdx}" data-timeline='${JSON.stringify(tl.map(p=>({d:p.date||p.label||'',v:p.cost})))}'></canvas><div class="svc-chart-tooltip" id="tt-${sparkId}" style="display:none;position:absolute;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:5px 10px;font-size:11px;pointer-events:none;white-space:nowrap;z-index:10;box-shadow:0 4px 16px rgba(0,0,0,.4)"></div></div>` : ''}
+      <div class="svc-card-actions">
+        <button class="svc-ask-btn" onclick="askAboutService(${JSON.stringify(svc.name).replace(/"/g,'&quot;')})">🤖 Ask DevOps ARG AI →</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Draw per-card sparklines
+  byService.forEach((svc, idx) => {
+    const origIdx = (trendData.byService || []).findIndex(s => s.name === svc.name);
+    const sparkId = `svc-spark-${idx}`;
+    const canvas = el.querySelector(`[data-sparkid="${sparkId}"]`);
+    if (!canvas) return;
+    const tl = svc.timeline || [];
+    if (!tl.length) return;
+    const color = SVC_COLORS[origIdx % SVC_COLORS.length];
+    drawServiceSparkline(canvas, tl.map(p => p.cost), color);
+  });
+}
+
+function drawServiceSparkline(canvas, data, color) {
+  if (!data.length) return;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = rect.width || 300;
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  const PAD_L = 44, PAD_R = 10, PAD_T = 8, PAD_B = 20;
+  const cW = W - PAD_L - PAD_R, cH = H - PAD_T - PAD_B;
+
+  const max = Math.max(...data) * 1.08 || 1;
+  const min = 0;
+  const range = max - min || 1;
+  const xS = i => PAD_L + i * cW / Math.max(data.length - 1, 1);
+  const yS = v => PAD_T + cH - ((v - min) / range) * cH;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Horizontal grid lines (3 levels)
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  [0.25, 0.5, 0.75, 1].forEach(p => {
+    const y = PAD_T + cH * (1 - p);
+    ctx.beginPath(); ctx.moveTo(PAD_L, y); ctx.lineTo(W - PAD_R, y); ctx.stroke();
+    // Y-axis label
+    const val = max * p;
+    ctx.fillStyle = '#52525b';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    const lbl = val >= 1000 ? `$${(val/1000).toFixed(0)}K` : `$${Math.round(val)}`;
+    ctx.fillText(lbl, PAD_L - 4, y + 3);
+  });
+
+  // Fill area under line
+  const grad = ctx.createLinearGradient(0, PAD_T, 0, PAD_T + cH);
+  grad.addColorStop(0, color + '30');
+  grad.addColorStop(1, color + '03');
+  ctx.beginPath();
+  ctx.moveTo(xS(0), PAD_T + cH);
+  data.forEach((v, i) => ctx.lineTo(xS(i), yS(v)));
+  ctx.lineTo(xS(data.length - 1), PAD_T + cH);
+  ctx.closePath();
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Smooth line using bezier curves
+  ctx.beginPath();
+  ctx.strokeStyle = color;
+  ctx.lineWidth = 2;
+  ctx.lineJoin = 'round';
+  ctx.lineCap = 'round';
+  data.forEach((v, i) => {
+    if (i === 0) { ctx.moveTo(xS(i), yS(v)); return; }
+    const cpx = (xS(i-1) + xS(i)) / 2;
+    ctx.bezierCurveTo(cpx, yS(data[i-1]), cpx, yS(v), xS(i), yS(v));
+  });
+  ctx.stroke();
+
+  // X-axis date labels — show 3-5 evenly spaced
+  const timeline = (() => { try { return JSON.parse(canvas.dataset.timeline||'[]'); } catch{return [];} })();
+  if (timeline.length > 1) {
+    ctx.fillStyle = '#52525b';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'center';
+    const step = Math.max(1, Math.floor(timeline.length / 4));
+    for (let i = 0; i < timeline.length; i += step) {
+      const d = timeline[i].d || '';
+      const lbl = d.length >= 10 ? d.slice(5, 10) : d; // MM-DD
+      ctx.fillText(lbl, xS(i), H - 4);
+    }
+    // Always show last
+    const last = timeline[timeline.length - 1];
+    const lastLbl = (last.d||'').length >= 10 ? last.d.slice(5,10) : last.d||'';
+    ctx.fillText(lastLbl, xS(timeline.length-1), H - 4);
+  }
+
+  // Dots on first and last
+  [[0, data[0]], [data.length-1, data[data.length-1]]].forEach(([i, v]) => {
+    ctx.beginPath();
+    ctx.fillStyle = color;
+    ctx.arc(xS(i), yS(v), 3, 0, Math.PI*2);
+    ctx.fill();
+  });
+
+  // Wire hover tooltip
+  _wireSparklineTooltip(canvas, data, color, xS, yS, timeline);
+}
+
+function _wireSparklineTooltip(canvas, data, color, xS, yS, timeline) {
+  const tt = document.getElementById('tt-' + canvas.dataset.sparkid);
+  if (!tt) return;
+  canvas.onmousemove = (e) => {
+    const r = canvas.getBoundingClientRect();
+    const mx = (e.clientX - r.left) * (canvas.width / r.width);
+    // Find nearest data point
+    let best = 0, bestDist = Infinity;
+    data.forEach((_, i) => { const d = Math.abs(xS(i) - mx); if (d < bestDist) { bestDist = d; best = i; } });
+    const v = data[best];
+    const d = timeline[best]?.d || '';
+    const dateStr = d.length >= 10 ? d.slice(0,10) : d;
+    const costStr = v >= 1000 ? `$${(v/1000).toFixed(2)}K` : `$${v.toFixed(2)}`;
+    tt.innerHTML = `<span style="color:${color};font-weight:700">${costStr}</span><span style="color:#71717a;margin-left:6px">${dateStr}</span>`;
+    // Position tooltip
+    const cx = xS(best) * (r.width / canvas.width);
+    const cy = yS(v) * (r.height / canvas.height);
+    tt.style.left = Math.min(cx + 10, r.width - 120) + 'px';
+    tt.style.top = Math.max(cy - 28, 0) + 'px';
+    tt.style.display = 'block';
+  };
+  canvas.onmouseleave = () => { tt.style.display = 'none'; };
+}
+
+function drawStackedChart(trendData) {
+  const canvas = document.getElementById('svc-stacked-chart');
+  const legend = document.getElementById('svc-chart-legend');
+  if (!canvas) return;
+
+  const trend = trendData.trend || [];
+  const byService = (trendData.byService || []).slice(0, 8); // top 8
+  if (!trend.length || !byService.length) return;
+
+  // Responsive
+  const container = canvas.parentElement;
+  canvas.width = container.clientWidth - 40;
+  const W = canvas.width, H = canvas.height;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, W, H);
+
+  const labels = trend.map(p => p.label);
+  const N = labels.length;
+  if (!N) return;
+
+  // Build per-service values per time bucket
+  const svcData = byService.map(svc => {
+    const tl = svc.timeline || [];
+    return labels.map(lbl => {
+      const pt = tl.find(p => p.label === lbl);
+      return pt ? pt.cost : 0;
+    });
+  });
+
+  // Stacked totals per bucket
+  const stackTotals = labels.map((_, i) => svcData.reduce((s, arr) => s + (arr[i] || 0), 0));
+  const maxVal = Math.max(...stackTotals, 1) * 1.08;
+
+  const padL = 52, padR = 12, padT = 8, padB = 28;
+  const chartW = W - padL - padR;
+  const chartH = H - padT - padB;
+  const barW = Math.max(2, (chartW / N) - 2);
+
+  // Grid lines
+  ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+  ctx.lineWidth = 1;
+  [0.25, 0.5, 0.75, 1].forEach(f => {
+    const y = padT + chartH * (1 - f);
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(W - padR, y); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.font = '9px monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText('$' + fmt(maxVal * f), padL - 4, y + 3);
+  });
+
+  // Bars (stacked)
+  labels.forEach((lbl, i) => {
+    const x = padL + i * (chartW / N) + (chartW / N - barW) / 2;
+    let stackBase = padT + chartH;
+    byService.forEach((svc, si) => {
+      const val = svcData[si][i] || 0;
+      if (!val) return;
+      const barH = (val / maxVal) * chartH;
+      const color = SVC_COLORS[si % SVC_COLORS.length];
+      ctx.fillStyle = color + 'cc';
+      ctx.fillRect(x, stackBase - barH, barW, barH);
+      stackBase -= barH;
+    });
+  });
+
+  // X axis labels (show every N to avoid crowding)
+  const step = Math.ceil(N / 10);
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '9px monospace';
+  ctx.textAlign = 'center';
+  labels.forEach((lbl, i) => {
+    if (i % step !== 0 && i !== N - 1) return;
+    const x = padL + i * (chartW / N) + (chartW / N) / 2;
+    ctx.fillText(lbl, x, H - 6);
+  });
+
+  // Legend
+  if (legend) {
+    legend.innerHTML = byService.map((svc, si) => {
+      const color = SVC_COLORS[si % SVC_COLORS.length];
+      const short = svc.name.replace('Amazon ', '').replace('AWS ', '');
+      return `<div class="svc-legend-item"><div class="svc-legend-dot" style="background:${color}"></div>${short} <span style="font-family:var(--mono);color:var(--text)">&nbsp;$${fmt(svc.cost)}</span></div>`;
+    }).join('');
+  }
+}
+
+function askAboutService(svcName) {
+  const svc = _serviceMap[svcName];
+  if (!svc) return;
+  switchTab('chat');
+  let costContext = '';
+  if (svc._source === 'trend') {
+    const PERIOD_LABELS = { '3d':'last 3 days','1w':'last 7 days','1m':'last 30 days','3m':'last 3 months','1y':'last year' };
+    costContext = `- **Period:** ${PERIOD_LABELS[svc.period] || svc.period}
+- **Total cost for period:** $${fmt(svc.cost)}
+- **Share of total spend:** ${svc.pct}%`;
+  } else {
+    const weeks = svc.weeks || [];
+    const costs = weeks.map(w => svc.costs?.[w] || 0);
+    const lastCost = costs[costs.length - 1] || 0;
+    const prevCost = costs[costs.length - 2] || 0;
+    const pct = prevCost ? ((lastCost - prevCost) / prevCost * 100).toFixed(1) : '0';
+    const weekStr = weeks.map((w, i) => `${w}: $${fmt(costs[i])}`).join(', ');
+    costContext = `- **Last week:** $${fmt(lastCost)}
+- **Previous week:** $${fmt(prevCost)}
+- **Week-over-week change:** ${pct}%
+- **Monthly estimate:** $${fmt(lastCost * 4.33)}
+- **Weekly breakdown:** ${weekStr}`;
+  }
+  const q = `Analyze the AWS cost for ${svcName}. What's driving this spend and what are the main optimization opportunities?
+
+## Service Cost Data
+- **Service:** ${svcName}
+${costContext}
+
+Please explain:
+1. What typically drives costs for this service
+2. Specific optimization actions I can take right now
+3. What a realistic savings target looks like (% or $ range)`;
+
+  const input = document.getElementById('chat-input');
+  if (input) { input.value = q; input.focus(); sendMessage(); }
 }
 
 function drawSparkline(canvas, data, color) {
@@ -1056,7 +3204,11 @@ function drawSparkline(canvas, data, color) {
 function renderOptimizer() {
   const opt = state.optimize;
   const el = document.getElementById('recommendations-list');
-  if (!opt || !el) return;
+  if (!el) return;
+  if (!opt) {
+    showTabLoading('recommendations-list', 'Loading optimization recommendations…', 5);
+    return;
+  }
 
   // Support both key naming conventions from the API
   const score = opt.score ?? opt.savings_score ?? 0;
@@ -1067,14 +3219,44 @@ function renderOptimizer() {
   if (totalEl) countUp(totalEl, totalSavings, v => '$' + fmt(v));
   drawGauge(score);
 
-  // Recommendations
+  // Read filters
+  const filterType    = (document.getElementById('opt-filter-type')?.value || '').toLowerCase();
+  const filterEffort  = (document.getElementById('opt-filter-effort')?.value || '').toLowerCase();
+  const filterSavings = parseFloat(document.getElementById('opt-filter-savings')?.value || '0');
+
+  const typeMatch = (rec) => {
+    if (!filterType) return true;
+    const cat = (rec.category ?? rec.service ?? rec.resource_type ?? '').toLowerCase();
+    const title = (rec.title || '').toLowerCase();
+    if (filterType === 'savings')   return cat.includes('savings') || title.includes('savings plan');
+    if (filterType === 'reserved')  return cat.includes('reserved') || title.includes('reserved');
+    if (filterType === 'rightsize') return cat.includes('rightsize') || cat.includes('ec2instance') || cat.includes('rds') || cat.includes('ebs') || title.includes('rightsize') || title.includes('downsize');
+    if (filterType === 'other')     return !cat.includes('savings') && !cat.includes('reserved') && !cat.includes('rightsize');
+    return true;
+  };
+
+  const allRecs = opt.recommendations || [];
+  // Populate rec map so Ask AI buttons can look up by index without inline JSON
+  allRecs.forEach((rec, i) => { rec._idx = i; window._recMap = window._recMap || {}; window._recMap[i] = rec; });
+  const filtered = allRecs.filter(rec => {
+    const savings = rec.monthlySavings ?? rec.monthly_savings ?? 0;
+    const effort = (rec.effort || '').toLowerCase();
+    return typeMatch(rec)
+      && (!filterEffort || effort.startsWith(filterEffort))
+      && savings >= filterSavings;
+  });
+
+  const countEl = document.getElementById('opt-filter-count');
+  if (countEl) countEl.textContent = `${filtered.length} of ${allRecs.length} recommendations`;
+
   const priorityColors = { P1: 'priority-p1', P2: 'priority-p2', P3: 'priority-p3' };
-  el.innerHTML = (opt.recommendations || []).map(rec => {
+  el.innerHTML = filtered.length === 0
+    ? `<div style="padding:40px;text-align:center;color:var(--text-muted);font-size:14px">No recommendations match the current filters.</div>`
+    : filtered.map(rec => {
     const savings = rec.monthlySavings ?? rec.monthly_savings ?? 0;
     const category = rec.category ?? rec.service ?? '';
     const desc = rec.description ?? rec.detail ?? '';
     const effort = rec.effort ? rec.effort.charAt(0).toUpperCase() + rec.effort.slice(1) : '';
-    const titleEsc = (rec.title || '').replace(/'/g, "\\'");
     return `
     <div class="rec-card">
       <div class="rec-header">
@@ -1087,7 +3269,7 @@ function renderOptimizer() {
       <div class="rec-footer">
         <span class="rec-effort">Effort: ${effort}</span>
         <span style="flex:1"></span>
-        <button class="btn-secondary" style="font-size:11px;padding:4px 10px" onclick="askAbout('${titleEsc}')">Ask AI →</button>
+        <button class="btn-secondary" style="font-size:11px;padding:4px 10px" onclick="askAboutRec(${rec._idx})">🤖 Ask DevOps ARG AI →</button>
       </div>
     </div>`;
   }).join('');
@@ -1127,75 +3309,305 @@ function drawGauge(score) {
 // ════════════════════════════════════════════════════════
 // INFRASTRUCTURE TAB
 // ════════════════════════════════════════════════════════
+// ── INFRASTRUCTURE REDESIGN ────────────────────────────────────────────────
+
+const _INFRA_META = {
+  ec2:         { label: 'EC2 Compute',       color: '#f59e0b', bg: 'rgba(245,158,11,.12)',  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>',        unit: svc => `${svc.running||0} running / ${svc.total_instances||0} total` },
+  rds:         { label: 'RDS / Aurora',      color: '#06b6d4', bg: 'rgba(6,182,212,.12)',   icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>', unit: svc => `${svc.instances||0} instances · ${svc.clusters||0} clusters` },
+  eks:         { label: 'EKS Kubernetes',    color: '#a78bfa', bg: 'rgba(167,139,250,.12)', icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>', unit: svc => `${svc.clusters||0} clusters · ${(svc.nodes||{}).total||0} nodes` },
+  elasticache: { label: 'ElastiCache',       color: '#10b981', bg: 'rgba(16,185,129,.12)',  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',       unit: svc => `${svc.clusters||0} clusters · ${svc.total_nodes||0} nodes` },
+  opensearch:  { label: 'OpenSearch',        color: '#f97316', bg: 'rgba(249,115,22,.12)',  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',   unit: svc => `${svc.domains||0} domains` },
+  s3:          { label: 'S3 Storage',        color: '#ec4899', bg: 'rgba(236,72,153,.12)',  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>', unit: svc => `${svc.total_buckets||0} buckets · ${((svc.total_size_gb||0)/1000).toFixed(1)} TB` },
+  lambda:      { label: 'Lambda',            color: '#fb923c', bg: 'rgba(251,146,60,.12)',  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',                unit: svc => `${svc.functions||0} functions` },
+  cloudfront:  { label: 'CloudFront',        color: '#38bdf8', bg: 'rgba(56,189,248,.12)',  icon: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>', unit: svc => `${svc.distributions||0} distributions` },
+};
+
+function _infraFmt(n) {
+  if (!n) return '$0';
+  if (n >= 1000) return `$${(n/1000).toFixed(1)}K`;
+  return `$${Math.round(n)}`;
+}
+
 function renderInfrastructure() {
   const infra = state.infra;
-  const el = document.getElementById('infra-grid');
-  if (!infra || !el) return;
+  const grid = document.getElementById('infra-grid');
+  const summary = document.getElementById('infra-summary');
+  if (!infra || !grid) return;
 
   const res = infra.resources || infra;
-  const svgIcons = {
-    ec2: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
-    rds: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"/><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"/></svg>',
-    eks: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/></svg>',
-    elasticache: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>',
-    opensearch: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f97316" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>',
-    s3: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>',
-  };
+  // Build sorted service list (by monthly cost desc)
+  const services = Object.entries(res)
+    .filter(([k, v]) => v && typeof v === 'object' && 'monthly_cost' in v)
+    .sort(([, a], [, b]) => (b.monthly_cost||0) - (a.monthly_cost||0));
 
-  const sections = [
-    { key: 'ec2', title: 'EC2 Compute', data: res.ec2 },
-    { key: 'rds', title: 'RDS Databases', data: res.rds },
-    { key: 'eks', title: 'EKS Clusters', data: res.eks },
-    { key: 'elasticache', title: 'ElastiCache Redis', data: res.elasticache },
-    { key: 'opensearch', title: 'OpenSearch', data: res.opensearch },
-    { key: 's3', title: 'S3 Storage', data: res.s3 },
-  ].filter(s => s.data);
+  const totalCost   = services.reduce((s, [, v]) => s + (v.monthly_cost||0), 0);
+  const totalRegions = new Set(services.flatMap(([, v]) => Object.keys(v.regions||{}))).size;
+  const activeServices = services.filter(([, v]) => (v.monthly_cost||0) > 0).length;
 
-  el.innerHTML = sections.map(sec => {
-    const d = sec.data;
-    const statusCls = d.status === 'healthy' ? 'status-healthy' : d.status === 'warning' ? 'status-warning' : 'status-error';
-    const statusLabel = d.status ? d.status.charAt(0).toUpperCase() + d.status.slice(1) : 'Unknown';
-
-    let metricsHtml = '';
-    if (d.avg_cpu_pct !== undefined) metricsHtml += metricBar('CPU', d.avg_cpu_pct);
-    if (d.avg_memory_pct !== undefined) metricsHtml += metricBar('MEM', d.avg_memory_pct);
-    if (d.hit_rate_pct !== undefined) metricsHtml += metricBar('HIT', d.hit_rate_pct, 'fill-green');
-    if (d.storage_used_gb && d.storage_allocated_gb) metricsHtml += metricBar('STO', Math.round(d.storage_used_gb / d.storage_allocated_gb * 100), 'fill-cyan');
-    if (d.storage_used_gb && d.storage_total_gb) metricsHtml += metricBar('STO', Math.round(d.storage_used_gb / d.storage_total_gb * 100), 'fill-cyan');
-
-    let statsHtml = '';
-    if (sec.key === 'ec2') statsHtml = `<div class="resource-meta-grid"><span>${d.running || 0} running</span><span>${d.stopped || 0} stopped</span><span>${Object.entries(d.instance_types || {}).map(([t,n]) => `${n}x ${t}`).join(', ')}</span></div>`;
-    if (sec.key === 'rds') statsHtml = `<div class="resource-meta-grid"><span>${d.engine || ''}</span><span>${d.instances || 0} instances</span><span>${d.connections_active || 0}/${d.connections_max || 0} conns</span></div>`;
-    if (sec.key === 'eks') statsHtml = `<div class="resource-meta-grid"><span>${(d.cluster_names || []).join(', ')}</span><span>${d.pods_running || 0} pods running</span><span>${d.node_provisioner || ''}</span></div>`;
-    if (sec.key === 'elasticache') statsHtml = `<div class="resource-meta-grid"><span>${d.engine || ''}</span><span>${d.instance_type || ''}</span><span>${d.memory_used_gb || 0}/${d.memory_total_gb || 0} GB</span></div>`;
-    if (sec.key === 'opensearch') statsHtml = `<div class="resource-meta-grid"><span>${d.engine_version || ''}</span><span>${d.nodes || 0} nodes · ${d.shards || 0} shards</span><span>${d.storage_used_gb || 0}/${d.storage_total_gb || 0} GB</span></div>`;
-    if (sec.key === 's3') {
-      const bucketsHtml = (d.buckets || []).map(b => `
-        <div class="resource-row">
-          <div class="status-dot ${b.lifecycle ? 'status-healthy' : 'status-warning'}"></div>
-          <span class="resource-name">${b.name}</span>
-          <span class="resource-meta">${b.size_gb >= 1000 ? (b.size_gb/1000).toFixed(1)+' TB' : b.size_gb+' GB'} · ${(b.objects || b.objects_count || 0).toLocaleString()} obj</span>
-        </div>`).join('');
-      statsHtml = `<div class="resource-meta-grid"><span>${d.total_buckets || 0} buckets</span><span>${((d.total_size_gb||0)/1000).toFixed(1)} TB total</span></div>${bucketsHtml}`;
+  // -- Summary KPIs --
+  if (summary) {
+    summary.style.display = 'grid';
+    // Get waste savings for infra services from state.findings
+    const wasteByService = {};
+    if (state.findings) {
+      for (const f of state.findings) {
+        const svc = (f.service||'').toLowerCase();
+        wasteByService[svc] = (wasteByService[svc]||0) + (f.estimated_savings_usd||0);
+      }
     }
+    const totalWaste = Object.values(wasteByService).reduce((a,b)=>a+b,0);
 
+    summary.innerHTML = `
+      <div class="infra-kpi">
+        <div class="infra-kpi-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--accent)" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+          Total Infrastructure Cost
+        </div>
+        <div class="infra-kpi-val" style="color:var(--accent)">${_infraFmt(totalCost)}</div>
+        <div class="infra-kpi-sub">per month · ${_infraFmt(totalCost*12)}/year</div>
+      </div>
+      <div class="infra-kpi">
+        <div class="infra-kpi-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--cyan)" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/></svg>
+          Active Services
+        </div>
+        <div class="infra-kpi-val" style="color:var(--cyan)">${activeServices}</div>
+        <div class="infra-kpi-sub">${services.length} total · ${totalRegions} region${totalRegions!==1?'s':''}</div>
+      </div>
+      <div class="infra-kpi">
+        <div class="infra-kpi-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+          Waste Detected
+        </div>
+        <div class="infra-kpi-val" style="color:var(--red)">${_infraFmt(totalWaste)}</div>
+        <div class="infra-kpi-sub">savings/mo · <a href="#waste" onclick="switchTab('waste');return false;" style="color:var(--accent);text-decoration:none">view findings →</a></div>
+      </div>
+      <div class="infra-kpi">
+        <div class="infra-kpi-label">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Top Service
+        </div>
+        <div class="infra-kpi-val" style="font-size:16px;color:var(--text)">${services[0] ? (_INFRA_META[services[0][0]]?.label || services[0][0].toUpperCase()) : '—'}</div>
+        <div class="infra-kpi-sub">${services[0] ? _infraFmt(services[0][1].monthly_cost) + '/mo (' + Math.round((services[0][1].monthly_cost||0)/totalCost*100) + '% of total)' : ''}</div>
+      </div>`;
+  }
+
+  // -- Service cards --
+  // Group waste findings by service for the detail panels
+  const wasteBySvc = {};
+  if (state.findings) {
+    for (const f of state.findings) {
+      const key = (f.service||'').toLowerCase().replace(/ /g,'').replace('amazon','').replace('aws','');
+      if (!wasteBySvc[key]) wasteBySvc[key] = [];
+      wasteBySvc[key].push(f);
+    }
+  }
+
+  grid.innerHTML = services.map(([key, d]) => {
+    const meta  = _INFRA_META[key] || { label: key.toUpperCase(), color: '#71717a', bg: 'rgba(113,113,122,.12)', icon: '', unit: () => '' };
+    const pct   = totalCost > 0 ? Math.round((d.monthly_cost||0) / totalCost * 100) : 0;
+    const status = d.status || 'unknown';
+    const statusColor = status==='healthy'?'var(--green)': status==='warning'?'var(--orange)':'var(--text-muted)';
+
+    // Chips: instance types / engines / etc
+    const chips = _buildChips(key, d);
+    const chipsHtml = chips.length ? `<div class="infra-card-chips">${chips.map(c=>`<span class="infra-chip">${c}</span>`).join('')}</div>` : '';
+
+    // Region breakdown
+    const regionEntries = Object.entries(d.regions||{}).slice(0,5);
+    const regionHtml = regionEntries.map(([r,v]) =>
+      `<div class="infra-res-row"><span class="status-dot status-healthy"></span><span style="flex:1;color:var(--text-secondary)">${r}</span><span style="font-family:var(--mono);font-size:11px;color:var(--text-muted)">${typeof v==='object'?JSON.stringify(v).replace(/[{}\"]/g,'').replace(/:/g,' ').slice(0,40):v}</span></div>`
+    ).join('');
+
+    // Waste findings for this service
+    const svcWaste = wasteBySvc[key] || wasteBySvc[key.replace('elasticache','redis')] || [];
+    const topWaste = svcWaste.slice(0,4);
+    const wasteTotal = svcWaste.reduce((a,b)=>a+(b.estimated_savings_usd||0),0);
+    const wasteHtml = topWaste.map(f=>
+      `<div class="infra-res-row">
+                <span class="infra-waste-pill">${_sevLabel(f.severity||'warning')}</span>
+        <span style="flex:1;color:var(--text-secondary);font-size:11px;margin:0 6px">${f.title||''}</span>
+        <span style="font-family:var(--mono);font-size:11px;color:var(--green)">${_infraFmt(f.estimated_savings_usd||0)}</span>
+      </div>`
+    ).join('');
+
+    // Detail: service-specific stats
+    const statsHtml = _buildDetailStats(key, d);
+
+    const cardId = `infra-card-${key}`;
     return `
-    <div class="infra-section">
-      <div class="infra-section-header">
-        ${svgIcons[sec.key] || ''}
-        <span class="infra-section-title">${sec.title}</span>
-        <div style="margin-left:auto;display:flex;align-items:center;gap:8px">
-          <div class="status-dot ${statusCls}"></div>
-          <span style="font-size:11px;color:var(--text-muted)">${statusLabel}</span>
-          <span style="font-family:var(--mono);font-size:13px;font-weight:700;color:var(--gold)">$${fmt(d.monthly_cost || 0)}/mo</span>
+    <div class="infra-card" id="${cardId}">
+      <div class="infra-card-top" onclick="_toggleInfraCard('${key}')">
+        <div class="infra-card-header">
+          <div class="infra-card-icon" style="background:${meta.bg};color:${meta.color}">${meta.icon}</div>
+          <div>
+            <div class="infra-card-name">${meta.label}</div>
+            <div class="infra-card-sub">${meta.unit(d)}</div>
+        </div>
+          <div class="infra-card-status" style="margin-left:auto">
+            <span style="width:7px;height:7px;border-radius:50%;background:${statusColor};display:inline-block"></span>
+            <span style="color:${statusColor};font-size:11px">${status}</span>
+      </div>
+        </div>
+        <div class="infra-card-cost-row">
+          <div>
+            <div class="infra-card-cost">${_infraFmt(d.monthly_cost||0)}</div>
+            <div class="infra-card-cost-sub">/month · ${_infraFmt((d.monthly_cost||0)*12)}/year</div>
+          </div>
+          <div class="infra-card-pct">${pct}%</div>
+        </div>
+        <div class="infra-spend-bar"><div class="infra-spend-fill" style="width:${pct}%;background:${meta.color}"></div></div>
+        ${chipsHtml}
+        <div class="infra-card-footer">
+          ${wasteTotal > 0 ? `<span style="font-size:11px;color:var(--red)">⚠ ${_infraFmt(wasteTotal)}/mo waste · ${svcWaste.length} finding${svcWaste.length!==1?'s':''}</span>` : `<span style="font-size:11px;color:var(--text-muted)">${d.detail||''}</span>`}
+          <div style="display:flex;gap:6px">
+            <button class="insight-ask-btn" onclick="event.stopPropagation();_askAboutInfraService('${key}')" style="font-size:11px">Ask devopsarg AI →</button>
+            <button class="infra-expand-btn" id="infra-toggle-${key}">
+              Details <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+          </div>
         </div>
       </div>
-      ${metricsHtml}
-      ${statsHtml}
-      ${d.warning ? `<div style="margin-top:8px;font-size:11px;color:var(--orange);background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:5px;padding:6px 10px">${d.warning}</div>` : ''}
-      ${d.detail ? `<div style="margin-top:6px;font-size:11px;color:var(--text-muted)">${d.detail}</div>` : ''}
+      <div class="infra-detail" id="infra-detail-${key}">
+        <div class="infra-detail-grid">
+          <div>
+            <div class="infra-detail-box">
+              <div class="infra-detail-box-title">Service Details</div>
+              ${statsHtml || `<div style="font-size:12px;color:var(--text-muted)">${d.detail||'No detail available'}</div>`}
+            </div>
+            ${regionHtml ? `<div class="infra-detail-box" style="margin-top:10px"><div class="infra-detail-box-title">By Region</div>${regionHtml}</div>` : ''}
+          </div>
+          <div>
+            ${wasteHtml ? `<div class="infra-detail-box"><div class="infra-detail-box-title">Waste Findings (${svcWaste.length})</div>${wasteHtml}${svcWaste.length>4?`<div style="font-size:11px;color:var(--text-muted);margin-top:6px">+${svcWaste.length-4} more · <a href="#waste" onclick="switchTab('waste');return false;" style="color:var(--accent)">view all</a></div>`:''}
+            </div>` : `<div class="infra-detail-box"><div class="infra-detail-box-title">Waste Findings</div><div style="font-size:12px;color:var(--text-muted)">No waste findings for this service.</div></div>`}
+            ${d.warning ? `<div style="margin-top:10px;font-size:12px;color:var(--orange);background:rgba(249,115,22,0.08);border:1px solid rgba(249,115,22,0.2);border-radius:5px;padding:8px 12px">${d.warning}</div>` : ''}
+          </div>
+        </div>
+      </div>
     </div>`;
   }).join('');
+
+  document.getElementById('infra-meta').textContent =
+    `${services.length} services · ${_infraFmt(totalCost)}/mo · ${totalRegions} region${totalRegions!==1?'s':''} · ${infra.generated ? new Date(infra.generated).toLocaleTimeString() : ''}`;
+}
+
+function _buildChips(key, d) {
+  const chips = [];
+  if (key==='ec2') {
+    const types = Object.entries(d.instance_types||{}).sort(([,a],[,b])=>b-a).slice(0,4);
+    types.forEach(([t,n]) => chips.push(`${n}× ${t}`));
+    const envs = Object.entries(d.environments||{}).filter(([k])=>k!=='unknown').slice(0,3);
+    envs.forEach(([e,n]) => chips.push(`${e}: ${n}`));
+  } else if (key==='rds') {
+    if (d.engine) d.engine.split(', ').slice(0,3).forEach(e => chips.push(e.replace('aurora-','')));
+    if (d.primary_type) chips.push(d.primary_type);
+    if (d.storage_allocated_gb) chips.push(`${d.storage_allocated_gb} GB storage`);
+  } else if (key==='eks') {
+    (d.cluster_names||[]).forEach(n => chips.push(n));
+    if (d.pods_running) chips.push(`${d.pods_running} pods`);
+  } else if (key==='elasticache') {
+    if (d.engine) chips.push(d.engine);
+    if (d.instance_type) chips.push(d.instance_type);
+    if (d.total_nodes) chips.push(`${d.total_nodes} nodes`);
+  } else if (key==='s3') {
+    chips.push(`${d.total_buckets||0} buckets`);
+    if (d.total_size_gb) chips.push(`${(d.total_size_gb/1000).toFixed(1)} TB`);
+    if (d.total_objects) chips.push(`${(d.total_objects/1e6).toFixed(1)}M objects`);
+  } else if (key==='opensearch') {
+    if (d.engine_version) chips.push(d.engine_version);
+    if (d.domains) chips.push(`${d.domains} domains`);
+  }
+  return chips;
+}
+
+function _buildDetailStats(key, d) {
+  let rows = '';
+  const row = (label, val, mono=false) =>
+    val ? `<div class="infra-res-row"><span style="color:var(--text-muted);min-width:120px;font-size:12px">${label}</span><span style="${mono?'font-family:var(--mono);':''}font-size:12px;color:var(--text)">${val}</span></div>` : '';
+
+  if (key==='ec2') {
+    rows += row('Running', d.running);
+    rows += row('Stopped', d.stopped);
+    rows += row('Total', d.total_instances);
+    rows += row('Regions', Object.keys(d.regions||{}).join(', '), true);
+  } else if (key==='rds') {
+    rows += row('Instances', d.instances);
+    rows += row('Clusters', d.clusters);
+    rows += row('Engines', d.engine);
+    rows += row('Primary type', d.primary_type, true);
+    rows += row('Storage alloc.', d.storage_allocated_gb ? `${d.storage_allocated_gb} GB` : null);
+    rows += row('Storage used', d.storage_used_gb ? `${d.storage_used_gb} GB` : null);
+    rows += row('Multi-AZ', d.multi_az !== undefined ? (d.multi_az?'Yes':'No') : null);
+  } else if (key==='eks') {
+    rows += row('Clusters', (d.cluster_names||[]).join(', '), true);
+    rows += row('Total nodes', (d.nodes||{}).total);
+    rows += row('Pods running', d.pods_running);
+    rows += row('Provisioner', d.node_provisioner, true);
+  } else if (key==='elasticache') {
+    rows += row('Clusters', d.clusters);
+    rows += row('Nodes', d.total_nodes);
+    rows += row('Engine', d.engine, true);
+    rows += row('Instance type', d.instance_type, true);
+    rows += row('Memory used', d.memory_used_gb ? `${d.memory_used_gb} / ${d.memory_total_gb} GB` : null);
+  } else if (key==='s3') {
+    rows += row('Total buckets', d.total_buckets);
+    rows += row('Total size', d.total_size_gb ? `${(d.total_size_gb/1000).toFixed(2)} TB` : null);
+    rows += row('Total objects', d.total_objects ? (d.total_objects/1e6).toFixed(1)+'M' : null);
+    // Bucket list
+    const buckets = (d.buckets||[]).slice(0,8);
+    if (buckets.length) {
+      rows += `<div style="margin-top:8px;font-size:10px;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px">Top Buckets</div>`;
+      rows += buckets.map(b=>`<div class="infra-res-row">
+        <span class="${b.lifecycle?'status-dot status-healthy':'status-dot status-warning'}"></span>
+        <span style="flex:1;font-size:11px;font-family:var(--mono);color:var(--text-secondary)">${b.name}</span>
+        <span style="font-size:11px;color:var(--text-muted)">${b.size_gb>=1000?(b.size_gb/1000).toFixed(1)+'TB':b.size_gb+'GB'}</span>
+      </div>`).join('');
+    }
+  } else if (key==='opensearch') {
+    rows += row('Domains', d.domains);
+    rows += row('Version', d.engine_version, true);
+    rows += row('Nodes', d.nodes);
+    rows += row('Storage', d.storage_used_gb ? `${d.storage_used_gb} / ${d.storage_total_gb} GB` : null);
+  }
+  return rows;
+}
+
+function _toggleInfraCard(key) {
+  const detail = document.getElementById(`infra-detail-${key}`);
+  const card   = document.getElementById(`infra-card-${key}`);
+  const btn    = document.getElementById(`infra-toggle-${key}`);
+  if (!detail) return;
+  const open = detail.classList.toggle('open');
+  card.classList.toggle('expanded', open);
+  if (btn) btn.innerHTML = open
+    ? 'Hide <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="18 15 12 9 6 15"/></svg>'
+    : 'Details <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>';
+}
+
+function _askAboutInfraService(key) {
+  const infra = state.infra;
+  if (!infra) return;
+  const d = (infra.resources||infra)[key] || {};
+  const meta = _INFRA_META[key] || { label: key };
+  const waste = (state.findings||[]).filter(f=>(f.service||'').toLowerCase().includes(key) || key.includes((f.service||'').toLowerCase())).slice(0,5);
+  const msg = `I need a detailed FinOps analysis for our **${meta.label}** infrastructure.
+
+## Current State
+- **Monthly cost:** ${_infraFmt(d.monthly_cost||0)}/mo
+- **Status:** ${d.status||'unknown'}
+- **Detail:** ${d.detail||'—'}
+- **Raw data:** ${JSON.stringify(d, null, 2).slice(0,600)}
+
+${waste.length ? `## Active Waste Findings
+${waste.map(f=>`- [${f.severity}] ${f.title} — ${_infraFmt(f.estimated_savings_usd||0)}/mo savings`).join('\n')}` : ''}
+
+Please analyze:
+1. Is this service right-sized for our usage?
+2. What are the top 3 cost reduction opportunities?
+3. Any commitment (RI/SP) opportunities?
+4. What live AWS data should you query to verify?`;
+  switchTab('chat');
+  setTimeout(() => { const inp = document.getElementById('chat-input'); if(inp){inp.value=msg;sendMessage();} }, 200);
 }
 
 function statusDot(status) {
@@ -1312,7 +3724,7 @@ function setupChat() {
 
 function askAbout(topic) {
   switchTab('chat');
-  document.getElementById('chat-input').value = `Tell me more about: ${topic}`;
+  document.getElementById('chat-input').value = `Tell me more about this AWS recommendation: ${topic}. What are the risks, prerequisites and exact steps to implement it?`;
   sendMessage();
 }
 
@@ -1478,18 +3890,22 @@ function startLiveTicker(weeklyUSD) {
 }
 
 // ════════════════════════════════════════════════════════
-// MODE BADGE
+// MODE BADGE + DATA TOGGLE
 // ════════════════════════════════════════════════════════
+let _currentMockState = true;
+
 function updateModeBadge(health) {
   const el = document.getElementById('mode-badge');
   if (!health) {
     el.className = 'mode-badge mode-loading'; el.textContent = 'offline'; return;
   }
-  // Mock data flag takes precedence visually so users know the numbers are fake
+  _currentMockState = health.use_mock_data;
+  syncToggleUI(_currentMockState);
+
   if (health.use_mock_data) {
     el.className = 'mode-badge mode-localstack';
     el.textContent = 'MOCK DATA';
-    el.title = 'USE_MOCK_DATA=true — all figures are demo data, not your AWS account';
+    el.title = 'Dashboard shows demo data — toggle to Live for real AWS';
     return;
   }
   if (health.mode === 'localstack') {
@@ -1499,6 +3915,53 @@ function updateModeBadge(health) {
     el.title = 'Reading live AWS data via read-only IAM user';
   }
 }
+
+function syncToggleUI(isMock) {
+  const sw = document.getElementById('toggleSwitch');
+  const labelL = document.getElementById('toggleLabel');
+  const labelR = document.getElementById('toggleLabelRight');
+  if (sw) {
+  sw.setAttribute('aria-checked', isMock ? 'true' : 'false');
+  labelL.classList.toggle('active', isMock);
+  labelR.classList.toggle('active', !isMock);
+  }
+  // Show/hide mock banner in chat
+  const banner = document.getElementById('chat-mock-banner');
+  if (banner) banner.style.display = isMock ? 'flex' : 'none';
+}
+
+async function toggleDataSource() {
+  const toggle = document.getElementById('dataToggle');
+  toggle.classList.add('loading');
+  const newMock = !_currentMockState;
+  try {
+    const res = await fetch(`${API}/api/config/mock`, {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({ use_mock_data: newMock })
+    });
+    const data = await res.json();
+    _currentMockState = data.use_mock_data;
+    syncToggleUI(_currentMockState);
+
+    // Refresh the badge
+    const hRes = await fetch(`${API}/api/health`);
+    const health = await hRes.json();
+    updateModeBadge(health);
+
+    // Force full data reload from backend
+    await Promise.all([loadReport(), loadInfra(), loadOptimize()]);
+  } catch (e) {
+    console.error('Toggle failed:', e);
+  } finally {
+    toggle.classList.remove('loading');
+  }
+}
+
+(function initToggle() {
+  const sw = document.getElementById('toggleSwitch');
+  if (sw) sw.addEventListener('click', toggleDataSource);
+})();
 
 // ════════════════════════════════════════════════════════
 // MARKDOWN RENDERER (lightweight)
@@ -1609,14 +4072,343 @@ function toast(msg, type='') {
   setTimeout(() => el.className = '', 3000);
 }
 
+async function exportReport() {
+  const btn = document.getElementById('export-report-btn');
+  const ICON_DOWNLOAD = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><polyline points="9 15 12 18 15 15"/></svg><span>Export Report</span>`;
+
+  // Check what's still pending
+  const pending = await _reportReadinessCheck();
+  if (pending.length) {
+    _showReportWaitModal(pending);
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Generating…</span>`;
+  try {
+    const resp = await fetch('/api/report/export');
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const blob = await resp.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date().toISOString().slice(0,10);
+    a.download = `finops-report-${date}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    toast('Report downloaded!', 'ok');
+  } catch (e) {
+    console.error('Export failed', e);
+    toast('Export failed — is the backend running?', 'error');
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = ICON_DOWNLOAD;
+  }
+}
+
+async function _reportReadinessCheck() {
+  const pending = [];
+  try {
+    // 1. Waste scan
+    const findings = await fetchJSON('/api/findings');
+    if (findings.scanning) pending.push({ label: 'Waste scan', detail: 'Infrastructure analysis still running…', icon: '🗑' });
+
+    // 2. Billing insights
+    const insights = await fetchJSON('/api/insights');
+    if (insights.scanning) pending.push({ label: 'Billing insights', detail: '20 checks still computing…', icon: '💡' });
+
+    // 3. Cost report
+    if (!state.report) pending.push({ label: 'Cost report', detail: 'Weekly cost data not yet loaded', icon: '📊' });
+  } catch (e) {
+    pending.push({ label: 'Backend', detail: 'Could not reach the backend', icon: '⚠️' });
+  }
+  return pending;
+}
+
+function _showReportWaitModal(pending) {
+  // Remove any existing modal
+  document.getElementById('report-wait-modal')?.remove();
+
+  const rows = pending.map(p => `
+    <div style="display:flex;align-items:flex-start;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);">
+      <span style="font-size:20px;flex-shrink:0">${p.icon}</span>
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--text)">${p.label}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${p.detail}</div>
+      </div>
+      <div style="margin-left:auto;flex-shrink:0">
+        <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:4px;background:rgba(251,191,36,.1);color:#fbbf24">IN PROGRESS</span>
+      </div>
+    </div>`).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'report-wait-modal';
+  modal.style.cssText = `position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.6);backdrop-filter:blur(4px);`;
+  modal.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:28px 28px 20px;max-width:440px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.5);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+        <span style="font-size:22px">⏳</span>
+        <div style="font-size:15px;font-weight:700;color:var(--text)">Report not ready yet</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:16px;">
+        The following data sources are still loading. Please wait for them to finish before generating the report.
+      </div>
+      <div style="border-top:1px solid var(--border)">${rows}</div>
+      <div style="display:flex;justify-content:flex-end;gap:10px;margin-top:20px;">
+        <button onclick="document.getElementById('report-wait-modal').remove()"
+          style="padding:7px 16px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--text-muted);font-size:12px;cursor:pointer;">
+          Close
+        </button>
+        <button onclick="document.getElementById('report-wait-modal').remove();exportReport()"
+          style="padding:7px 16px;border-radius:6px;border:none;background:var(--accent);color:#000;font-size:12px;font-weight:600;cursor:pointer;">
+          Try Again
+        </button>
+      </div>
+    </div>`;
+
+  // Close on backdrop click
+  modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+  document.body.appendChild(modal);
+}
+
 // ════════════════════════════════════════════════════════
 // WINDOW RESIZE — redraw charts
 // ════════════════════════════════════════════════════════
 let resizeTimer;
+// Close site dropdown when clicking outside
+document.addEventListener('click', () => {
+  document.getElementById('site-dropdown')?.classList.remove('open');
+});
+
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
   resizeTimer = setTimeout(redrawCharts, 200);
 });
+
+// ════════════════════════════════════════════════════════
+// BILLING INSIGHTS TAB
+// ════════════════════════════════════════════════════════
+const _insightMap = {};  // id → insight object for Ask AI
+
+const INSIGHT_CATEGORY_META = {
+  cost:          { label: 'Cost Analysis',      icon: '💰', order: 0 },
+  networking:    { label: 'Networking',          icon: '🌐', order: 1 },
+  commitments:   { label: 'Commitments (RI/SP)', icon: '🤝', order: 2 },
+  compute:       { label: 'Compute',             icon: '⚡', order: 3 },
+  storage:       { label: 'Storage & Databases', icon: '💾', order: 4 },
+  observability: { label: 'Observability',       icon: '📡', order: 5 },
+};
+
+function setupInsights() {
+  document.getElementById('insights-refresh-btn').addEventListener('click', async () => {
+    await triggerInsightsRefresh();
+  });
+}
+
+let _insightsPollTimer = null;
+
+async function loadInsights() {
+  const loading = document.getElementById('insights-loading');
+  const content = document.getElementById('insights-content');
+  try {
+    const data = await fetchJSON('/api/insights');
+    if (data.scanning) {
+      // Show scanning state and poll
+      loading.style.display = 'block';
+      content.style.display = 'none';
+      document.getElementById('insights-meta').textContent = 'Running 20 billing checks…';
+      _startInsightsPoll();
+    } else {
+      loading.style.display = 'none';
+      content.style.display = 'block';
+      renderInsights(data);
+    }
+  } catch (e) {
+    console.error('loadInsights error', e);
+    loading.style.display = 'none';
+    content.style.display = 'block';
+    document.getElementById('insights-meta').textContent = 'Error loading insights';
+  }
+}
+
+function _startInsightsPoll() {
+  if (_insightsPollTimer) return;
+  let dots = 0;
+  const dotEl = document.querySelector('#insights-loading div:last-child');
+  _insightsPollTimer = setInterval(async () => {
+    dots = (dots + 1) % 4;
+    if (dotEl) dotEl.textContent = 'Running 20 billing checks' + '.'.repeat(dots + 1);
+    try {
+      const data = await fetchJSON('/api/insights');
+      if (!data.scanning) {
+        clearInterval(_insightsPollTimer);
+        _insightsPollTimer = null;
+        document.getElementById('insights-loading').style.display = 'none';
+        document.getElementById('insights-content').style.display = 'block';
+        renderInsights(data);
+      }
+    } catch (_) {}
+  }, 3000);
+}
+
+async function triggerInsightsRefresh() {
+  const btn = document.getElementById('insights-refresh-btn');
+  btn.disabled = true;
+  btn.textContent = '⟳ Running...';
+  try {
+    await fetch('/api/insights/refresh', { method: 'POST' });
+    document.getElementById('insights-loading').style.display = 'block';
+    document.getElementById('insights-content').style.display = 'none';
+    document.getElementById('insights-meta').textContent = 'Running 20 billing checks…';
+    // Clear any existing poll and start fresh
+    if (_insightsPollTimer) { clearInterval(_insightsPollTimer); _insightsPollTimer = null; }
+    _startInsightsPoll();
+  } catch (e) {
+    console.error('triggerInsightsRefresh error', e);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '↻ Refresh';
+  }
+}
+
+function renderInsights(data) {
+  const insights = data.insights || [];
+  const summary = data.summary || {};
+
+  // Populate summary for discovery banner
+  const byStatusForBanner = summary.by_status || {};
+  state.insightsSummary = {
+    warnings: (byStatusForBanner.warning || 0) + (byStatusForBanner.critical || 0),
+    savings: summary.total_savings_usd || 0,
+  };
+  renderDiscoveryBanner();
+
+  // KPIs
+  const byStatus = summary.by_status || {};
+  document.getElementById('ins-kpi-total').textContent = insights.length;
+  document.getElementById('ins-kpi-critical').textContent = byStatus.critical || 0;
+  document.getElementById('ins-kpi-warning').textContent = byStatus.warning || 0;
+  document.getElementById('ins-kpi-ok').textContent = (byStatus.ok || 0) + (byStatus.info || 0);
+  const savingsUsd = summary.total_savings_usd || 0;
+  document.getElementById('ins-kpi-savings').textContent =
+    savingsUsd >= 1000 ? `$${(savingsUsd/1000).toFixed(1)}K` : `$${Math.round(savingsUsd)}`;
+
+  // Nav badge
+  const urgent = (byStatus.critical || 0) + (byStatus.warning || 0);
+  const badge = document.getElementById('insights-nav-badge');
+  if (urgent > 0) { badge.textContent = urgent; badge.style.display = 'inline-flex'; }
+  else badge.style.display = 'none';
+
+  // Meta
+  const ageH = data.age_hours;
+  const ageStr = ageH != null ? ` · Last run ${ageH < 1 ? '<1h' : Math.round(ageH) + 'h'} ago` : '';
+  document.getElementById('insights-meta').textContent =
+    `${insights.length} checks · ${_fmt(savingsUsd)}/mo savings identified${ageStr}`;
+
+  // Empty state
+  const empty = document.getElementById('insights-empty');
+  const cats = document.getElementById('insights-categories');
+  if (!insights.length) { empty.style.display = 'block'; cats.style.display = 'none'; return; }
+  empty.style.display = 'none';
+  cats.style.display = 'block';
+
+  // Store for Ask AI
+  insights.forEach(i => { _insightMap[i.id] = i; });
+
+  // Group by category
+  const grouped = {};
+  insights.forEach(i => {
+    const cat = i.category || 'cost';
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push(i);
+  });
+
+  const catOrder = ['cost','networking','commitments','compute','storage','observability'];
+  const html = catOrder
+    .filter(cat => grouped[cat] && grouped[cat].length)
+    .map(cat => {
+      const meta = INSIGHT_CATEGORY_META[cat] || { label: cat, icon: '📊', order: 9 };
+      const items = grouped[cat];
+      const cards = items.map(ins => _insightCard(ins)).join('');
+      return `
+        <div class="insight-section">
+          <div class="insight-section-header">
+            <span style="font-size:15px">${meta.icon}</span>
+            <span class="insight-section-title">${meta.label}</span>
+            <span class="insight-section-count">${items.length}</span>
+          </div>
+          <div class="insight-grid">${cards}</div>
+        </div>`;
+    }).join('');
+
+  cats.innerHTML = html;
+}
+
+function _insightCard(ins) {
+  const statusBadge = {
+    critical: '<span class="insight-status-badge badge-critical">🔴 High</span>',
+    warning:  '<span class="insight-status-badge badge-warning">🟡 Medium</span>',
+    info:     '<span class="insight-status-badge badge-info">🔵 Low</span>',
+    ok:       '<span class="insight-status-badge badge-ok">✅ OK</span>',
+  }[ins.status] || '';
+
+  const savings = ins.savings_usd > 0
+    ? `<span class="insight-savings">Saves ~${ins.savings_usd >= 1000 ? '$'+(ins.savings_usd/1000).toFixed(1)+'K' : '$'+Math.round(ins.savings_usd)}/mo</span>`
+    : `<span></span>`;
+
+  const rec = ins.recommendation
+    ? `<div class="insight-rec">${ins.recommendation}</div>`
+    : '';
+
+  const safeId = ins.id.replace(/[^a-zA-Z0-9]/g, '_');
+
+  return `
+    <div class="insight-card status-${ins.status}" id="ins-card-${safeId}">
+      <div class="insight-card-top">
+        <div class="insight-card-title">${ins.title}</div>
+        ${statusBadge}
+      </div>
+      <div class="insight-value">${ins.value}</div>
+      <div class="insight-detail">${ins.detail}</div>
+      ${rec}
+      <div class="insight-card-footer">
+        ${savings}
+        <button class="insight-ask-btn" onclick="askAboutInsight('${safeId}')">Ask devopsarg AI →</button>
+      </div>
+    </div>`;
+}
+
+function askAboutInsight(safeId) {
+  const ins = Object.values(_insightMap).find(i => i.id.replace(/[^a-zA-Z0-9]/g, '_') === safeId);
+  if (!ins) return;
+  const msg = `I have a billing insight detected by the automated checks. Please help me understand the impact and the best next steps.
+
+## Insight: ${ins.title}
+- **Category:** ${ins.category}
+- **Status:** ${ins.status}
+- **Value:** ${ins.value}
+- **Detail:** ${ins.detail}
+- **Recommendation:** ${ins.recommendation}
+- **Estimated savings:** $${ins.savings_usd}/mo
+${ins.affected_count ? `- **Affected resources:** ${ins.affected_count}` : ''}
+
+Please analyze this in detail. Use your AWS tools to verify the current state, quantify the real impact, and give me a prioritized action plan.`;
+
+  switchTab('chat');
+  setTimeout(() => {
+    const inp = document.getElementById('chat-input');
+    if (inp) { inp.value = msg; sendMessage(); }
+  }, 200);
+}
+
+function _fmt(n) {
+  if (!n || n === 0) return '$0';
+  if (n >= 1000000) return `$${(n/1000000).toFixed(1)}M`;
+  if (n >= 1000) return `$${(n/1000).toFixed(1)}K`;
+  return `$${Math.round(n)}`;
+}
 </script>
 </body>
 </html>

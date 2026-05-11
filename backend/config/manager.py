@@ -16,6 +16,7 @@ class AWSConfig:
     access_key_id: str = ""
     secret_access_key: str = ""
     region: str = "us-east-1"
+    scan_regions: List[str] = field(default_factory=list)
     profile: Optional[str] = None
     assume_role_arn: Optional[str] = None
 
@@ -114,10 +115,17 @@ class ConfigurationManager:
     def _build_config(self) -> Config:
         localstack_enabled = os.getenv("USE_LOCALSTACK", "false").lower() in ("true", "1", "yes")
 
+        default_region = os.getenv("AWS_DEFAULT_REGION", "us-east-1")
+        raw_scan_regions = os.getenv("AWS_REGIONS_TO_ANALYZE", "")
+        scan_regions = (
+            [r.strip() for r in raw_scan_regions.split(",") if r.strip()]
+            if raw_scan_regions else [default_region]
+        )
         aws = AWSConfig(
             access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "test" if localstack_enabled else ""),
             secret_access_key=os.getenv("AWS_SECRET_ACCESS_KEY", "test" if localstack_enabled else ""),
-            region=os.getenv("AWS_DEFAULT_REGION", "us-east-1"),
+            region=default_region,
+            scan_regions=scan_regions,
             profile=os.getenv("AWS_PROFILE"),
             assume_role_arn=os.getenv("AWS_ASSUME_ROLE_ARN"),
         )
@@ -154,9 +162,15 @@ class ConfigurationManager:
         errors = []
         cfg = self.config
         if cfg.llm.provider == "anthropic" and not cfg.llm.anthropic_api_key:
-            errors.append("ANTHROPIC_API_KEY is required when AI_PROVIDER=anthropic")
+            if cfg.flags.use_mock_data:
+                logger.warning("ANTHROPIC_API_KEY not set — chat disabled, dashboard mock data available")
+            else:
+                errors.append("ANTHROPIC_API_KEY is required when AI_PROVIDER=anthropic")
         if cfg.llm.provider == "openai" and not cfg.llm.openai_api_key:
-            errors.append("OPENAI_API_KEY is required when AI_PROVIDER=openai")
+            if cfg.flags.use_mock_data:
+                logger.warning("OPENAI_API_KEY not set — chat disabled, dashboard mock data available")
+            else:
+                errors.append("OPENAI_API_KEY is required when AI_PROVIDER=openai")
 
         # Skip AWS validation in LocalStack mode (uses dummy credentials)
         if not cfg.localstack.enabled:

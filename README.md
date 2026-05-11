@@ -11,6 +11,12 @@ conversational AI. Ask questions in natural language — the agent reasons acros
 Cost Explorer, infrastructure metrics, and AWS's native recommendation APIs (Cost
 Optimization Hub, Compute Optimizer, Rightsizing, Savings Plans) to answer them.
 
+Beyond chat: an automated **waste detection engine** (55+ checks across 12 AWS
+services) runs scheduled scans and persists findings to SQLite; a **billing
+insights engine** (20 pre-computed checks) surfaces high-signal cost patterns
+without LLM invocations; and a **self-contained HTML export** lets you share
+full cost + infrastructure reports with stakeholders.
+
 > **Read-only by design.** The agent uses a dedicated IAM user with the AWS-managed
 > `ReadOnlyAccess` policy. It can't create, modify, or delete anything in your
 > account — it reads metrics and suggests changes that you apply yourself.
@@ -71,6 +77,8 @@ Cost Optimization Hub results ranked by monthly savings. Each card explains WHAT
 - [Feature flags](#feature-flags-env) — all `.env` variables
 - [Endpoints](#endpoints) — HTTP API reference
 - [The reasoning engine](#the-reasoning-engine) — multi-round loop, reflection, SSE events
+- [Waste detection engine](#waste-detection-engine) — 55+ checks, SQLite persistence, scheduled scans
+- [Billing insights engine](#billing-insights-engine) — 20 pre-computed checks, no LLM required
 - [The read-only setup script](#the-read-only-setup-script) — IAM provisioning + write-block verification
 - [Project structure](#project-structure)
 - [Security posture](#security-posture)
@@ -99,19 +107,27 @@ Every preset question in the sidebar has a hover tooltip explaining which tools 
 ```
 docker compose up --build    (3 services)
 
-┌─────────────────┐     ┌────────────────────────────┐     ┌──────────────────┐
-│  Frontend       │────▶│  FastAPI Backend            │────▶│  AWS APIs        │
-│  nginx (:3000)  │◀────│  (:8000)                    │◀────│  (read-only)     │
-│                 │ SSE │                             │     │                  │
-│  Chat + Dash    │     │  Reasoning Engine (4 rounds)│     │  Cost Explorer   │
-│  Infrastructure │     │  14 tool definitions        │     │  EC2/RDS/EKS/... │
-│  Optimizer      │     │  Claude Sonnet 4            │     │  Cost Opt Hub    │
-└─────────────────┘     └────────────────────────────┘     └──────────────────┘
+┌─────────────────┐     ┌──────────────────────────────────────┐     ┌──────────────────┐
+│  Frontend       │────▶│  FastAPI Backend (:8000)             │────▶│  AWS APIs        │
+│  nginx (:3000)  │◀────│                                      │◀────│  (read-only)     │
+│                 │ SSE │  Reasoning Engine (4 rounds)         │     │                  │
+│  Chat           │     │  16 tool definitions + call_aws      │     │  Cost Explorer   │
+│  Dashboard      │     │  Claude Sonnet 4 / GPT-4o            │     │  EC2/RDS/EKS/... │
+│  Findings       │     │                                      │     │  Cost Opt Hub    │
+│  Insights       │     │  WasteAnalyzer (55+ checks)          │     │  Compute Opt     │
+│  Optimizer      │     │  InsightsEngine (20 checks)          │     └──────────────────┘
+└─────────────────┘     │  FindingsStore (SQLite)              │
+                        │  Scheduler (TTL-based re-scan)       │
+                        └──────────────────────────────────────┘
 ```
 
 **Data flow for the chat:** user message → reasoning engine picks tools → boto3
 calls AWS (or returns mock) → LLM synthesizes answer → streamed back over SSE so
 the trace panel shows reasoning in real time.
+
+**Data flow for findings/insights:** scheduler triggers on startup (respecting
+`WASTE_SCAN_TTL_HOURS`) → analyzers run read-only boto3 calls → results written
+to SQLite → `/api/findings` and `/api/insights` serve cached results instantly.
 
 ## Quick start
 
@@ -173,7 +189,10 @@ identity check **fails the startup** if it can't validate live-mode credentials.
 | `USE_LOCALSTACK` | `false` | Force LocalStack demo (no real AWS) |
 | `USE_MOCK_DATA` | `false` in live, `true` in localstack | Override: return mock data from `/api/report`, `/api/infrastructure`, `/api/optimize` even in live mode |
 | `AWS_DEFAULT_REGION` | `us-east-1` | Default region for single-region infra scans |
+| `AWS_REGIONS_TO_ANALYZE` | `AWS_DEFAULT_REGION` | Comma-separated regions for waste detection scans (e.g. `us-east-1,us-east-2,eu-west-1`) |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | — | Read-only keys from `create-read-only.sh` |
+| `WASTE_SCAN_TTL_HOURS` | `12` | Hours before a new waste scan is triggered on startup. Set to `0` to always re-scan. |
+| `COST_TAG_KEYS` | `env` | Tag keys for Billing Insights cost breakdown (e.g. `env,project,team`) |
 
 When `USE_MOCK_DATA=true` the backend returns the fictional "Ribbon" data. The
 dashboard header shows a yellow **MOCK DATA** badge so users can't mistake it for
@@ -188,8 +207,17 @@ real numbers.
 | `POST` | `/api/chat` | Non-streaming chat (returns full response) |
 | `GET`  | `/api/report` | Weekly cost report (by service/account/region/env/team) |
 | `POST` | `/api/report/refresh` | Regenerate from live data |
+| `GET`  | `/api/report/trend` | 4-week cost trend series for sparklines |
+| `GET`  | `/api/report/export` | Download self-contained HTML cost report |
 | `GET`  | `/api/infrastructure?region=<name>` | EC2/RDS/EKS/... health. `region=all` scans every enabled region in parallel (~20s). Omitted → uses `AWS_DEFAULT_REGION`. |
 | `GET`  | `/api/optimize` | Recommendations from AWS Cost Optimization Hub |
+| `GET`  | `/api/findings` | Waste findings from latest scan (filter by `service`, `severity`, `category`, `min_savings`) |
+| `POST` | `/api/findings/refresh` | Trigger a new waste scan immediately |
+| `GET`  | `/api/findings/trends` | Historical scan results for trend tracking |
+| `GET`  | `/api/insights` | Pre-computed billing insights (no LLM required) |
+| `POST` | `/api/insights/refresh` | Re-run all insight checks |
+| `GET`  | `/api/cost-by-tags` | Cost breakdown by tag keys defined in `COST_TAG_KEYS` |
+| `POST` | `/api/config/mock` | Toggle `USE_MOCK_DATA` at runtime without restart |
 
 ## The reasoning engine
 
@@ -202,7 +230,7 @@ real numbers.
    - `SYSTEM_PROMPT` — role, constraints, conversational tone
    - Full conversation history (for follow-ups)
    - **14 tool definitions** — each with JSON schema and usage hints
-3. **Round 1** — the LLM calls one or more tools. Typical trajectory: `get_current_date` → `query_aws_costs` → maybe `get_cost_forecast`.
+3. **Round 1** — the LLM calls one or more tools. Typical trajectory: `get_current_date` → `query_aws_costs` → maybe `get_cost_forecast`. The `call_aws` tool lets the LLM issue any read-only AWS CLI-style command dynamically.
 4. **Reflection step** — the engine injects a short system message asking *"do you have enough data to answer? If not, what would you call next?"*. This is the hook that catches incomplete reasoning.
 5. **Rounds 2-4** — up to 3 additional tool-call rounds if the LLM decides it needs more. Hard cap at 4 total rounds to control cost.
 6. **Final synthesis** — structured markdown with **real numbers**, formatted tables, and next-step recommendations. If a tool returned no data (empty account, no RIs, etc.), the agent states that explicitly rather than hallucinating.
@@ -237,7 +265,64 @@ Most "chat with your data" demos use a single tool call and hope for the best. F
   in `AWS_DEFAULT_REGION`. Pass `?region=all` to parallel-scan every enabled
   region (18+ on typical accounts). The UI exposes a dropdown to switch.
 
-## The read-only setup script
+## Waste detection engine
+
+`backend/tools/waste_analyzers.py` implements **55+ resource checks** inspired by
+open-source cloud custodian tools. Checks are split into two categories:
+
+- **cleanup** — zombie/orphan resources that should be deleted (old snapshots,
+  unattached EBS volumes, idle load balancers, unused EIPs, empty ECR repos…)
+- **rightsize** — resources over-provisioned for their actual usage (EC2 instances,
+  RDS instances with <5% CPU, ElastiCache nodes, Lambda with excess memory…)
+
+Coverage by service:
+
+| Service | Example checks |
+|---------|----------------|
+| EC2 | Stopped >7 days, oversized (CloudWatch CPU p95 <10%), unassociated EIPs |
+| EBS | Unattached volumes, orphaned snapshots (source volume deleted), gp2 candidates |
+| RDS | Multi-AZ on non-prod, idle (<1 connection/day), old manual snapshots |
+| ELB / ALBv2 | Zero request count >14 days, no healthy targets |
+| NAT Gateway | Idle (no active connections metric), cheaper VPC endpoint alternatives |
+| ElastiCache | Low cache-hit-ratio, undersized/oversized nodes |
+| Lambda | Zero invocations >30 days, oversized memory (p95 used <20% of configured) |
+| DynamoDB | Tables with 0 reads/writes, provisioned mode with low utilization |
+| S3 | Buckets with no lifecycle rules and large size, incomplete multipart uploads |
+| CloudWatch Logs | Log groups with no retention policy set, high ingest cost |
+| ECR | Repositories with no pulls >90 days, untagged image accumulation |
+| Misc | Secrets Manager secrets unused >90 days, old ACM certs |
+
+### How it works
+
+1. On startup the `FindingsScheduler` checks SQLite for the last scan timestamp.
+2. If older than `WASTE_SCAN_TTL_HOURS` (default 12h), a background scan starts.
+3. Each analyzer calls boto3 read-only APIs (or returns mock data when `USE_MOCK_DATA=true`).
+4. `Finding` objects are written to SQLite with cost estimates, severity, and metadata.
+5. `/api/findings` queries the DB with optional filters; a 1-hour in-memory cache sits on top.
+
+Set `WASTE_SCAN_TTL_HOURS=0` to re-scan on every container restart (useful in CI/CD pipelines).
+
+## Billing insights engine
+
+`backend/tools/insights_engine.py` runs **20 deterministic billing checks** against
+live AWS APIs — no LLM invocation, no latency, no per-token cost. Results are
+returned in milliseconds from the in-memory cache.
+
+| Category | Checks |
+|----------|--------|
+| **cost** | Month-over-month anomaly, top service by spend, service concentration risk |
+| **networking** | NAT Gateway cross-AZ ratio, missing VPC endpoints, data transfer patterns |
+| **commitments** | Savings Plans coverage gap, RI utilization, on-demand vs committed ratio |
+| **compute** | Graviton migration candidates, Spot interruption-safe workloads, gp2→gp3 |
+| **storage** | S3 without intelligent-tiering, CloudWatch Logs without retention, EBS snapshot cost |
+| **database** | RDS Multi-AZ in non-prod, idle RDS instances, RDS snapshot accumulation |
+| **lambda** | Functions with deprecated runtimes, oversized memory allocations |
+
+Insights are refreshed by the `InsightsScheduler` on the same TTL cycle as findings.
+The `/api/insights` endpoint returns all checks with a severity level (`info`, `warning`,
+`critical`), estimated monthly savings, and a one-line recommendation.
+
+
 
 `create-read-only.sh` is the **safety moat**. You run it once with an admin AWS profile; it provisions everything the agent needs and proves the agent can't write:
 
@@ -267,26 +352,37 @@ finops-agent/
 ├── backend/
 │   ├── config/manager.py          — env-based config + feature flags
 │   ├── llm/                       — Anthropic / OpenAI providers
-│   ├── models/                    — Pydantic models
+│   ├── models/
+│   │   ├── core.py                — Session, Message, ToolResult
+│   │   ├── finding.py             — Finding Pydantic model (waste scan results)
+│   │   └── insight.py             — Insight Pydantic model (billing checks)
 │   ├── tools/
 │   │   ├── aws_costs.py           — 8 Cost Explorer tools
 │   │   ├── aws_resources.py       — 7 infra inspection tools
+│   │   ├── aws_api.py             — call_aws: generic read-only boto3 dispatcher
+│   │   ├── waste_analyzers.py     — 55+ waste checks across 12 services
+│   │   ├── findings_store.py      — SQLite persistence + 1h in-memory cache
+│   │   ├── findings_scheduler.py  — TTL-based background scan orchestrator
+│   │   ├── insights_engine.py     — 20 deterministic billing checks
+│   │   ├── insights_store.py      — Insights persistence + cache
+│   │   ├── insights_scheduler.py  — Insights refresh scheduler
 │   │   ├── live_resources.py      — multi-region live AWS queries
 │   │   ├── mock_data.py           — "Ribbon" fictional fintech data
 │   │   ├── knowledge.py           — KB search tool
 │   │   └── registry.py            — tool registry
 │   ├── reasoning/engine.py        — 4-round loop with reflection
-│   ├── reports/generator.py       — cost report builder
-│   └── server/main.py             — FastAPI app, SSE streaming
+│   ├── reports/
+│   │   ├── generator.py           — cost report builder (JSON)
+│   │   └── html_report.py         — self-contained HTML export
+│   └── server/main.py             — FastAPI app, SSE streaming, all endpoints
 ├── frontend/
-│   ├── index.html                 — single-page UI with 27 preset questions
-│   └── devopsarg-logo.png         — brand asset
+│   └── index.html                 — single-page UI: chat + dashboard + findings + insights
 ├── scripts/
 │   ├── seed_localstack.py         — LocalStack AWS resource seed
 │   ├── setup.py                   — knowledge base setup
 │   └── test_connection.py         — AWS + LLM connectivity test
-├── create-read-only.sh            — IAM read-only user provisioning
-├── docker-compose.yml             — 3 services (localstack, backend, frontend)
+├── create-read-only.sh            — IAM read-only user provisioning + write-block verify
+├── docker-compose.yml             — 3 services + finops-data volume for SQLite
 ├── nginx.conf                     — reverse proxy with SSE-safe buffering
 └── .env.example                   — all config documented
 ```

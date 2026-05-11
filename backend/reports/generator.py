@@ -17,16 +17,13 @@ class ReportGenerator:
         self._num_weeks = num_weeks
         self._ce_client = None
         self._report_path = Path("report_data.json")
+        self.use_mock_data = True
 
     def _is_localstack(self) -> bool:
         return bool(self._localstack and self._localstack.enabled)
 
     def _should_mock(self) -> bool:
-        import os
-        if self._is_localstack():
-            return True
-        flag = os.environ.get("USE_MOCK_DATA", "").lower()
-        return flag in ("true", "1", "yes")
+        return self.use_mock_data
 
     def _get_ce(self):
         if self._ce_client:
@@ -136,7 +133,7 @@ class ReportGenerator:
             "byService": by_service[:20],
             "byEnvironment": by_env,
             "byRegion": by_region[:20],
-            "anomalies": [],
+            "anomalies": self._fetch_anomalies(),
             "summary": {
                 "lastWeekCost": last_week_cost,
                 "previousWeekCost": prev_week_cost,
@@ -157,6 +154,44 @@ class ReportGenerator:
         self._save(report)
         logger.info(f"Live report generated: ${report['summary']['lastWeekCost']:.2f} USD last week")
         return report
+
+    def _fetch_anomalies(self) -> List[Dict]:
+        """Fetch cost anomalies from AWS Cost Anomaly Detection (last 30 days)."""
+        try:
+            ce = self._get_ce()
+            end = datetime.utcnow().date()
+            start = end - timedelta(days=30)
+            resp = ce.get_anomalies(
+                DateInterval={"StartDate": str(start), "EndDate": str(end)},
+                MaxResults=10,
+            )
+            anomalies = []
+            for a in resp.get("Anomalies", []):
+                impact = a.get("Impact", {})
+                causes = a.get("RootCauses", [{}])
+                svc    = causes[0].get("Service", "Unknown") if causes else "Unknown"
+                region = causes[0].get("Region", "") if causes else ""
+                start_date = a.get("AnomalyStartDate", "")
+                end_date   = a.get("AnomalyEndDate", "")
+                total_impact = float(impact.get("TotalImpact", 0))
+                max_impact   = float(impact.get("MaxImpact", 0))
+                anomalies.append({
+                    "id":          a.get("AnomalyId", ""),
+                    "service":     svc,
+                    "region":      region,
+                    "start_date":  start_date,
+                    "end_date":    end_date,
+                    "total_impact": round(total_impact, 2),
+                    "max_impact":   round(max_impact, 2),
+                    "score":       round(float(a.get("AnomalyScore", {}).get("MaxScore", 0)), 2),
+                    "status":      a.get("AnomalyEndDate") and "closed" or "open",
+                    "feedback":    a.get("Feedback", ""),
+                })
+            anomalies.sort(key=lambda x: -x["total_impact"])
+            return anomalies
+        except Exception as e:
+            logger.warning(f"Could not fetch anomalies: {e}")
+            return []
 
     def get_weeks(self) -> List[Dict[str, str]]:
         today = datetime.utcnow().date()
@@ -223,10 +258,170 @@ class ReportGenerator:
             total += float(period.get("Total", {}).get("UnblendedCost", {}).get("Amount", 0))
         return total
 
+    # ── Period trend (chart + service breakdown) ─────────────────────────────
+
+    PERIOD_CONFIG: Dict[str, Dict] = {
+        "3d":  {"days": 3,   "granularity": "DAILY",   "label_fmt": "%a %d"},
+        "1w":  {"days": 7,   "granularity": "DAILY",   "label_fmt": "%a %d"},
+        "1m":  {"days": 30,  "granularity": "DAILY",   "label_fmt": "%d/%m"},
+        "3m":  {"days": 90,  "granularity": "MONTHLY", "label_fmt": "%b"},
+        "1y":  {"days": 365, "granularity": "MONTHLY", "label_fmt": "%b %y"},
+    }
+
+    def get_trend_data(self, period: str = "1m") -> Dict[str, Any]:
+        if self._should_mock():
+            return self._mock_trend_data(period)
+        return self._live_trend_data(period)
+
+    def _live_trend_data(self, period: str) -> Dict[str, Any]:
+        cfg = self.PERIOD_CONFIG.get(period, self.PERIOD_CONFIG["1m"])
+        end = datetime.utcnow().date()
+        start = end - timedelta(days=cfg["days"])
+        gran = cfg["granularity"]
+        fmt = cfg["label_fmt"]
+        ce = self._get_ce()
+
+        resp = ce.get_cost_and_usage(
+            TimePeriod={"Start": start.isoformat(), "End": end.isoformat()},
+            Granularity=gran,
+            Metrics=["UnblendedCost"],
+            GroupBy=[{"Type": "DIMENSION", "Key": "SERVICE"}],
+        )
+
+        trend_map: Dict[str, float] = {}
+        svc_totals: Dict[str, float] = {}
+        svc_timeline: Dict[str, List[Dict]] = {}  # service → [{label, cost}, ...]
+        labels: List[str] = []
+
+        for row in resp.get("ResultsByTime", []):
+            dt = datetime.strptime(row["TimePeriod"]["Start"], "%Y-%m-%d")
+            label = dt.strftime(fmt)
+            if label not in labels:
+                labels.append(label)
+            day_total = 0.0
+            for group in row.get("Groups", []):
+                svc = group["Keys"][0]
+                cost = float(group["Metrics"]["UnblendedCost"]["Amount"])
+                svc_totals[svc] = svc_totals.get(svc, 0) + cost
+                day_total += cost
+                if svc not in svc_timeline:
+                    svc_timeline[svc] = []
+                svc_timeline[svc].append({"label": label, "cost": round(cost, 2)})
+            trend_map[label] = trend_map.get(label, 0) + day_total
+
+        trend = [{"label": k, "cost": round(v, 2)} for k, v in trend_map.items()]
+        total = sum(svc_totals.values())
+        days = cfg["days"]
+        by_service = sorted(
+            [{
+                "name": k,
+                "cost": round(v, 2),
+                "pct": round(v / total * 100, 1) if total else 0,
+                "daily_avg": round(v / days, 2),
+                "timeline": svc_timeline.get(k, []),
+            }
+             for k, v in svc_totals.items() if v > 0.01],
+            key=lambda x: -x["cost"],
+        )[:15]
+
+        return {
+            "period": period,
+            "trend": trend,
+            "labels": labels,
+            "byService": by_service,
+            "total": round(total, 2),
+            "daily_avg": round(total / days, 2),
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+        }
+
+    def _mock_trend_data(self, period: str) -> Dict[str, Any]:
+        import random
+        cfg = self.PERIOD_CONFIG.get(period, self.PERIOD_CONFIG["1m"])
+        end = datetime.utcnow().date()
+        start = end - timedelta(days=cfg["days"])
+        gran = cfg["granularity"]
+        fmt = cfg["label_fmt"]
+        rng = random.Random(42)
+        base = 850.0
+
+        SVC_BASES = [
+            ("Amazon EC2",         0.35),
+            ("Amazon RDS",         0.20),
+            ("Amazon EKS",         0.15),
+            ("Amazon S3",          0.10),
+            ("AWS Lambda",         0.08),
+            ("Amazon CloudFront",  0.05),
+            ("Amazon ElastiCache", 0.04),
+            ("Amazon CloudWatch",  0.03),
+        ]
+
+        # Build day-by-day labels and per-service timelines
+        labels = []
+        svc_timeline: Dict[str, List[Dict]] = {n: [] for n, _ in SVC_BASES}
+
+        if gran == "DAILY":
+            d = start
+            while d <= end:
+                lbl = d.strftime(fmt)
+                labels.append(lbl)
+                for svc, frac in SVC_BASES:
+                    svc_timeline[svc].append({
+                        "label": lbl,
+                        "cost": round(base * frac * rng.uniform(0.75, 1.25), 2),
+                    })
+                d += timedelta(days=1)
+        else:
+            from datetime import date as _date
+            d = _date(start.year, start.month, 1)
+            while d <= end:
+                lbl = d.strftime(fmt)
+                labels.append(lbl)
+                for svc, frac in SVC_BASES:
+                    svc_timeline[svc].append({
+                        "label": lbl,
+                        "cost": round(base * 30 * frac * rng.uniform(0.9, 1.1), 2),
+                    })
+                d = _date(d.year + (d.month // 12), (d.month % 12) + 1, 1)
+
+        trend = []
+        for i, lbl in enumerate(labels):
+            total_day = sum(svc_timeline[n][i]["cost"] for n, _ in SVC_BASES if i < len(svc_timeline[n]))
+            trend.append({"label": lbl, "cost": round(total_day, 2)})
+
+        days = cfg["days"]
+        by_service = []
+        for svc, frac in SVC_BASES:
+            cost = sum(p["cost"] for p in svc_timeline[svc])
+            by_service.append({
+                "name": svc,
+                "cost": round(cost, 2),
+                "pct": round(frac * 100, 1),
+                "daily_avg": round(cost / max(days, 1), 2),
+                "timeline": svc_timeline[svc],
+            })
+
+        total = sum(s["cost"] for s in by_service)
+        return {
+            "period": period,
+            "trend": trend,
+            "labels": labels,
+            "byService": by_service,
+            "total": round(total, 2),
+            "daily_avg": round(total / max(days, 1), 2),
+            "start": start.isoformat(),
+            "end": end.isoformat(),
+        }
+
     def _save(self, report: Dict[str, Any]):
         with open(self._report_path, "w") as f:
             json.dump(report, f, indent=2, default=str)
         logger.info(f"Report saved to {self._report_path}")
+
+    def invalidate_cache(self):
+        if self._report_path.exists():
+            self._report_path.unlink()
+            logger.info("Report cache invalidated")
 
     def load_cached(self) -> Optional[Dict[str, Any]]:
         if not self._report_path.exists():
@@ -234,9 +429,11 @@ class ReportGenerator:
         try:
             with open(self._report_path) as f:
                 data = json.load(f)
-            # In mock mode (localstack OR USE_MOCK_DATA=true), always regenerate
-            # so dates stay fresh relative to `today` — mock data is instant anyway.
+            # Always regenerate in mock mode (dates stay fresh) 
             if self._should_mock():
+                return None
+            # Don't serve a mock cache when we want live data
+            if not self._should_mock() and data.get("mode") == "mock":
                 return None
             return data
         except Exception as e:

@@ -170,15 +170,83 @@ class AWSResourceTools(BaseTool):
                 error=str(e), execution_time=round(time.time() - start, 2),
             )
 
+    def _is_live(self) -> bool:
+        return not self._ls.enabled
+
+    def _cw_metric(self, namespace: str, metric: str, dimensions: List[Dict],
+                   days: int = 7, stat: str = "Average") -> float:
+        """CloudWatch average over N days. Returns 0.0 on error."""
+        try:
+            from datetime import datetime, timedelta
+            cw = self._client("cloudwatch")
+            end = datetime.utcnow()
+            start = end - timedelta(days=days)
+            resp = cw.get_metric_statistics(
+                Namespace=namespace, MetricName=metric, Dimensions=dimensions,
+                StartTime=start, EndTime=end, Period=days * 86400,
+                Statistics=[stat],
+            )
+            pts = resp.get("Datapoints", [])
+            if not pts:
+                return 0.0
+            return round(pts[0].get(stat, 0.0), 2)
+        except Exception:
+            return 0.0
+
     # ── Handlers ─────────────────────────────────────────────────────────────
 
     def _get_infra_health(self, params: Dict) -> Dict:
+        if self._is_live():
+            try:
+                rds_data = self._get_rds({})
+                ec2_data = self._list_ec2({})
+                ec_data  = self._get_elasticache({})
+                s3_data  = self._get_s3({})
+                return {
+                    "source": "live",
+                    "rds":          {"count": rds_data.get("count", 0), "instances": rds_data.get("instances", [])},
+                    "ec2":          {"count": ec2_data.get("count", 0), "running": ec2_data.get("running", 0)},
+                    "elasticache":  {"count": len(ec_data.get("clusters", []))},
+                    "s3":           {"count": ec2_data.get("count", 0), "buckets": s3_data.get("count", 0)},
+                    "total_monthly_cost_estimate": (
+                        rds_data.get("total_monthly_cost", 0) + ec_data.get("total_monthly_cost", 0)
+                    ),
+                }
+            except Exception as e:
+                logger.warning(f"Live infra health failed: {e}")
         from backend.tools.mock_data import generate_infrastructure
         return generate_infrastructure()
 
     def _list_ec2(self, params: Dict) -> Dict:
         env_filter = params.get("environment")
         state_filter = params.get("state", "all")
+
+        if self._is_live():
+            try:
+                from backend.tools.live_resources import (
+                    _fetch_ec2_region, _aggregate_ec2, _run_per_region, _session as _lr_session,
+                )
+                sess = _lr_session(self._aws)
+                regions = self._aws.scan_regions or [self._aws.region]
+                per_region = _run_per_region(sess, regions, _fetch_ec2_region, "ec2")
+                agg = _aggregate_ec2(per_region)
+                all_instances = []
+                for rd in per_region:
+                    all_instances.extend(rd.get("instances", []))
+                if env_filter:
+                    all_instances = [i for i in all_instances if i.get("environment") == env_filter]
+                if state_filter != "all":
+                    all_instances = [i for i in all_instances if i.get("state") == state_filter]
+                running = sum(1 for i in all_instances if i.get("state") == "running")
+                return {
+                    **agg,
+                    "instances": all_instances,
+                    "count": len(all_instances),
+                    "running": running,
+                    "source": "live-aws",
+                }
+            except Exception as e:
+                logger.warning(f"Live EC2 query failed, falling back to mock: {e}")
 
         if self._ls.enabled:
             # Query LocalStack for seeded instances

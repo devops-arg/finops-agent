@@ -35,6 +35,12 @@ knowledge_index.json
 data/qdrant/
 data/
 
+# Generated cleanup artifacts — may contain real AWS account IDs and resource names
+cleanup.sh
+cleanup-plan.md
+findings.db
+*.db
+
 # IDE / OS
 .idea/
 .vscode/

@@ -657,6 +657,14 @@ class AWSCostTools(BaseTool):
                     "period": {"start": start_date, "end": end_date},
                 }
             except Exception as e:
+                err_str = str(e)
+                if "DataUnavailableException" in err_str or "DataUnavailable" in err_str:
+                    return {
+                        "type": "savings_plans",
+                        "status": "no_savings_plans",
+                        "message": "This account has no active Savings Plans. No utilization data available.",
+                        "recommendation": "Consider purchasing Compute Savings Plans to save 20-66% on EC2, Lambda, and Fargate. Analyze steady-state compute with: aws ce get-savings-plans-purchase-recommendation",
+                    }
                 return {"error": f"Could not retrieve Savings Plans data: {e}", "type": "savings_plans"}
         else:
             try:
