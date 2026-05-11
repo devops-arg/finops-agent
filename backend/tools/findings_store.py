@@ -40,6 +40,7 @@ class FindingsStore:
         self._scanning: bool = False
         self._scan_progress: Dict = {}
         self._current_scan_id: Optional[str] = None
+        self._current_account_id: str = "unknown"
         self._init_db()
 
     def set_scanning(self, value: bool):
@@ -80,7 +81,8 @@ class FindingsStore:
                         findings_count INTEGER DEFAULT 0,
                         total_savings_usd REAL DEFAULT 0,
                         total_waste_usd REAL DEFAULT 0,
-                        mode TEXT DEFAULT 'mock'
+                        mode TEXT DEFAULT 'mock',
+                        account_id TEXT DEFAULT 'unknown'
                     );
 
                     CREATE TABLE IF NOT EXISTS findings (
@@ -109,7 +111,14 @@ class FindingsStore:
                     CREATE INDEX IF NOT EXISTS idx_findings_severity ON findings(severity);
                     CREATE INDEX IF NOT EXISTS idx_findings_category ON findings(category);
                     CREATE INDEX IF NOT EXISTS idx_scan_started ON scan_runs(started_at);
+                    CREATE INDEX IF NOT EXISTS idx_scan_account ON scan_runs(account_id);
+                    CREATE INDEX IF NOT EXISTS idx_findings_account ON findings(account_id);
                 """)
+                # Auto-migrate: add account_id to scan_runs if missing (existing DBs)
+                existing_cols = {row[1] for row in conn.execute("PRAGMA table_info(scan_runs)").fetchall()}
+                if "account_id" not in existing_cols:
+                    conn.execute("ALTER TABLE scan_runs ADD COLUMN account_id TEXT DEFAULT 'unknown'")
+                    logger.info("Migrated scan_runs: added account_id column")
             logger.info(f"FindingsStore initialized at {self._db_path}")
         except Exception as e:
             logger.warning(f"FindingsStore DB init failed (will use in-memory only): {e}")
@@ -122,9 +131,10 @@ class FindingsStore:
 
     # ── Write ─────────────────────────────────────────────────────────────────
 
-    def open_scan(self, mode: str = "live") -> str:
+    def open_scan(self, mode: str = "live", account_id: str = "unknown") -> str:
         """Create a new scan_run record and return its ID.
 
+        account_id: real AWS account number in live mode, '666666666666' in mock mode.
         Call this at scan start so findings appear incrementally via append_batch().
         """
         scan_id = str(uuid.uuid4())
@@ -139,7 +149,9 @@ class FindingsStore:
                 "total_savings_usd": 0.0,
                 "total_waste_usd": 0.0,
                 "mode": mode,
+                "account_id": account_id,
             }
+            self._current_account_id = account_id
             # Reset cache so partial results come from DB
             self._cache = []
             self._cache_at = datetime.utcnow()
@@ -149,7 +161,7 @@ class FindingsStore:
                 with self._connect() as conn:
                     conn.execute(
                         "INSERT INTO scan_runs VALUES (:id,:started_at,:completed_at,"
-                        ":findings_count,:total_savings_usd,:total_waste_usd,:mode)",
+                        ":findings_count,:total_savings_usd,:total_waste_usd,:mode,:account_id)",
                         self._last_scan_run,
                     )
             except Exception as e:
@@ -162,13 +174,18 @@ class FindingsStore:
 
         Immediately invalidates the in-memory cache so the next API poll
         picks up the new findings (incremental display while scanning).
+        Each finding's account_id is overridden with the scan's account_id so
+        mock findings get '666666666666' and live findings get the real account.
         """
         if not findings:
             return
+        with self._lock:
+            scan_account = self._current_account_id
         rows = [
             {
                 **f.to_dict(),
                 "scan_run_id": scan_id,
+                "account_id": scan_account,
                 "tags": json.dumps(f.tags),
                 "metadata": json.dumps(f.metadata),
             }
@@ -236,6 +253,7 @@ class FindingsStore:
         severity: Optional[str] = None,
         min_savings: float = 0,
         region: Optional[str] = None,
+        account_id: Optional[str] = None,
         limit: int = 500,
     ) -> List[Dict[str, Any]]:
         """Return findings from hot cache (or SQLite if cache expired)."""
@@ -253,6 +271,8 @@ class FindingsStore:
             results = [r for r in results if r.get("estimated_savings_usd", 0) >= min_savings]
         if region:
             results = [r for r in results if r.get("region", "") == region]
+        if account_id:
+            results = [r for r in results if r.get("account_id", "") == account_id]
 
         results.sort(key=lambda x: x.get("estimated_savings_usd", 0), reverse=True)
         return results[:limit]
@@ -294,10 +314,11 @@ class FindingsStore:
             "by_service": by_service,
             "last_scan_at": scan.get("completed_at"),
             "last_scan_mode": scan.get("mode", "unknown"),
+            "account_id": scan.get("account_id", "unknown"),
         }
 
     def last_completed_scan_age_hours(self) -> Optional[float]:
-        """Return how many hours ago the last completed scan finished, or None if never."""
+        """Return how many hours ago the last completed scan finished (any account), or None if never."""
         try:
             with self._connect() as conn:
                 row = conn.execute(
@@ -308,6 +329,39 @@ class FindingsStore:
                 completed = datetime.fromisoformat(row["completed_at"])
                 age = (datetime.utcnow() - completed).total_seconds() / 3600
                 return round(age, 2)
+        except Exception:
+            return None
+
+    def last_completed_scan_age_hours_for_account(self, account_id: str) -> Optional[float]:
+        """Return hours since the last completed scan for a specific account, or None if never scanned."""
+        if not self._db_path:
+            return None
+        try:
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT completed_at FROM scan_runs "
+                    "WHERE completed_at IS NOT NULL AND account_id = ? "
+                    "ORDER BY completed_at DESC LIMIT 1",
+                    (account_id,),
+                ).fetchone()
+                if not row or not row["completed_at"]:
+                    return None
+                completed = datetime.fromisoformat(row["completed_at"])
+                age = (datetime.utcnow() - completed).total_seconds() / 3600
+                return round(age, 2)
+        except Exception:
+            return None
+
+    def get_account_id_for_latest_scan(self) -> Optional[str]:
+        """Return the account_id of the most recent completed scan."""
+        if not self._db_path:
+            return None
+        try:
+            with self._connect() as conn:
+                row = conn.execute(
+                    "SELECT account_id FROM scan_runs ORDER BY started_at DESC LIMIT 1"
+                ).fetchone()
+                return row["account_id"] if row else None
         except Exception:
             return None
 
@@ -359,7 +413,7 @@ class FindingsStore:
         try:
             with self._connect() as conn:
                 latest_scan = conn.execute(
-                    "SELECT id FROM scan_runs ORDER BY started_at DESC LIMIT 1"
+                    "SELECT id, account_id FROM scan_runs ORDER BY started_at DESC LIMIT 1"
                 ).fetchone()
                 if not latest_scan:
                     return []

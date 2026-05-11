@@ -38,7 +38,7 @@ class Finding:
     monthly_cost_usd: float
     estimated_savings_usd: float
     region: str
-    account_id: str = "123456789012"
+    account_id: str = "666666666666"
     idle_days: Optional[int] = None
     tags: Dict[str, str] = field(default_factory=dict)
     metadata: Dict[str, Any] = field(default_factory=dict)

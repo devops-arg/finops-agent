@@ -292,6 +292,8 @@ async def health():
         "findings_count": findings_summary.get("findings_count", 0),
         "total_savings_identified": findings_summary.get("total_savings_usd", 0),
         "last_scan_at": findings_summary.get("last_scan_at"),
+        "last_scan_mode": findings_summary.get("last_scan_mode", "unknown"),
+        "account_id": findings_summary.get("account_id", "unknown"),
         "scanning": findings_store.is_scanning() if findings_store else False,
     }
 
@@ -334,6 +336,7 @@ async def get_findings(
         "total_waste_usd": round(sum(f.get("monthly_cost_usd", 0) for f in findings), 2),
         "last_scan_at": summary.get("last_scan_at"),
         "last_scan_mode": summary.get("last_scan_mode"),
+        "account_id": summary.get("account_id", "unknown"),
         "scanning": findings_store.is_scanning(),
         "scan_progress": findings_store.get_progress() if findings_store.is_scanning() else {},
         "scan_stale": scan_stale,

@@ -573,6 +573,7 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
       <span class="data-toggle__label" id="toggleLabelRight">LIVE</span>
     </div>
     <div id="mode-badge" class="mode-badge mode-loading">connecting</div>
+    <span id="account-id-pill" style="display:none;font-size:11px;font-family:monospace;padding:3px 8px;border-radius:4px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);cursor:default"></span>
     <a href="https://www.devopsarg.com/en/blog/" class="topbar-btn" target="_blank">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 20H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h10l6 6v8a2 2 0 0 1-2 2z"/><polyline points="14 2 14 8 20 8"/></svg>
       <span>Blog</span>
@@ -1972,11 +1973,19 @@ function updateWasteKPIs(data) {
     setText('wsticky-rightsize', s.rightsize_count || 0);
     setText('wsticky-savings', '$' + fmtNum(s.total_savings_usd || 0));
   }
-  // Meta
+  // Meta — account badge + scan timestamp
   const meta = document.getElementById('waste-meta');
-  if (meta) meta.textContent = s.last_scan_at
-    ? `Último scan: ${s.last_scan_at.substring(0,16).replace('T',' ')} UTC (${s.last_scan_mode || 'mock'})`
-    : 'Cargando...';
+  if (meta) {
+    const acct = s.account_id || 'unknown';
+    const isMock = acct === '666666666666';
+    const acctLabel = isMock
+      ? `<span style="color:#f59e0b;font-weight:600" title="Mock account — no real AWS data">⚠ Mock (${acct})</span>`
+      : `<span style="color:#22c55e;font-weight:600" title="Real AWS account">🔒 ${acct}</span>`;
+    const scanTime = s.last_scan_at
+      ? `${s.last_scan_at.substring(0,16).replace('T',' ')} UTC`
+      : '—';
+    meta.innerHTML = `${acctLabel} &nbsp;·&nbsp; Último scan: ${scanTime}`;
+  }
 }
 
 function updateWasteNavBadge(data) {
@@ -3901,6 +3910,16 @@ function updateModeBadge(health) {
   }
   _currentMockState = health.use_mock_data;
   syncToggleUI(_currentMockState);
+
+  // Account pill
+  const acctEl = document.getElementById('account-id-pill');
+  if (acctEl && health.account_id && health.account_id !== 'unknown') {
+    const isMock = health.account_id === '666666666666';
+    acctEl.textContent = isMock ? `⚠ ${health.account_id}` : `🔒 ${health.account_id}`;
+    acctEl.title = isMock ? 'Mock account — demo data' : `AWS Account ${health.account_id}`;
+    acctEl.style.color = isMock ? '#f59e0b' : '#22c55e';
+    acctEl.style.display = 'inline-block';
+  }
 
   if (health.use_mock_data) {
     el.className = 'mode-badge mode-localstack';
