@@ -47,7 +47,7 @@ Landing page of the dashboard tab — last-7-days spend, monthly projection, sav
 </p>
 
 ### 4. Services breakdown
-Per-service grid view — every active AWS service with last-week / this-week / monthly projection, and a mini sparkline for the 4-week trend. Clicking any service drills into that service's cost detail on the chat tab.
+Per-service grid view — every active AWS service with last-week / this-week / monthly projection, and a mini sparkline for the 4-week trend. Each card has an **"Ask AI →"** button that opens the chat tab with a pre-filled, service-specific deep-dive prompt: it injects real cost numbers, week-over-week trend direction, and any pre-detected waste scanner findings for that service into the question, so the agent starts with full context instead of having to re-fetch it.
 
 <p align="center">
   <img src="docs/screenshots/dashboard-services.webp" alt="Services breakdown grid showing EC2, RDS, ElastiCache, OpenSearch, S3, Data Transfer, EKS, CloudWatch, MSK, Lambda, Route 53, Secrets Manager, WAF with weekly costs and trend sparklines" width="900" />
@@ -102,32 +102,48 @@ The sidebar ships with **27 high-value FinOps questions across 9 categories**, a
 
 Every preset question in the sidebar has a hover tooltip explaining which tools it triggers — a nice teaching moment for anyone new to FinOps.
 
+The **Services tab** adds a second entry point: each service card has an **"Ask AI →"** button that fires a service-specific prompt pre-loaded with real cost data (weekly breakdown, month-over-month trend, monthly projection) and any waste scanner findings detected for that service. The prompt varies by service type — EC2 asks about instance families and purchase types, RDS about connection counts and Multi-AZ, S3 about lifecycle rules and multipart uploads, NAT Gateway about cross-AZ traffic, etc.
+
 ## Architecture
 
+```mermaid
+graph LR
+    subgraph Frontend["🖥 Frontend — nginx :3000"]
+        UI["Chat · Dashboard\nFindings · Insights\nOptimizer · Services"]
+    end
+
+    subgraph Backend["⚙️ FastAPI Backend — :8000"]
+        RE["Reasoning Engine\n4 rounds + reflection"]
+        TOOLS["18 Tools\ncall_aws · Cost Explorer\nEC2/RDS/EKS · Optimizer"]
+        WA["WasteAnalyzer\n55+ checks · 12 services"]
+        IE["InsightsEngine\n20 deterministic checks"]
+        FS["FindingsStore\nSQLite · per-account TTL"]
+        SCH["Scheduler\nSTS → account_id\nskip if already scanned"]
+        RE --- TOOLS
+        WA --- FS
+        SCH --> WA
+        SCH --> IE
+    end
+
+    subgraph AWS["☁️ AWS (read-only)"]
+        CE["Cost Explorer"]
+        INFRA["EC2 · RDS · EKS\nElastiCache · S3"]
+        OPT["Cost Opt Hub\nCompute Optimizer"]
+        STS["STS\nGetCallerIdentity"]
+    end
+
+    subgraph Demo["🧪 LocalStack :4566 (demo)"]
+        LS["S3 · EC2 · RDS\nEKS · ElastiCache"]
+    end
+
+    UI -->|"HTTP + SSE"| Backend
+    Backend -->|"boto3 · read-only"| AWS
+    Backend -.->|"demo mode"| Demo
 ```
-docker compose up --build    (3 services)
 
-┌─────────────────┐     ┌──────────────────────────────────────┐     ┌──────────────────┐
-│  Frontend       │────▶│  FastAPI Backend (:8000)             │────▶│  AWS APIs        │
-│  nginx (:3000)  │◀────│                                      │◀────│  (read-only)     │
-│                 │ SSE │  Reasoning Engine (4 rounds)         │     │                  │
-│  Chat           │     │  16 tool definitions + call_aws      │     │  Cost Explorer   │
-│  Dashboard      │     │  Claude Sonnet 4 / GPT-4o            │     │  EC2/RDS/EKS/... │
-│  Findings       │     │                                      │     │  Cost Opt Hub    │
-│  Insights       │     │  WasteAnalyzer (55+ checks)          │     │  Compute Opt     │
-│  Optimizer      │     │  InsightsEngine (20 checks)          │     └──────────────────┘
-└─────────────────┘     │  FindingsStore (SQLite)              │
-                        │  Scheduler (TTL-based re-scan)       │
-                        └──────────────────────────────────────┘
-```
+**Data flow — chat:** user message → Reasoning Engine selects tools → boto3 calls AWS → LLM synthesizes answer → streamed back over SSE with full reasoning trace.
 
-**Data flow for the chat:** user message → reasoning engine picks tools → boto3
-calls AWS (or returns mock) → LLM synthesizes answer → streamed back over SSE so
-the trace panel shows reasoning in real time.
-
-**Data flow for findings/insights:** scheduler triggers on startup (respecting
-`WASTE_SCAN_TTL_HOURS`) → analyzers run read-only boto3 calls → results written
-to SQLite → `/api/findings` and `/api/insights` serve cached results instantly.
+**Data flow — findings/insights:** Scheduler resolves AWS account via STS → checks SQLite for existing scan for that account (respects `WASTE_SCAN_TTL_HOURS`) → if none found, runs 55+ analyzers → tags every finding with `account_id` → writes to SQLite → `/api/findings` serves cached results instantly. Mock mode uses sentinel `666666666666` so demo data never pollutes a real account's history.
 
 ## Quick start
 
@@ -191,18 +207,19 @@ identity check **fails the startup** if it can't validate live-mode credentials.
 | `AWS_DEFAULT_REGION` | `us-east-1` | Default region for single-region infra scans |
 | `AWS_REGIONS_TO_ANALYZE` | `AWS_DEFAULT_REGION` | Comma-separated regions for waste detection scans (e.g. `us-east-1,us-east-2,eu-west-1`) |
 | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | — | Read-only keys from `create-read-only.sh` |
-| `WASTE_SCAN_TTL_HOURS` | `12` | Hours before a new waste scan is triggered on startup. Set to `0` to always re-scan. |
+| `WASTE_SCAN_TTL_HOURS` | `72` | Hours before a new waste scan is considered stale. On container restart, the scheduler checks if the **current AWS account** already has a completed scan within this window; if yes it skips the scan automatically. Set to `0` to always re-scan on startup. |
 | `COST_TAG_KEYS` | `env` | Tag keys for Billing Insights cost breakdown (e.g. `env,project,team`) |
 
 When `USE_MOCK_DATA=true` the backend returns the fictional "Ribbon" data. The
-dashboard header shows a yellow **MOCK DATA** badge so users can't mistake it for
-real numbers.
+dashboard header shows a yellow **MOCK DATA** badge and a `⚠ 666666666666` account
+pill so users can't mistake it for real numbers. In live mode the pill shows
+`🔒 <real-account-id>` in green — visible in both the topbar and the Waste tab.
 
 ## Endpoints
 
 | Method | Path | Description |
 |--------|------|-------------|
-| `GET`  | `/api/health` | Status + mode + USE_MOCK_DATA flag |
+| `GET`  | `/api/health` | Status, mode, `account_id` of the latest scan, findings count, and scanning flag |
 | `POST` | `/api/chat/stream` | SSE chat with live reasoning trace |
 | `POST` | `/api/chat` | Non-streaming chat (returns full response) |
 | `GET`  | `/api/report` | Weekly cost report (by service/account/region/env/team) |
@@ -211,7 +228,7 @@ real numbers.
 | `GET`  | `/api/report/export` | Download self-contained HTML cost report |
 | `GET`  | `/api/infrastructure?region=<name>` | EC2/RDS/EKS/... health. `region=all` scans every enabled region in parallel (~20s). Omitted → uses `AWS_DEFAULT_REGION`. |
 | `GET`  | `/api/optimize` | Recommendations from AWS Cost Optimization Hub |
-| `GET`  | `/api/findings` | Waste findings from latest scan (filter by `service`, `severity`, `category`, `min_savings`) |
+| `GET`  | `/api/findings` | Waste findings from the latest scan for the current account. Filters: `service`, `severity`, `category`, `min_savings`, `region`, `account_id` |
 | `POST` | `/api/findings/refresh` | Trigger a new waste scan immediately |
 | `GET`  | `/api/findings/trends` | Historical scan results for trend tracking |
 | `GET`  | `/api/insights` | Pre-computed billing insights (no LLM required) |
@@ -225,15 +242,41 @@ real numbers.
 
 ### Flow
 
+```mermaid
+sequenceDiagram
+    participant U as User
+    participant FE as Frontend (SSE)
+    participant RE as Reasoning Engine
+    participant LLM as Claude / GPT
+    participant AWS as AWS APIs
+
+    U->>FE: question
+    FE->>RE: POST /api/chat/stream
+    RE->>LLM: system prompt + history + 18 tool defs
+    LLM-->>FE: event: thinking
+    LLM->>RE: tool_call: get_current_date
+    RE->>AWS: boto3
+    AWS-->>RE: result
+    RE-->>FE: event: tool_result
+    LLM->>RE: tool_call: query_aws_costs
+    RE->>AWS: Cost Explorer
+    AWS-->>RE: cost data
+    RE-->>FE: event: tool_result
+    RE->>LLM: reflection — "enough data?"
+    LLM->>RE: tool_call: get_rightsizing_recommendations
+    RE->>AWS: boto3
+    AWS-->>RE: result
+    RE-->>FE: event: tool_result
+    LLM-->>FE: event: answer (streamed tokens)
+    RE-->>FE: event: done
+```
+
 1. **User query arrives** over `/api/chat/stream`.
-2. LLM (Claude Sonnet 4 by default) sees:
-   - `SYSTEM_PROMPT` — role, constraints, conversational tone
-   - Full conversation history (for follow-ups)
-   - **14 tool definitions** — each with JSON schema and usage hints
-3. **Round 1** — the LLM calls one or more tools. Typical trajectory: `get_current_date` → `query_aws_costs` → maybe `get_cost_forecast`. The `call_aws` tool lets the LLM issue any read-only AWS CLI-style command dynamically.
-4. **Reflection step** — the engine injects a short system message asking *"do you have enough data to answer? If not, what would you call next?"*. This is the hook that catches incomplete reasoning.
-5. **Rounds 2-4** — up to 3 additional tool-call rounds if the LLM decides it needs more. Hard cap at 4 total rounds to control cost.
-6. **Final synthesis** — structured markdown with **real numbers**, formatted tables, and next-step recommendations. If a tool returned no data (empty account, no RIs, etc.), the agent states that explicitly rather than hallucinating.
+2. LLM (Claude Sonnet 4 by default) sees `SYSTEM_PROMPT` + full conversation history + 18 tool definitions.
+3. **Round 1** — LLM calls tools. Typical trajectory: `get_current_date` → `query_aws_costs` → maybe `get_cost_forecast`. `call_aws` lets the LLM issue any read-only boto3 command dynamically.
+4. **Reflection step** — engine injects *"do you have enough data? If not, what would you call next?"*.
+5. **Rounds 2-4** — up to 3 additional tool-call rounds. Hard cap at 4 to control cost.
+6. **Final synthesis** — structured markdown with real numbers. If a tool returned no data the agent states that explicitly rather than hallucinating.
 
 <p align="center">
   <img src="docs/screenshots/reasoning-trace.webp" alt="Reasoning trace panel showing round-by-round tool calls — Round 1 get_current_date, Round 2 query_aws_costs, Round 3 ..." width="420" />
@@ -283,7 +326,7 @@ Coverage by service:
 | EBS | Unattached volumes, orphaned snapshots (source volume deleted), gp2 candidates |
 | RDS | Multi-AZ on non-prod, idle (<1 connection/day), old manual snapshots |
 | ELB / ALBv2 | Zero request count >14 days, no healthy targets |
-| NAT Gateway | Idle (no active connections metric), cheaper VPC endpoint alternatives |
+| NAT Gateway | **Idle** (0 bytes for 7+ days → `cleanup/critical`, full cost savings); **Low traffic** (<1 GB/day → `rightsize/warning`, VPC endpoint opportunity) |
 | ElastiCache | Low cache-hit-ratio, undersized/oversized nodes |
 | Lambda | Zero invocations >30 days, oversized memory (p95 used <20% of configured) |
 | DynamoDB | Tables with 0 reads/writes, provisioned mode with low utilization |
@@ -294,11 +337,25 @@ Coverage by service:
 
 ### How it works
 
-1. On startup the `FindingsScheduler` checks SQLite for the last scan timestamp.
-2. If older than `WASTE_SCAN_TTL_HOURS` (default 12h), a background scan starts.
-3. Each analyzer calls boto3 read-only APIs (or returns mock data when `USE_MOCK_DATA=true`).
-4. `Finding` objects are written to SQLite with cost estimates, severity, and metadata.
-5. `/api/findings` queries the DB with optional filters; a 1-hour in-memory cache sits on top.
+```mermaid
+flowchart TD
+    START([Container startup]) --> STS["STS GetCallerIdentity\n→ account_id\n(or 666666666666 in mock)"]
+    STS --> CHECK{Completed scan\nfor this account\nwithin TTL?}
+    CHECK -->|Yes — skip| SERVE
+    CHECK -->|No — run| SCAN["Run 55+ analyzers\nboto3 read-only calls\nper region"]
+    SCAN --> TAG["Tag every finding\nwith account_id"]
+    TAG --> DB[(SQLite\nfindings.db\nscan_runs)]
+    DB --> SERVE["Serve via /api/findings\n1h in-memory cache"]
+    SERVE --> UI["Waste tab\nCleanup · Rightsize\nFilters · Ask AI"]
+    UI -->|"POST /api/findings/refresh"| SCAN
+```
+
+1. Resolves AWS account via `STS GetCallerIdentity` (live) or uses sentinel `666666666666` (mock).
+2. Checks SQLite for a completed scan **for that account** within `WASTE_SCAN_TTL_HOURS` (default 72h). If found → skips. If not → runs automatically.
+3. Every finding is tagged with `account_id` — mock and live data never mix in the same DB.
+4. `scan_runs` stores `account_id`, timestamps, and aggregated savings for correct TTL checks across restarts.
+5. `/api/findings` returns findings from the latest scan, with optional filters (`service`, `severity`, `category`, `region`, `account_id`); 1h in-memory cache on top.
+6. Users trigger a manual rescan via the **Refresh Scan** button in the UI or `POST /api/findings/refresh`.
 
 Set `WASTE_SCAN_TTL_HOURS=0` to re-scan on every container restart (useful in CI/CD pipelines).
 

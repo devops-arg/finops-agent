@@ -1925,18 +1925,28 @@ class NATLowTrafficAnalyzer(BaseAnalyzer):
             if gb_per_day >= 1:
                 continue
             cost = round(NAT_HOUR * 730, 2)
+            # Zero traffic for 7 days → cleanup candidate (delete it); low traffic → rightsize
+            is_dead = gb_per_day == 0
+            category = CATEGORY_CLEANUP if is_dead else CATEGORY_RIGHTSIZE
+            severity = SEVERITY_CRITICAL if is_dead else SEVERITY_WARNING
+            savings = cost if is_dead else round(cost * 0.6, 2)
+            title = (f"NAT Gateway idle — 0 traffic for 7+ days" if is_dead
+                     else f"NAT Gateway low traffic — {gb_per_day:.2f}GB/day avg")
+            description = (f"NAT {nat_id} has had zero traffic for 7+ days. ${cost}/mo wasted. Safe to delete."
+                           if is_dead
+                           else f"NAT {nat_id} processing <1GB/day. ${cost}/mo base cost. Consider VPC Endpoints.")
             findings.append(Finding(
                 resource_id=nat_id,
                 resource_type="nat_gateway",
                 service=self.service,
-                category=self.category,
-                title=f"NAT Gateway low traffic — {gb_per_day:.2f}GB/day avg",
-                description=f"NAT {nat_id} processing <1GB/day. ${cost}/mo base cost. Consider VPC Endpoints.",
-                severity=SEVERITY_WARNING,
+                category=category,
+                title=title,
+                description=description,
+                severity=severity,
                 monthly_cost_usd=cost,
-                estimated_savings_usd=round(cost * 0.6, 2),
+                estimated_savings_usd=savings,
                 region=self._aws.region,
-                metadata={"gb_per_day": round(gb_per_day, 3), "subnet_id": nat.get("SubnetId")},
+                metadata={"gb_per_day": round(gb_per_day, 3), "subnet_id": nat.get("SubnetId"), "idle": is_dead},
             ))
         return findings
 

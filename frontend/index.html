@@ -3151,42 +3151,77 @@ function drawStackedChart(trendData) {
   }
 }
 
+// Service-specific deep-dive questions injected into the prompt
+const SVC_DEEP_QUESTIONS = {
+  'Amazon EC2':          'Break down by instance family, region, and purchase type (on-demand vs reserved vs spot). Flag any instances with <20% CPU over 7 days.',
+  'Amazon RDS':          'Break down by engine and instance class. Identify instances with low connection counts, Multi-AZ in non-prod, and old manual snapshots.',
+  'Amazon S3':           'Break down storage cost vs request cost vs data transfer. Identify buckets with no lifecycle rules and incomplete multipart uploads.',
+  'AWS Lambda':          'Break down by invocation cost vs duration cost. Flag functions with zero invocations >14 days and any with oversized memory.',
+  'Amazon ElastiCache':  'Break down by node type and cluster. Identify nodes with low cache-hit-ratio or cross-AZ replication cost.',
+  'Amazon EKS':          'Separate control plane cost from worker node cost. Check for over-provisioned node groups vs actual pod resource requests.',
+  'AWS Data Transfer':   'Break down inter-AZ vs internet egress vs CloudFront origin transfer. Flag cross-AZ patterns that could be eliminated with topology-aware routing.',
+  'Amazon CloudWatch':   'Break down Logs ingestion vs metrics vs dashboards. Identify log groups with no retention policy and highest ingest volume.',
+  'Amazon DynamoDB':     'Break down read/write cost vs storage. Flag tables in provisioned mode with low utilization that could switch to on-demand.',
+  'Amazon OpenSearch':   'Break down instance cost vs storage. Check UltraWarm vs hot tier split and index lifecycle policies.',
+  'Elastic Load Balancing': 'Identify load balancers with zero or very low request counts. Check for LCUs being charged on idle ALBs.',
+  'Amazon VPC':          'Break down NAT Gateway data cost vs processing cost. Identify VPC endpoints that could eliminate NAT traffic for S3/DynamoDB.',
+  'AWS Secrets Manager': 'Count secrets unused >90 days. Check rotation schedules — unused secrets with rotation enabled cost more.',
+  'Amazon ECR':          'Identify repositories with no pulls >60 days and untagged image accumulation driving storage cost.',
+};
+
 function askAboutService(svcName) {
   const svc = _serviceMap[svcName];
   if (!svc) return;
-  switchTab('chat');
-  let costContext = '';
+
+  // Build cost context
+  let lastCost = 0, prevCost = 0, pct = '0', weekStr = '', monthlyEst = 0, periodLabel = '';
   if (svc._source === 'trend') {
     const PERIOD_LABELS = { '3d':'last 3 days','1w':'last 7 days','1m':'last 30 days','3m':'last 3 months','1y':'last year' };
-    costContext = `- **Period:** ${PERIOD_LABELS[svc.period] || svc.period}
-- **Total cost for period:** $${fmt(svc.cost)}
-- **Share of total spend:** ${svc.pct}%`;
+    periodLabel = PERIOD_LABELS[svc.period] || svc.period;
+    lastCost = svc.cost || 0;
+    monthlyEst = svc.daily_avg ? svc.daily_avg * 30 : lastCost;
   } else {
     const weeks = svc.weeks || [];
     const costs = weeks.map(w => svc.costs?.[w] || 0);
-    const lastCost = costs[costs.length - 1] || 0;
-    const prevCost = costs[costs.length - 2] || 0;
-    const pct = prevCost ? ((lastCost - prevCost) / prevCost * 100).toFixed(1) : '0';
-    const weekStr = weeks.map((w, i) => `${w}: $${fmt(costs[i])}`).join(', ');
-    costContext = `- **Last week:** $${fmt(lastCost)}
-- **Previous week:** $${fmt(prevCost)}
-- **Week-over-week change:** ${pct}%
-- **Monthly estimate:** $${fmt(lastCost * 4.33)}
-- **Weekly breakdown:** ${weekStr}`;
+    lastCost = costs[costs.length - 1] || 0;
+    prevCost = costs[costs.length - 2] || 0;
+    pct = prevCost ? ((lastCost - prevCost) / prevCost * 100).toFixed(1) : '0';
+    monthlyEst = lastCost * 4.33;
+    weekStr = weeks.map((w, i) => `  - ${w}: $${fmt(costs[i])}`).join('\n');
+    periodLabel = 'last 4 weeks';
   }
-  const q = `Analyze the AWS cost for ${svcName}. What's driving this spend and what are the main optimization opportunities?
 
-## Service Cost Data
-- **Service:** ${svcName}
-${costContext}
+  const trendDir = parseFloat(pct) > 5 ? `📈 UP ${pct}% week-over-week — investigate what changed` :
+                   parseFloat(pct) < -5 ? `📉 DOWN ${pct}% week-over-week` : `➡ Stable (${pct}% change)`;
 
-Please explain:
-1. What typically drives costs for this service
-2. Specific optimization actions I can take right now
-3. What a realistic savings target looks like (% or $ range)`;
+  // Pull waste findings for this service from the in-memory findings state
+  const svcFindings = (state.findings?.findings || [])
+    .filter(f => f.service === svcName)
+    .slice(0, 5)
+    .map(f => `  - [${f.severity?.toUpperCase()}] ${f.title} — save $${fmt(f.estimated_savings_usd || 0)}/mo`)
+    .join('\n');
 
-  const input = document.getElementById('chat-input');
-  if (input) { input.value = q; input.focus(); sendMessage(); }
+  const deepQ = SVC_DEEP_QUESTIONS[svcName] || 'Break down by resource type, region, and usage pattern. Identify the top 3 cost drivers.';
+
+  const q = `I need a deep-dive analysis of our ${svcName} costs. Here is the data I have:
+
+**Cost Summary (${periodLabel})**
+- Last week: $${fmt(lastCost)}${prevCost ? `\n- Previous week: $${fmt(prevCost)}\n- Trend: ${trendDir}` : ''}
+- Monthly projection: $${fmt(monthlyEst)}
+${weekStr ? `- Weekly breakdown:\n${weekStr}` : ''}
+${svcFindings ? `\n**Waste Scanner Findings (pre-detected)**\n${svcFindings}` : ''}
+
+**What I need from you:**
+1. ${deepQ}
+2. What changed in the last 7 days that could explain the current trend?
+3. Give me 3 specific actions I can take this week to reduce this bill, with estimated savings in dollars per month for each.
+4. Are there any findings from the waste scanner above I should prioritize first?`;
+
+  switchTab('chat');
+  setTimeout(() => {
+    const input = document.getElementById('chat-input');
+    if (input) { input.value = q; input.focus(); sendMessage(); }
+  }, 80);
 }
 
 function drawSparkline(canvas, data, color) {
