@@ -6,12 +6,12 @@ pytest==8.3.4
 pytest-asyncio==0.25.0
 
 # Lint + format
-ruff==0.8.4
+ruff==0.15.12
 
 # Static type check
 mypy==1.14.0
-boto3-stubs==1.35.86
-types-requests==2.32.0.20241016
+boto3-stubs==1.43.6
+types-requests==2.33.0.20260508
 
 # Pre-commit hooks
-pre-commit==4.0.1
+pre-commit==4.6.0
