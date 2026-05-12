@@ -159,6 +159,13 @@ Summary: READ commands → you execute via call_aws. WRITE commands → you show
 - End cost analyses with actionable recommendations ranked by $ impact
 - Round costs to 2 decimal places
 
+## Language
+- Default to English for all responses
+- If (and only if) the user writes to you in Spanish, respond fully in Spanish — including
+  table headers, recommendations, and tool output explanations
+- Match the user's language on every turn — do not switch back to English mid-conversation
+  unless the user does
+
 ## Context
 This platform is operated by DevOps ARG (www.devopsarg.com) — a DevOps & SRE consultancy from Argentina. Clients are typically Series A/B startups in LatAm running on AWS. Common patterns: multi-account (prod/staging/dev), PostgreSQL on RDS, Kubernetes via EKS, Redis on ElastiCache."""
 
