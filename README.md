@@ -6,20 +6,22 @@
   <img src="docs/screenshots/logo.webp" alt="DevOps ARG" width="140" />
 </p>
 
-An AI-powered FinOps agent that analyzes AWS cloud costs and infrastructure using
-conversational AI. Ask questions in natural language — the agent reasons across
-Cost Explorer, infrastructure metrics, and AWS's native recommendation APIs (Cost
-Optimization Hub, Compute Optimizer, Rightsizing, Savings Plans) to answer them.
+An AI-powered FinOps platform that analyzes AWS cloud costs and infrastructure using conversational AI. Ask questions in natural language — the agent reasons across Cost Explorer, infrastructure metrics, and AWS's native recommendation APIs (Cost Optimization Hub, Compute Optimizer, Rightsizing, Savings Plans) to answer them.
 
-Beyond chat: an automated **waste detection engine** (55+ checks across 12 AWS
-services) runs scheduled scans and persists findings to SQLite; a **billing
-insights engine** (20 pre-computed checks) surfaces high-signal cost patterns
-without LLM invocations; and a **self-contained HTML export** lets you share
-full cost + infrastructure reports with stakeholders.
+**What's included:**
 
-> **Read-only by design.** The agent uses a dedicated IAM user with the AWS-managed
-> `ReadOnlyAccess` policy. It can't create, modify, or delete anything in your
-> account — it reads metrics and suggests changes that you apply yourself.
+| Feature | Description |
+|---------|-------------|
+| 💬 **Conversational chat** | Multi-round agentic reasoning with live SSE trace. 27 preset questions + free-form. `call_aws` lets the LLM query any read-only AWS API dynamically. |
+| 🗑️ **Waste detection engine** | 55+ automated checks across 12 services. Finds idle NAT Gateways, orphaned snapshots, stopped EC2, over-provisioned RDS, unused Lambdas, and more. Persists to SQLite, scoped per AWS account. |
+| 💡 **Billing insights engine** | 20 deterministic checks (no LLM, no latency): NAT cross-AZ ratio, missing VPC endpoints, Savings Plans gaps, gp2→gp3 candidates, log groups without retention. |
+| 📊 **Cost dashboard** | Overview KPIs, 4-week trend, by-service donut, anomaly detection, services breakdown with sparklines. |
+| 🔍 **Service-level Ask AI** | Each service card injects real cost data + waste findings into a service-specific prompt. EC2 asks about instance families; RDS about connections; S3 about lifecycle. |
+| 🔒 **Account ID tracking** | Every scan stamped with real AWS account (via STS) or mock sentinel `666666666666`. UI shows account pill in topbar and Waste tab — mock and live data never mix. |
+| 📄 **HTML report export** | Self-contained single-file report with all sections (overview, services, infra, waste, insights, optimizer) for sharing with stakeholders. |
+| 🧪 **Zero-cost demo mode** | LocalStack + mock data. Full UI works without an AWS account — fictional "Ribbon" fintech, $28K/mo spend. |
+
+> **Read-only by design.** The agent uses a dedicated IAM user with `ReadOnlyAccess`. It can't create, modify, or delete anything — it reads metrics and suggests changes that you apply yourself.
 
 ---
 
@@ -67,18 +69,36 @@ Cost Optimization Hub results ranked by monthly savings. Each card explains WHAT
   <img src="docs/screenshots/dashboard-optimize.webp" alt="Cost Optimizer view: Savings Score 62/100, $4,470/month identified across 5 recommendations — RDS downsize -$520, VPC endpoints -$450, Savings Plans -$870, Graviton migration -$320, more — each with Ask AI button" width="900" />
 </p>
 
+### 7. Waste detector — Cleanup
+Automated findings from the 55+ check engine, filtered to resources ready to delete: unattached EBS volumes, idle NAT Gateways (0 traffic for 7+ days), old orphaned snapshots, unused Elastic IPs, empty ECR repositories. Each card shows the resource ID, region, monthly cost, severity, and a CLI fix command. Account `⚠ 666666666666` in the topbar confirms mock mode.
+
+<p align="center">
+  <img src="docs/screenshots/waste-cleanup.webp" alt="Waste Detector cleanup tab — 143 findings, resources to delete including idle NAT gateway ($32/mo), unattached EBS volumes, orphaned snapshots" width="900" />
+</p>
+
+### 8. Waste detector — Rightsize
+Over-provisioned resources: EC2 instances with <10% CPU p95, RDS with near-zero connections, Lambda with >80% unused memory, NAT Gateways with <1 GB/day traffic. Each finding includes the usage metric that triggered it and the estimated monthly savings.
+
+<p align="center">
+  <img src="docs/screenshots/waste-rightsize.webp" alt="Waste Detector rightsize tab — 112 findings, over-provisioned EC2/RDS/Lambda/ElastiCache instances with usage metrics and savings estimates" width="900" />
+</p>
+
 ---
 
 ## 📖 Table of contents
 
+- [Screenshots](#-screenshots) — all 8 UI sections
 - [What it answers](#what-it-answers) — the 27 preset questions and what tools they trigger
-- [Architecture](#architecture) — services, data flow, diagram
+- [Architecture](#architecture) — services, data flow, Mermaid diagrams
 - [Quick start](#quick-start) — mock mode + live AWS mode
 - [Feature flags](#feature-flags-env) — all `.env` variables
 - [Endpoints](#endpoints) — HTTP API reference
 - [The reasoning engine](#the-reasoning-engine) — multi-round loop, reflection, SSE events
-- [Waste detection engine](#waste-detection-engine) — 55+ checks, SQLite persistence, scheduled scans
+- [Waste detection engine](#waste-detection-engine) — 55+ checks, SQLite persistence, per-account scans
+- [Waste tab UI](#waste-tab-ui) — Cleanup vs Rightsize, findings cards, refresh
 - [Billing insights engine](#billing-insights-engine) — 20 pre-computed checks, no LLM required
+- [Service-level Ask AI](#service-level-ask-ai) — context-aware prompts from the Services tab
+- [Account ID tracking](#account-id-tracking) — mock vs live isolation in the UI
 - [The read-only setup script](#the-read-only-setup-script) — IAM provisioning + write-block verification
 - [Project structure](#project-structure)
 - [Security posture](#security-posture)
@@ -359,6 +379,15 @@ flowchart TD
 
 Set `WASTE_SCAN_TTL_HOURS=0` to re-scan on every container restart (useful in CI/CD pipelines).
 
+### Waste tab UI
+
+The Waste tab has two sections toggled by a pill selector:
+
+- **Cleanup** (`category=cleanup`) — resources safe to delete: unattached EBS volumes, idle NAT gateways (0 traffic), old snapshots, unused EIPs, empty ECR repos, stopped EC2 instances. Sorted by monthly savings descending. Each card shows the resource ID, region, severity badge, estimated monthly cost, and a CLI fix command.
+- **Rightsize** (`category=rightsize`) — over-provisioned resources: EC2/RDS/ElastiCache with low utilization, Lambda with excess memory, NAT Gateways with <1 GB/day. Each card shows the usage metric that triggered the finding.
+
+Both sections show a running total of findings and projected monthly savings at the top. A **Refresh Scan** button triggers `POST /api/findings/refresh` and shows a live progress indicator (analyzer name + % complete) while the scan runs.
+
 ## Billing insights engine
 
 `backend/tools/insights_engine.py` runs **20 deterministic billing checks** against
@@ -375,11 +404,55 @@ returned in milliseconds from the in-memory cache.
 | **database** | RDS Multi-AZ in non-prod, idle RDS instances, RDS snapshot accumulation |
 | **lambda** | Functions with deprecated runtimes, oversized memory allocations |
 
-Insights are refreshed by the `InsightsScheduler` on the same TTL cycle as findings.
-The `/api/insights` endpoint returns all checks with a severity level (`info`, `warning`,
-`critical`), estimated monthly savings, and a one-line recommendation.
+Insights are refreshed by the `InsightsScheduler` on a 12-hour TTL cycle (configurable). The `/api/insights` endpoint returns all checks with a severity level (`info`, `warning`, `critical`), estimated monthly savings, and a one-line recommendation.
 
+## Service-level Ask AI
 
+Each card in the **Services tab** has an **"Ask AI →"** button (`askAboutService()` in `index.html`). Clicking it:
+
+1. Reads real cost data for that service from `_serviceMap` — weekly breakdown for the last 4 weeks, week-over-week trend direction (📈/📉/➡), and monthly projection.
+2. Fetches up to 5 pre-detected waste scanner findings for that service from `state.findings.findings`.
+3. Injects a service-specific deep-dive question from `SVC_DEEP_QUESTIONS` — 14 services covered:
+
+| Service | What it asks |
+|---------|-------------|
+| Amazon EC2 | Instance family / region / purchase type breakdown; instances with <20% CPU |
+| Amazon RDS | Engine / instance class; low connections, Multi-AZ in non-prod, old snapshots |
+| Amazon S3 | Storage vs request vs transfer cost; no-lifecycle buckets, incomplete multiparts |
+| AWS Lambda | Invocation vs duration cost; zero-invocation functions, oversized memory |
+| Amazon ElastiCache | Node type; low cache-hit-ratio, cross-AZ replication cost |
+| Amazon EKS | Control plane vs node cost; over-provisioned node groups vs pod requests |
+| AWS Data Transfer | Inter-AZ vs internet egress; cross-AZ patterns vs topology-aware routing |
+| Amazon CloudWatch | Logs ingest vs metrics vs dashboards; no-retention groups, high-ingest volumes |
+| Amazon DynamoDB | Read/write vs storage; provisioned tables with low utilization |
+| Amazon OpenSearch | Instance vs storage; UltraWarm / hot tier split, index lifecycle |
+| Elastic Load Balancing | Zero-request ALBs; idle LCU charges |
+| Amazon VPC | NAT data vs processing cost; VPC endpoint opportunities for S3/DynamoDB |
+| AWS Secrets Manager | Secrets unused >90 days; rotation cost on inactive secrets |
+| Amazon ECR | No-pull repos >60 days; untagged image storage accumulation |
+
+4. Switches to the chat tab and auto-sends the prompt, so the agent responds immediately with full context — no need to re-fetch data it already has.
+
+## Account ID tracking
+
+Every scan run is tagged with the AWS account it came from:
+
+- **Live mode** — the scheduler calls `STS GetCallerIdentity` at scan start and stamps the real account ID (e.g. `123456789012`) on the `scan_runs` record and every finding.
+- **Mock mode** — uses the sentinel `666666666666` (not a valid AWS account number, impossible to confuse).
+
+The UI shows this in two places:
+
+| Location | Live | Mock |
+|----------|------|------|
+| Topbar (next to AWS Live badge) | `🔒 123456789012` in green | `⚠ 666666666666` in amber |
+| Waste tab meta line | `🔒 123456789012 · Last scan: 2026-05-11 20:52 UTC` | `⚠ Mock (666666666666) · Last scan: …` |
+
+On container restart the scheduler checks SQLite for a completed scan **for the current account** within `WASTE_SCAN_TTL_HOURS`. This means:
+- Restarting in live mode after a mock scan → runs a new live scan automatically.
+- Restarting in live mode after a recent live scan → skips (data is fresh).
+- Mock and live findings never appear together in the same view.
+
+## The read-only setup script
 
 `create-read-only.sh` is the **safety moat**. You run it once with an admin AWS profile; it provisions everything the agent needs and proves the agent can't write:
 
