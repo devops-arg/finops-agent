@@ -597,8 +597,11 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
   let skipped = false;
   function skip(){ skipped = true; overlay.classList.add('done'); }
   skipBtn.addEventListener('click', skip);
-  // Hard timeout — UI must never be blocked by a slow backend
-  const hardTimeout = setTimeout(skip, 8000);
+  // Hard timeout — UI must never be blocked by a slow backend.
+  // Bumped to 15s to comfortably cover the slower boot pacing below.
+  const hardTimeout = setTimeout(skip, 15000);
+  // Random jitter so the pacing doesn't feel mechanical
+  const jitter = (min, max) => min + Math.random() * (max - min);
 
   function append(text, cls){
     const span = document.createElement('span');
@@ -723,6 +726,9 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
       const dots = label.startsWith('\n') ? '' : ' ' + '.'.repeat(Math.max(2, 42 - label.length)) + ' ';
       append(label + dots, 'dim');
       cursor(true);
+      // Let the blinking cursor sit on the label for a beat before the result
+      // appears — feels like the system is actually doing work.
+      await sleep(jitter(320, 580));
       let result;
       if (step.run) {
         try { result = await step.run(); }
@@ -733,11 +739,11 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
       cursor(false);
       append(result.text + '\n', result.cls);
       fillEl.style.width = ((i + 1) / total * 100) + '%';
-      // Small delay so the user perceives progressive boot
-      await sleep(110);
+      // Pause between steps so the eye can follow each line landing
+      await sleep(jitter(280, 460));
     }
     fillEl.style.width = '100%';
-    await sleep(280);
+    await sleep(700);
     clearTimeout(hardTimeout);
     skip();
   }
