@@ -3,7 +3,7 @@
 **Built by [DevOps ARG](https://www.devopsarg.com) · powered with Claude**
 
 <p align="center">
-  <img src="docs/screenshots/logo.webp" alt="DevOps ARG" width="140" />
+  <img src="https://avatars.githubusercontent.com/u/275813102?v=4" alt="DevOps ARG" width="140" />
 </p>
 
 <p align="center">
