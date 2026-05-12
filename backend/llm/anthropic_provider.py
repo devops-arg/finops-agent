@@ -1,6 +1,7 @@
 import logging
-from typing import Any, Dict, List, Optional
-from backend.llm.provider import LLMProvider, ChatResponse
+from typing import Any, Optional
+
+from backend.llm.provider import ChatResponse, LLMProvider
 from backend.models.conversation import ToolCall
 
 logger = logging.getLogger(__name__)
@@ -9,6 +10,7 @@ logger = logging.getLogger(__name__)
 class AnthropicProvider(LLMProvider):
     def __init__(self, api_key: str, model: str = "claude-sonnet-4-20250514"):
         import anthropic
+
         self._client = anthropic.Anthropic(api_key=api_key)
         self._model = model
         logger.info(f"Anthropic provider initialized: {model}")
@@ -21,7 +23,7 @@ class AnthropicProvider(LLMProvider):
     def provider_name(self) -> str:
         return "anthropic"
 
-    def format_tool_for_provider(self, tool_def: Dict[str, Any]) -> Dict[str, Any]:
+    def format_tool_for_provider(self, tool_def: dict[str, Any]) -> dict[str, Any]:
         params = tool_def.get("parameters", {})
         if params.get("type") == "object" and "properties" in params:
             input_schema = params
@@ -39,8 +41,8 @@ class AnthropicProvider(LLMProvider):
 
     def chat_completion(
         self,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[Dict[str, Any]]] = None,
+        messages: list[dict[str, Any]],
+        tools: Optional[list[dict[str, Any]]] = None,
         temperature: float = 0.0,
         max_tokens: int = 4096,
     ) -> ChatResponse:

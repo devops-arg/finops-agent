@@ -1,6 +1,6 @@
-from dataclasses import dataclass, field
-from typing import Dict, List
+from dataclasses import dataclass
 from datetime import datetime
+
 from backend.models.conversation import ConversationContext
 
 
@@ -23,5 +23,5 @@ class SessionState:
         self.context.add_message(role, content)
         self.last_activity = datetime.utcnow().isoformat()
 
-    def get_messages_for_llm(self) -> List[Dict[str, str]]:
+    def get_messages_for_llm(self) -> list[dict[str, str]]:
         return self.context.get_messages_for_llm()

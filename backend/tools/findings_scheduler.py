@@ -4,6 +4,7 @@ Background scheduler for waste analyzer scans.
 Runs once at startup only. Manual re-scans are triggered via POST /api/findings/refresh.
 Results are persisted to SQLite via FindingsStore with a 'scanning' status flag while running.
 """
+
 import asyncio
 import logging
 import os
@@ -28,6 +29,7 @@ def _resolve_account_id(is_mock: bool, aws_config: AWSConfig, localstack_config:
         return MOCK_ACCOUNT_ID
     try:
         import boto3
+
         kwargs: dict = {"region_name": aws_config.region}
         if aws_config.access_key_id:
             kwargs["aws_access_key_id"] = aws_config.access_key_id
@@ -63,11 +65,13 @@ async def run_scan(store: FindingsStore, aws_config: AWSConfig, localstack_confi
             logger.debug(f"Saved {len(findings)} findings from {analyzer_name} [{region}]")
 
         import functools
+
         findings = await loop.run_in_executor(
             None,
             functools.partial(
                 run_all_analyzers,
-                aws_config, localstack_config,
+                aws_config,
+                localstack_config,
                 progress_cb=_progress,
                 findings_cb=_findings_cb,
             ),

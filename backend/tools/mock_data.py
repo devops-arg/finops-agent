@@ -13,8 +13,7 @@ page refreshes within a day.
 
 import math
 from datetime import datetime, timedelta
-from typing import Any, Dict, List
-
+from typing import Any
 
 # ── Fictional client profile ─────────────────────────────────────────────────
 CLIENT_NAME = "Ribbon (demo)"
@@ -23,87 +22,122 @@ CLIENT_SPEND_CLASS = "Series B LatAm fintech, ~$28K/mo AWS"
 # ── Service cost profile (weekly baseline in USD) ────────────────────────────
 # Totals to roughly $6,500/week = $28,145/month
 SERVICES = [
-    {"name": "Amazon EC2",                   "weekly": 2240,  "color": "#f59e0b"},
-    {"name": "Amazon RDS",                   "weekly": 1180,  "color": "#06b6d4"},
-    {"name": "Amazon ElastiCache",           "weekly": 620,   "color": "#22c55e"},
-    {"name": "Amazon OpenSearch Service",    "weekly": 480,   "color": "#f97316"},
-    {"name": "Amazon S3",                    "weekly": 410,   "color": "#8b5cf6"},
-    {"name": "AWS Data Transfer",            "weekly": 380,   "color": "#94a3b8"},
-    {"name": "Amazon EKS",                   "weekly": 180,   "color": "#ec4899"},
-    {"name": "Amazon CloudWatch",            "weekly": 340,   "color": "#64748b"},
-    {"name": "Amazon MSK (Kafka)",           "weekly": 280,   "color": "#a78bfa"},
-    {"name": "AWS Lambda",                   "weekly": 190,   "color": "#3b82f6"},
-    {"name": "Amazon Route 53",              "weekly": 28,    "color": "#334155"},
-    {"name": "AWS Secrets Manager",          "weekly": 24,    "color": "#475569"},
-    {"name": "AWS WAF",                      "weekly": 148,   "color": "#ef4444"},
+    {"name": "Amazon EC2", "weekly": 2240, "color": "#f59e0b"},
+    {"name": "Amazon RDS", "weekly": 1180, "color": "#06b6d4"},
+    {"name": "Amazon ElastiCache", "weekly": 620, "color": "#22c55e"},
+    {"name": "Amazon OpenSearch Service", "weekly": 480, "color": "#f97316"},
+    {"name": "Amazon S3", "weekly": 410, "color": "#8b5cf6"},
+    {"name": "AWS Data Transfer", "weekly": 380, "color": "#94a3b8"},
+    {"name": "Amazon EKS", "weekly": 180, "color": "#ec4899"},
+    {"name": "Amazon CloudWatch", "weekly": 340, "color": "#64748b"},
+    {"name": "Amazon MSK (Kafka)", "weekly": 280, "color": "#a78bfa"},
+    {"name": "AWS Lambda", "weekly": 190, "color": "#3b82f6"},
+    {"name": "Amazon Route 53", "weekly": 28, "color": "#334155"},
+    {"name": "AWS Secrets Manager", "weekly": 24, "color": "#475569"},
+    {"name": "AWS WAF", "weekly": 148, "color": "#ef4444"},
 ]
 
 ENVIRONMENTS = [
     {"name": "production", "pct": 0.72},
-    {"name": "staging",    "pct": 0.18},
-    {"name": "dev",        "pct": 0.10},
+    {"name": "staging", "pct": 0.18},
+    {"name": "dev", "pct": 0.10},
 ]
 
 ACCOUNTS = [
-    {"id": "111122223333", "name": "ribbon-prod",     "pct": 0.72},
-    {"id": "444455556666", "name": "ribbon-staging",  "pct": 0.18},
-    {"id": "777788889999", "name": "ribbon-sandbox",  "pct": 0.10},
+    {"id": "111122223333", "name": "ribbon-prod", "pct": 0.72},
+    {"id": "444455556666", "name": "ribbon-staging", "pct": 0.18},
+    {"id": "777788889999", "name": "ribbon-sandbox", "pct": 0.10},
 ]
 
 REGIONS = [
-    {"name": "us-east-1",      "pct": 0.62, "label": "N. Virginia"},
-    {"name": "eu-west-1",      "pct": 0.22, "label": "Ireland (DR)"},
+    {"name": "us-east-1", "pct": 0.62, "label": "N. Virginia"},
+    {"name": "eu-west-1", "pct": 0.22, "label": "Ireland (DR)"},
     {"name": "ap-southeast-1", "pct": 0.11, "label": "Singapore"},
-    {"name": "us-west-2",      "pct": 0.04, "label": "Oregon"},
-    {"name": "global",         "pct": 0.01, "label": "Route 53/CF"},
+    {"name": "us-west-2", "pct": 0.04, "label": "Oregon"},
+    {"name": "global", "pct": 0.01, "label": "Route 53/CF"},
 ]
 
 TEAMS = [
-    {"name": "payments",   "pct": 0.38},
-    {"name": "platform",   "pct": 0.26},
-    {"name": "data",       "pct": 0.19},
-    {"name": "growth",     "pct": 0.12},
-    {"name": "shared",     "pct": 0.05},
+    {"name": "payments", "pct": 0.38},
+    {"name": "platform", "pct": 0.26},
+    {"name": "data", "pct": 0.19},
+    {"name": "growth", "pct": 0.12},
+    {"name": "shared", "pct": 0.05},
 ]
 
 # Usage types (for NAT, data transfer, EBS questions)
 USAGE_TYPES_WEEKLY = [
     # NAT Gateway (critical for questions about cross-AZ + NAT)
-    {"type": "NatGateway-Bytes",                         "weekly": 612, "category": "networking", "service": "VPC"},
-    {"type": "NatGateway-Hours",                         "weekly": 72,  "category": "networking", "service": "VPC"},
+    {"type": "NatGateway-Bytes", "weekly": 612, "category": "networking", "service": "VPC"},
+    {"type": "NatGateway-Hours", "weekly": 72, "category": "networking", "service": "VPC"},
     # Data transfer
-    {"type": "DataTransfer-Out-Bytes (Internet)",        "weekly": 184, "category": "transfer",   "service": "AWS Data Transfer"},
-    {"type": "DataTransfer-Regional-Bytes (cross-AZ)",   "weekly": 142, "category": "transfer",   "service": "AWS Data Transfer"},
-    {"type": "USW2-DataTransfer-Regional-Bytes",         "weekly": 54,  "category": "transfer",   "service": "AWS Data Transfer"},  # inter-region
+    {
+        "type": "DataTransfer-Out-Bytes (Internet)",
+        "weekly": 184,
+        "category": "transfer",
+        "service": "AWS Data Transfer",
+    },
+    {
+        "type": "DataTransfer-Regional-Bytes (cross-AZ)",
+        "weekly": 142,
+        "category": "transfer",
+        "service": "AWS Data Transfer",
+    },
+    {
+        "type": "USW2-DataTransfer-Regional-Bytes",
+        "weekly": 54,
+        "category": "transfer",
+        "service": "AWS Data Transfer",
+    },  # inter-region
     # EBS
-    {"type": "EBS:VolumeUsage.gp2",                      "weekly": 287, "category": "storage",    "service": "Amazon EC2"},  # migration candidate
-    {"type": "EBS:VolumeUsage.gp3",                      "weekly": 412, "category": "storage",    "service": "Amazon EC2"},
-    {"type": "EBS:SnapshotUsage",                        "weekly": 156, "category": "storage",    "service": "Amazon EC2"},
-    {"type": "EBS:VolumeUsage.io1",                      "weekly": 92,  "category": "storage",    "service": "Amazon EC2"},
+    {
+        "type": "EBS:VolumeUsage.gp2",
+        "weekly": 287,
+        "category": "storage",
+        "service": "Amazon EC2",
+    },  # migration candidate
+    {"type": "EBS:VolumeUsage.gp3", "weekly": 412, "category": "storage", "service": "Amazon EC2"},
+    {"type": "EBS:SnapshotUsage", "weekly": 156, "category": "storage", "service": "Amazon EC2"},
+    {"type": "EBS:VolumeUsage.io1", "weekly": 92, "category": "storage", "service": "Amazon EC2"},
     # Compute breakdown
-    {"type": "BoxUsage:m5.xlarge (on-demand)",           "weekly": 682, "category": "compute",    "service": "Amazon EC2"},
-    {"type": "SpotUsage:m5.xlarge",                      "weekly": 198, "category": "compute",    "service": "Amazon EC2"},
-    {"type": "BoxUsage:c6i.2xlarge (on-demand)",         "weekly": 412, "category": "compute",    "service": "Amazon EC2"},
-    {"type": "SpotUsage:c6i.2xlarge",                    "weekly": 145, "category": "compute",    "service": "Amazon EC2"},
+    {"type": "BoxUsage:m5.xlarge (on-demand)", "weekly": 682, "category": "compute", "service": "Amazon EC2"},
+    {"type": "SpotUsage:m5.xlarge", "weekly": 198, "category": "compute", "service": "Amazon EC2"},
+    {
+        "type": "BoxUsage:c6i.2xlarge (on-demand)",
+        "weekly": 412,
+        "category": "compute",
+        "service": "Amazon EC2",
+    },
+    {"type": "SpotUsage:c6i.2xlarge", "weekly": 145, "category": "compute", "service": "Amazon EC2"},
     # RDS
-    {"type": "InstanceUsage:db.r5.2xlarge",              "weekly": 520, "category": "database",   "service": "Amazon RDS"},
-    {"type": "InstanceUsage:db.r5.xlarge (replica)",     "weekly": 260, "category": "database",   "service": "Amazon RDS"},
-    {"type": "RDS:StorageUsage",                         "weekly": 240, "category": "database",   "service": "Amazon RDS"},
-    {"type": "RDS:BackupUsage",                          "weekly": 160, "category": "database",   "service": "Amazon RDS"},
+    {"type": "InstanceUsage:db.r5.2xlarge", "weekly": 520, "category": "database", "service": "Amazon RDS"},
+    {
+        "type": "InstanceUsage:db.r5.xlarge (replica)",
+        "weekly": 260,
+        "category": "database",
+        "service": "Amazon RDS",
+    },
+    {"type": "RDS:StorageUsage", "weekly": 240, "category": "database", "service": "Amazon RDS"},
+    {"type": "RDS:BackupUsage", "weekly": 160, "category": "database", "service": "Amazon RDS"},
     # S3 & CloudWatch
-    {"type": "S3:StandardStorage",                       "weekly": 240, "category": "storage",    "service": "Amazon S3"},
-    {"type": "S3:Requests-Tier1",                        "weekly": 62,  "category": "storage",    "service": "Amazon S3"},
-    {"type": "CW:DataProcessing-Bytes (Logs ingestion)", "weekly": 218, "category": "observability", "service": "Amazon CloudWatch"},
-    {"type": "CW:LogsStorage",                           "weekly": 72,  "category": "observability", "service": "Amazon CloudWatch"},
-    {"type": "CW:Metrics",                               "weekly": 50,  "category": "observability", "service": "Amazon CloudWatch"},
+    {"type": "S3:StandardStorage", "weekly": 240, "category": "storage", "service": "Amazon S3"},
+    {"type": "S3:Requests-Tier1", "weekly": 62, "category": "storage", "service": "Amazon S3"},
+    {
+        "type": "CW:DataProcessing-Bytes (Logs ingestion)",
+        "weekly": 218,
+        "category": "observability",
+        "service": "Amazon CloudWatch",
+    },
+    {"type": "CW:LogsStorage", "weekly": 72, "category": "observability", "service": "Amazon CloudWatch"},
+    {"type": "CW:Metrics", "weekly": 50, "category": "observability", "service": "Amazon CloudWatch"},
 ]
 
 # Commitment coverage profile
 COMMITMENT_COVERAGE = {
-    "savings_plans_pct": 18,          # 18% of eligible compute covered
-    "reserved_instances_pct": 22,     # 22% of RDS/ElastiCache
-    "spot_pct": 28,                   # 28% of EC2 on Spot
-    "on_demand_pct": 32,              # 32% pure on-demand (optimization target)
+    "savings_plans_pct": 18,  # 18% of eligible compute covered
+    "reserved_instances_pct": 22,  # 22% of RDS/ElastiCache
+    "spot_pct": 28,  # 28% of EC2 on Spot
+    "on_demand_pct": 32,  # 32% pure on-demand (optimization target)
     "savings_plans_monthly_potential": 1850,
     "ri_monthly_potential": 720,
 }
@@ -138,7 +172,7 @@ def _iso_date(d) -> str:
 
 
 # ── Time-series generators (all date-relative) ───────────────────────────────
-def generate_weekly_trend(today=None, num_weeks=12) -> List[Dict]:
+def generate_weekly_trend(today=None, num_weeks=12) -> list[dict]:
     today = today or datetime.utcnow().date()
     anchor = today - timedelta(days=today.weekday())  # current Monday
     weeks = []
@@ -146,17 +180,19 @@ def generate_weekly_trend(today=None, num_weeks=12) -> List[Dict]:
         start = anchor - timedelta(weeks=i)
         end = start + timedelta(days=6)
         cost = WEEKLY_TOTAL_BASE * _week_multiplier(i)
-        weeks.append({
-            "start": _iso_date(start),
-            "end": _iso_date(end),
-            "label": start.strftime("%d/%m"),
-            "cost": round(cost, 2),
-            "weeks_ago": i,
-        })
+        weeks.append(
+            {
+                "start": _iso_date(start),
+                "end": _iso_date(end),
+                "label": start.strftime("%d/%m"),
+                "cost": round(cost, 2),
+                "weeks_ago": i,
+            }
+        )
     return weeks
 
 
-def generate_by_service(today=None, num_weeks=4) -> List[Dict]:
+def generate_by_service(today=None, num_weeks=4) -> list[dict]:
     today = today or datetime.utcnow().date()
     anchor = today - timedelta(days=today.weekday())
     result = []
@@ -166,16 +202,18 @@ def generate_by_service(today=None, num_weeks=4) -> List[Dict]:
             start = anchor - timedelta(weeks=i)
             label = start.strftime("%d/%m")
             costs[label] = round(svc["weekly"] * _week_multiplier(i) * _service_multiplier(svc["name"], i), 2)
-        result.append({
-            "name": svc["name"],
-            "color": svc["color"],
-            "costs": costs,
-            "monthly_estimate": round(svc["weekly"] * 4.33, 2),
-        })
+        result.append(
+            {
+                "name": svc["name"],
+                "color": svc["color"],
+                "costs": costs,
+                "monthly_estimate": round(svc["weekly"] * 4.33, 2),
+            }
+        )
     return result
 
 
-def generate_by_environment(today=None, num_weeks=4) -> List[Dict]:
+def generate_by_environment(today=None, num_weeks=4) -> list[dict]:
     today = today or datetime.utcnow().date()
     anchor = today - timedelta(days=today.weekday())
     result = []
@@ -189,7 +227,7 @@ def generate_by_environment(today=None, num_weeks=4) -> List[Dict]:
     return result
 
 
-def generate_by_account(today=None, num_weeks=4) -> List[Dict]:
+def generate_by_account(today=None, num_weeks=4) -> list[dict]:
     today = today or datetime.utcnow().date()
     anchor = today - timedelta(days=today.weekday())
     result = []
@@ -203,7 +241,7 @@ def generate_by_account(today=None, num_weeks=4) -> List[Dict]:
     return result
 
 
-def generate_by_region(today=None, num_weeks=4) -> List[Dict]:
+def generate_by_region(today=None, num_weeks=4) -> list[dict]:
     today = today or datetime.utcnow().date()
     anchor = today - timedelta(days=today.weekday())
     result = []
@@ -217,7 +255,7 @@ def generate_by_region(today=None, num_weeks=4) -> List[Dict]:
     return result
 
 
-def generate_by_team(today=None, num_weeks=4) -> List[Dict]:
+def generate_by_team(today=None, num_weeks=4) -> list[dict]:
     today = today or datetime.utcnow().date()
     anchor = today - timedelta(days=today.weekday())
     result = []
@@ -231,7 +269,7 @@ def generate_by_team(today=None, num_weeks=4) -> List[Dict]:
     return result
 
 
-def generate_usage_types(today=None) -> List[Dict]:
+def generate_usage_types(today=None) -> list[dict]:
     """Detailed usage-type breakdown — covers NAT, data transfer, EBS, etc."""
     today = today or datetime.utcnow().date()
     return [
@@ -246,7 +284,7 @@ def generate_usage_types(today=None) -> List[Dict]:
     ]
 
 
-def generate_anomalies(today=None) -> List[Dict]:
+def generate_anomalies(today=None) -> list[dict]:
     """Multiple anomalies across different services — date-relative."""
     today = today or datetime.utcnow().date()
     anchor = today - timedelta(days=today.weekday())
@@ -316,7 +354,7 @@ def generate_anomalies(today=None) -> List[Dict]:
     ]
 
 
-def generate_daily_trend(today=None, days=30) -> List[Dict]:
+def generate_daily_trend(today=None, days=30) -> list[dict]:
     today = today or datetime.utcnow().date()
     result = []
     for i in range(days - 1, -1, -1):
@@ -328,16 +366,18 @@ def generate_daily_trend(today=None, days=30) -> List[Dict]:
         # Add extra RDS snapshot cost during anomaly window (~21-25 days ago)
         if 21 <= i <= 25:
             daily_cost += 185
-        result.append({
-            "date": _iso_date(day),
-            "cost": round(daily_cost, 2),
-            "is_weekend": is_weekend,
-        })
+        result.append(
+            {
+                "date": _iso_date(day),
+                "cost": round(daily_cost, 2),
+                "is_weekend": is_weekend,
+            }
+        )
     return result
 
 
 # ── Master report (aggregates everything) ────────────────────────────────────
-def generate_report(today=None, num_weeks=4) -> Dict[str, Any]:
+def generate_report(today=None, num_weeks=4) -> dict[str, Any]:
     today = today or datetime.utcnow().date()
 
     weekly_trend_full = generate_weekly_trend(today, 12)
@@ -350,7 +390,9 @@ def generate_report(today=None, num_weeks=4) -> Dict[str, Any]:
 
     last_week_cost = weekly_trend_report[-1]["cost"]
     prev_week_cost = weekly_trend_report[-2]["cost"] if len(weekly_trend_report) >= 2 else 0
-    weekly_change = round(((last_week_cost - prev_week_cost) / prev_week_cost * 100) if prev_week_cost else 0, 1)
+    weekly_change = round(
+        ((last_week_cost - prev_week_cost) / prev_week_cost * 100) if prev_week_cost else 0, 1
+    )
     four_week_total = sum(w["cost"] for w in weekly_trend_report)
     four_week_avg = round(four_week_total / len(weekly_trend_report), 2)
     monthly_projection = round(four_week_avg * 4.33, 2)
@@ -397,7 +439,7 @@ def generate_report(today=None, num_weeks=4) -> Dict[str, Any]:
 
 
 # ── Infrastructure snapshot ──────────────────────────────────────────────────
-def generate_infrastructure() -> Dict[str, Any]:
+def generate_infrastructure() -> dict[str, Any]:
     return {
         "mode": "mock",
         "generated": datetime.utcnow().isoformat() + "Z",
@@ -407,7 +449,13 @@ def generate_infrastructure() -> Dict[str, Any]:
                 "total_instances": 48,
                 "running": 42,
                 "stopped": 6,
-                "instance_types": {"m5.xlarge": 14, "c6i.2xlarge": 10, "m5.large": 8, "t3.large": 6, "r5.xlarge": 4},
+                "instance_types": {
+                    "m5.xlarge": 14,
+                    "c6i.2xlarge": 10,
+                    "m5.large": 8,
+                    "t3.large": 6,
+                    "r5.xlarge": 4,
+                },
                 "environments": {"production": 32, "staging": 10, "dev": 6},
                 "regions": {"us-east-1": 32, "eu-west-1": 12, "ap-southeast-1": 4},
                 "avg_cpu_pct": 22.8,
@@ -488,12 +536,48 @@ def generate_infrastructure() -> Dict[str, Any]:
                 "status": "warning",
                 "warning": "6 buckets missing lifecycle policies. ~$340/mo savings from Intelligent-Tiering.",
                 "buckets": [
-                    {"name": "ribbon-prod-data",     "size_gb": 6800, "objects": 12000000, "lifecycle": True,  "storage_class": "Standard"},
-                    {"name": "ribbon-prod-logs",     "size_gb": 4200, "objects": 8400000,  "lifecycle": False, "storage_class": "Standard"},
-                    {"name": "ribbon-prod-backups",  "size_gb": 3800, "objects": 2400000,  "lifecycle": True,  "storage_class": "Glacier IR"},
-                    {"name": "ribbon-prod-ml-models","size_gb": 1800, "objects": 120000,   "lifecycle": True,  "storage_class": "Intelligent-Tiering"},
-                    {"name": "ribbon-staging-data",  "size_gb": 1200, "objects": 1600000,  "lifecycle": False, "storage_class": "Standard"},
-                    {"name": "ribbon-cloudtrail",    "size_gb": 600,  "objects": 280000,   "lifecycle": True,  "storage_class": "Glacier"},
+                    {
+                        "name": "ribbon-prod-data",
+                        "size_gb": 6800,
+                        "objects": 12000000,
+                        "lifecycle": True,
+                        "storage_class": "Standard",
+                    },
+                    {
+                        "name": "ribbon-prod-logs",
+                        "size_gb": 4200,
+                        "objects": 8400000,
+                        "lifecycle": False,
+                        "storage_class": "Standard",
+                    },
+                    {
+                        "name": "ribbon-prod-backups",
+                        "size_gb": 3800,
+                        "objects": 2400000,
+                        "lifecycle": True,
+                        "storage_class": "Glacier IR",
+                    },
+                    {
+                        "name": "ribbon-prod-ml-models",
+                        "size_gb": 1800,
+                        "objects": 120000,
+                        "lifecycle": True,
+                        "storage_class": "Intelligent-Tiering",
+                    },
+                    {
+                        "name": "ribbon-staging-data",
+                        "size_gb": 1200,
+                        "objects": 1600000,
+                        "lifecycle": False,
+                        "storage_class": "Standard",
+                    },
+                    {
+                        "name": "ribbon-cloudtrail",
+                        "size_gb": 600,
+                        "objects": 280000,
+                        "lifecycle": True,
+                        "storage_class": "Glacier",
+                    },
                 ],
                 "detail": "32 buckets, 18.4 TB total across 3 regions.",
             },
@@ -513,7 +597,7 @@ def generate_infrastructure() -> Dict[str, Any]:
 
 
 # ── Optimization recommendations ─────────────────────────────────────────────
-def generate_optimization() -> Dict[str, Any]:
+def generate_optimization() -> dict[str, Any]:
     """Comprehensive recommendations covering all the main FinOps angles."""
     recommendations = [
         {

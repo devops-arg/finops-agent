@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 """Test AWS and LLM connectivity before running the agent."""
+
 import os
 import sys
 
@@ -12,6 +13,7 @@ def test_aws():
     print("Testing AWS connection...")
     try:
         import boto3
+
         config_mgr = ConfigurationManager()
         config = config_mgr.load_config()
         aws = config.aws
@@ -42,6 +44,7 @@ def test_aws():
 
         ce = session.client("ce", region_name="us-east-1")
         from datetime import datetime, timedelta
+
         today = datetime.utcnow().date()
         start = (today - timedelta(days=7)).isoformat()
         end = today.isoformat()
@@ -70,6 +73,7 @@ def test_llm():
     try:
         if config.llm.provider == "anthropic":
             import anthropic
+
             client = anthropic.Anthropic(api_key=config.llm.anthropic_api_key)
             response = client.messages.create(
                 model=config.llm.anthropic_model,
@@ -80,6 +84,7 @@ def test_llm():
             print(f"  Response: {response.content[0].text}")
         else:
             from openai import OpenAI
+
             client = OpenAI(api_key=config.llm.openai_api_key)
             response = client.chat.completions.create(
                 model=config.llm.openai_model,

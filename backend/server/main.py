@@ -5,9 +5,9 @@ import os
 import uuid
 from contextlib import asynccontextmanager
 from datetime import datetime, timedelta
-from typing import Dict, Optional
+from typing import Optional
 
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
@@ -17,6 +17,7 @@ from backend.knowledge.store import KnowledgeStore
 from backend.llm.anthropic_provider import AnthropicProvider
 from backend.llm.openai_provider import OpenAIProvider
 from backend.models.session import SessionState
+from backend.observability import configure_logging
 from backend.reasoning.engine import ReasoningEngine
 from backend.reports.generator import ReportGenerator
 from backend.tools.aws_api import AWSAPITool
@@ -30,10 +31,11 @@ from backend.tools.knowledge import KnowledgeTools
 from backend.tools.registry import ToolRegistry
 from backend.tools.waste_analyzers import WasteTools
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(name)s] %(levelname)s: %(message)s")
+# Structured logging — JSON in containers, console in local dev. See observability.py.
+configure_logging()
 logger = logging.getLogger(__name__)
 
-sessions: Dict[str, SessionState] = {}
+sessions: dict[str, SessionState] = {}
 engine: ReasoningEngine = None
 report_generator: ReportGenerator = None
 knowledge_store: KnowledgeStore = None
@@ -41,7 +43,7 @@ findings_store: FindingsStore = None
 insights_store: InsightsStore = None
 _localstack_enabled: bool = False
 _use_mock_data: bool = True
-_aws_config = None         # AWSConfig reference for live boto3 calls
+_aws_config = None  # AWSConfig reference for live boto3 calls
 _localstack_config = None  # LocalStackConfig reference
 
 
@@ -69,7 +71,16 @@ async def cleanup_sessions():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    global engine, report_generator, knowledge_store, findings_store, insights_store, _localstack_enabled, _use_mock_data, _aws_config, _localstack_config
+    global \
+        engine, \
+        report_generator, \
+        knowledge_store, \
+        findings_store, \
+        insights_store, \
+        _localstack_enabled, \
+        _use_mock_data, \
+        _aws_config, \
+        _localstack_config
 
     config_mgr = ConfigurationManager()
     config = config_mgr.load_config()
@@ -86,11 +97,14 @@ async def lifespan(app: FastAPI):
     _localstack_config = config.localstack
     mode = "LocalStack" if _localstack_enabled else "AWS Live"
     logger.info(f"Starting in {mode} mode")
-    logger.info(f"Feature flag USE_MOCK_DATA={_use_mock_data} (dashboard endpoints will use {'MOCK' if _use_mock_data else 'LIVE AWS'} data)")
+    logger.info(
+        f"Feature flag USE_MOCK_DATA={_use_mock_data} (dashboard endpoints will use {'MOCK' if _use_mock_data else 'LIVE AWS'} data)"
+    )
 
     # ── Identity check: confirm which AWS identity we're using ─────────
     try:
         import boto3
+
         sts_kwargs = {}
         if _localstack_enabled:
             sts_kwargs = {
@@ -102,7 +116,7 @@ async def lifespan(app: FastAPI):
         sts = boto3.client("sts", **sts_kwargs)
         ident = sts.get_caller_identity()
         logger.info("=" * 60)
-        logger.info(f"AWS IDENTITY CHECK")
+        logger.info("AWS IDENTITY CHECK")
         logger.info(f"  Account: {ident['Account']}")
         logger.info(f"  ARN:     {ident['Arn']}")
         logger.info(f"  UserId:  {ident['UserId']}")
@@ -161,9 +175,8 @@ async def lifespan(app: FastAPI):
         if not _localstack_enabled:
             raise RuntimeError(f"Cannot verify AWS identity in live mode: {e}")
 
-    has_llm_key = (
-        (config.llm.provider == "anthropic" and config.llm.anthropic_api_key)
-        or (config.llm.provider == "openai" and config.llm.openai_api_key)
+    has_llm_key = (config.llm.provider == "anthropic" and config.llm.anthropic_api_key) or (
+        config.llm.provider == "openai" and config.llm.openai_api_key
     )
 
     llm_provider = None
@@ -219,17 +232,17 @@ async def lifespan(app: FastAPI):
     insights_store = InsightsStore()
 
     cleanup_task = asyncio.create_task(cleanup_sessions())
-    scan_task = asyncio.create_task(
-        findings_scheduler_loop(findings_store, config.aws, config.localstack)
-    )
+    scan_task = asyncio.create_task(findings_scheduler_loop(findings_store, config.aws, config.localstack))
     insights_task = asyncio.create_task(
         insights_scheduler_loop(insights_store, config.aws, config.localstack)
     )
 
-    provider_info = f"provider={config.llm.provider}, model={llm_provider.model_name}" if llm_provider else "provider=NONE (no API key)"
-    logger.info(
-        f"FinOps Agent ready — mode={mode}, {provider_info}, tools={tool_registry.tool_count}"
+    provider_info = (
+        f"provider={config.llm.provider}, model={llm_provider.model_name}"
+        if llm_provider
+        else "provider=NONE (no API key)"
     )
+    logger.info(f"FinOps Agent ready — mode={mode}, {provider_info}, tools={tool_registry.tool_count}")
 
     yield
 
@@ -351,6 +364,7 @@ async def refresh_findings():
     if not findings_store:
         raise HTTPException(status_code=503, detail="Findings store not initialized")
     from backend.tools.findings_scheduler import run_scan
+
     global _aws_config
     config_mgr = ConfigurationManager()
     config = config_mgr.load_config()
@@ -397,7 +411,7 @@ async def chat_stream(request: ChatRequest):
                 f"Total: {summary['findings_count']} findings, ${total_s:,.0f}/mo potential savings "
                 f"({summary.get('critical_count', 0)} critical, {summary.get('warning_count', 0)} warnings)\n"
                 + "\n".join(lines)
-                + f"\n\nUse get_waste_findings tool to explore details. Use get_waste_summary for full breakdown."
+                + "\n\nUse get_waste_findings tool to explore details. Use get_waste_summary for full breakdown."
             )
 
     async def event_generator():
@@ -416,12 +430,18 @@ async def chat_stream(request: ChatRequest):
 
         def worker():
             try:
-                for ev in engine.process_query_stream(request.message, history_arg, findings_context=findings_context, use_mock_data=_use_mock_data):
+                for ev in engine.process_query_stream(
+                    request.message,
+                    history_arg,
+                    findings_context=findings_context,
+                    use_mock_data=_use_mock_data,
+                ):
                     asyncio.run_coroutine_threadsafe(queue.put(ev), loop)
             except Exception as e:
                 logger.exception("Reasoning engine error in stream worker")
                 asyncio.run_coroutine_threadsafe(
-                    queue.put({"type": "error", "data": {"message": str(e)}}), loop,
+                    queue.put({"type": "error", "data": {"message": str(e)}}),
+                    loop,
                 )
             finally:
                 asyncio.run_coroutine_threadsafe(queue.put(SENTINEL), loop)
@@ -466,7 +486,9 @@ async def chat_rest(request: ChatRequest):
     answer = ""
     tool_calls = []
 
-    for event in engine.process_query_stream(request.message, history[:-1] if len(history) > 1 else None, use_mock_data=_use_mock_data):
+    for event in engine.process_query_stream(
+        request.message, history[:-1] if len(history) > 1 else None, use_mock_data=_use_mock_data
+    ):
         if event["type"] == "answer":
             answer = event["data"].get("content", "")
         elif event["type"] == "tool_call":
@@ -494,6 +516,7 @@ async def get_report():
     except Exception as e:
         logger.error(f"Report generation error (falling back to mock): {e}")
         from backend.tools.mock_data import generate_report
+
         data = generate_report(num_weeks=4)
         data["mode"] = "mock-fallback"
         data["error"] = str(e)
@@ -543,16 +566,19 @@ async def get_infrastructure(region: str = None):
     Returns mock data when USE_MOCK_DATA=true, otherwise hits AWS describe-* APIs.
     """
     from backend.tools.mock_data import generate_infrastructure
+
     try:
         if _use_mock_data:
             return generate_infrastructure()
 
         from backend.tools.live_resources import fetch_live_infrastructure
+
         return fetch_live_infrastructure(_aws_config, region=region)
     except Exception as e:
         logger.error(f"Infrastructure query error: {e}")
         # Fallback to mock on error rather than 500
         from backend.tools.mock_data import generate_infrastructure
+
         data = generate_infrastructure()
         data["mode"] = "aws-live-fallback-to-mock"
         data["error"] = str(e)
@@ -567,11 +593,13 @@ async def get_optimization():
     from live AWS data (EC2 CPU, RDS utilization, S3 lifecycle policies, etc.).
     """
     from backend.tools.mock_data import generate_optimization
+
     try:
         if _use_mock_data:
             return generate_optimization()
 
         from backend.tools.live_resources import fetch_live_optimization
+
         return fetch_live_optimization(_aws_config)
     except Exception as e:
         logger.error(f"Optimization query error: {e}")
@@ -585,7 +613,9 @@ async def get_optimization():
 async def export_html_report():
     """Generate and return a self-contained HTML cost report (download)."""
     import asyncio
+
     from fastapi.responses import HTMLResponse
+
     from backend.reports.html_report import generate_html_report
 
     all_findings = findings_store.get_findings(limit=5000) if findings_store else []
@@ -596,12 +626,18 @@ async def export_html_report():
     try:
         if _aws_config and not (_localstack_config and _localstack_config.enabled):
             import boto3
+
             sts = boto3.client(
                 "sts",
                 region_name=_aws_config.region or "us-east-1",
-                **({"aws_access_key_id": _aws_config.access_key_id,
-                    "aws_secret_access_key": _aws_config.secret_access_key}
-                   if _aws_config.access_key_id else {}),
+                **(
+                    {
+                        "aws_access_key_id": _aws_config.access_key_id,
+                        "aws_secret_access_key": _aws_config.secret_access_key,
+                    }
+                    if _aws_config.access_key_id
+                    else {}
+                ),
             )
             identity = sts.get_caller_identity()
             account_label = f"Account {identity.get('Account', '')}"
@@ -609,37 +645,45 @@ async def export_html_report():
         pass
 
     # Fetch all dashboard data in parallel
-    report_data   = None
-    trend_data    = None
-    infra_data    = None
+    report_data = None
+    trend_data = None
+    infra_data = None
     optimize_data = None
 
     async def _safe(coro):
-        try:   return await coro
-        except Exception: return None
+        try:
+            return await coro
+        except Exception:
+            return None
 
     async def _get_report():
-        if not report_generator: return None
+        if not report_generator:
+            return None
         cached = report_generator.load_cached()
         return cached or report_generator.generate()
 
     async def _get_trend():
-        if not report_generator: return None
+        if not report_generator:
+            return None
         return report_generator.get_trend_data("1m")
 
     async def _get_infra():
         if _use_mock_data:
             from backend.tools.mock_data import generate_infrastructure
+
             return generate_infrastructure()
         from backend.tools.live_resources import fetch_live_infrastructure
+
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, lambda: fetch_live_infrastructure(_aws_config))
 
     async def _get_optimize():
         if _use_mock_data:
             from backend.tools.mock_data import generate_optimization
+
             return generate_optimization()
         from backend.tools.live_resources import fetch_live_optimization
+
         loop = asyncio.get_event_loop()
         return await loop.run_in_executor(None, lambda: fetch_live_optimization(_aws_config))
 
@@ -671,8 +715,11 @@ async def get_cost_by_tags():
     Runs live on every request (cached by Cost Explorer internally).
     Returns one entry per tag key with cost per tag value.
     """
-    import asyncio, functools
+    import asyncio
+    import functools
+
     from backend.tools.insights_engine import check_cost_by_env_tag
+
     loop = asyncio.get_event_loop()
     try:
         insight = await loop.run_in_executor(

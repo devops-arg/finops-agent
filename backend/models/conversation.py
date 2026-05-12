@@ -1,13 +1,13 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, List, Optional
 from datetime import datetime
+from typing import Any, Optional
 
 
 @dataclass
 class ToolCall:
     id: str
     tool_name: str
-    parameters: Dict[str, Any]
+    parameters: dict[str, Any]
     result: Optional[Any] = None
     timestamp: str = ""
 
@@ -22,11 +22,12 @@ class Message:
     content: str
     id: str = ""
     timestamp: str = ""
-    tool_calls: List[ToolCall] = field(default_factory=list)
+    tool_calls: list[ToolCall] = field(default_factory=list)
 
     def __post_init__(self):
         if not self.id:
             import uuid
+
             self.id = str(uuid.uuid4())
         if not self.timestamp:
             self.timestamp = datetime.utcnow().isoformat()
@@ -35,7 +36,7 @@ class Message:
 @dataclass
 class ConversationContext:
     session_id: str
-    messages: List[Message] = field(default_factory=list)
+    messages: list[Message] = field(default_factory=list)
     max_history: int = 10
 
     def add_message(self, role: str, content: str) -> Message:
@@ -46,5 +47,5 @@ class ConversationContext:
             self.messages = self.messages[-max_msgs:]
         return msg
 
-    def get_messages_for_llm(self) -> List[Dict[str, str]]:
+    def get_messages_for_llm(self) -> list[dict[str, str]]:
         return [{"role": m.role, "content": m.content} for m in self.messages]

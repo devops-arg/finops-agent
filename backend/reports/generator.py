@@ -2,7 +2,8 @@ import json
 import logging
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
+
 from backend.config.manager import AWSConfig, LocalStackConfig
 
 logger = logging.getLogger(__name__)
@@ -58,20 +59,21 @@ class ReportGenerator:
         self._ce_client = session.client("ce", region_name="us-east-1")
         return self._ce_client
 
-    def generate(self) -> Dict[str, Any]:
+    def generate(self) -> dict[str, Any]:
         if self._should_mock():
             return self._generate_mock()
         return self._generate_live()
 
-    def _generate_mock(self) -> Dict[str, Any]:
+    def _generate_mock(self) -> dict[str, Any]:
         from backend.tools.mock_data import generate_report
+
         logger.info("Generating mock cost report (LocalStack mode)")
         report = generate_report(num_weeks=self._num_weeks)
         self._save(report)
         logger.info(f"Mock report generated: ${report['summary']['lastWeekCost']:.2f} last week")
         return report
 
-    def _generate_live(self) -> Dict[str, Any]:
+    def _generate_live(self) -> dict[str, Any]:
         logger.info("Generating live AWS cost report...")
         weeks = self.get_weeks()
 
@@ -111,14 +113,32 @@ class ReportGenerator:
                     by_region_all[reg] = {"name": reg, "costs": {}}
                 by_region_all[reg]["costs"][label] = round(cost, 2)
 
-        by_account = sorted(by_account_all.values(), key=lambda x: list(x["costs"].values())[-1] if x["costs"] else 0, reverse=True)
-        by_service = sorted(by_service_all.values(), key=lambda x: list(x["costs"].values())[-1] if x["costs"] else 0, reverse=True)
-        by_env = sorted(by_env_all.values(), key=lambda x: list(x["costs"].values())[-1] if x["costs"] else 0, reverse=True)
-        by_region = sorted(by_region_all.values(), key=lambda x: list(x["costs"].values())[-1] if x["costs"] else 0, reverse=True)
+        by_account = sorted(
+            by_account_all.values(),
+            key=lambda x: list(x["costs"].values())[-1] if x["costs"] else 0,
+            reverse=True,
+        )
+        by_service = sorted(
+            by_service_all.values(),
+            key=lambda x: list(x["costs"].values())[-1] if x["costs"] else 0,
+            reverse=True,
+        )
+        by_env = sorted(
+            by_env_all.values(),
+            key=lambda x: list(x["costs"].values())[-1] if x["costs"] else 0,
+            reverse=True,
+        )
+        by_region = sorted(
+            by_region_all.values(),
+            key=lambda x: list(x["costs"].values())[-1] if x["costs"] else 0,
+            reverse=True,
+        )
 
         last_week_cost = weekly_trend[-1]["cost"] if weekly_trend else 0
         prev_week_cost = weekly_trend[-2]["cost"] if len(weekly_trend) >= 2 else 0
-        weekly_change = round(((last_week_cost - prev_week_cost) / prev_week_cost * 100) if prev_week_cost else 0, 1)
+        weekly_change = round(
+            ((last_week_cost - prev_week_cost) / prev_week_cost * 100) if prev_week_cost else 0, 1
+        )
         four_week_total = sum(w["cost"] for w in weekly_trend)
         four_week_avg = round(four_week_total / len(weekly_trend), 2) if weekly_trend else 0
         monthly_projection = round(four_week_avg * 4.33, 2)
@@ -155,7 +175,7 @@ class ReportGenerator:
         logger.info(f"Live report generated: ${report['summary']['lastWeekCost']:.2f} USD last week")
         return report
 
-    def _fetch_anomalies(self) -> List[Dict]:
+    def _fetch_anomalies(self) -> list[dict]:
         """Fetch cost anomalies from AWS Cost Anomaly Detection (last 30 days)."""
         try:
             ce = self._get_ce()
@@ -169,31 +189,33 @@ class ReportGenerator:
             for a in resp.get("Anomalies", []):
                 impact = a.get("Impact", {})
                 causes = a.get("RootCauses", [{}])
-                svc    = causes[0].get("Service", "Unknown") if causes else "Unknown"
+                svc = causes[0].get("Service", "Unknown") if causes else "Unknown"
                 region = causes[0].get("Region", "") if causes else ""
                 start_date = a.get("AnomalyStartDate", "")
-                end_date   = a.get("AnomalyEndDate", "")
+                end_date = a.get("AnomalyEndDate", "")
                 total_impact = float(impact.get("TotalImpact", 0))
-                max_impact   = float(impact.get("MaxImpact", 0))
-                anomalies.append({
-                    "id":          a.get("AnomalyId", ""),
-                    "service":     svc,
-                    "region":      region,
-                    "start_date":  start_date,
-                    "end_date":    end_date,
-                    "total_impact": round(total_impact, 2),
-                    "max_impact":   round(max_impact, 2),
-                    "score":       round(float(a.get("AnomalyScore", {}).get("MaxScore", 0)), 2),
-                    "status":      a.get("AnomalyEndDate") and "closed" or "open",
-                    "feedback":    a.get("Feedback", ""),
-                })
+                max_impact = float(impact.get("MaxImpact", 0))
+                anomalies.append(
+                    {
+                        "id": a.get("AnomalyId", ""),
+                        "service": svc,
+                        "region": region,
+                        "start_date": start_date,
+                        "end_date": end_date,
+                        "total_impact": round(total_impact, 2),
+                        "max_impact": round(max_impact, 2),
+                        "score": round(float(a.get("AnomalyScore", {}).get("MaxScore", 0)), 2),
+                        "status": (a.get("AnomalyEndDate") and "closed") or "open",
+                        "feedback": a.get("Feedback", ""),
+                    }
+                )
             anomalies.sort(key=lambda x: -x["total_impact"])
             return anomalies
         except Exception as e:
             logger.warning(f"Could not fetch anomalies: {e}")
             return []
 
-    def get_weeks(self) -> List[Dict[str, str]]:
+    def get_weeks(self) -> list[dict[str, str]]:
         today = datetime.utcnow().date()
         days_since_sunday = (today.weekday() + 1) % 7
         if days_since_sunday == 0:
@@ -204,15 +226,17 @@ class ReportGenerator:
         for i in range(self._num_weeks):
             end = last_sunday - timedelta(weeks=i)
             start = end - timedelta(days=6)
-            weeks.append({
-                "start": start.isoformat(),
-                "end": (end + timedelta(days=1)).isoformat(),
-                "label": f"{start.strftime('%d/%m')} - {end.strftime('%d/%m')}",
-            })
+            weeks.append(
+                {
+                    "start": start.isoformat(),
+                    "end": (end + timedelta(days=1)).isoformat(),
+                    "label": f"{start.strftime('%d/%m')} - {end.strftime('%d/%m')}",
+                }
+            )
         weeks.reverse()
         return weeks
 
-    def _fetch_costs_grouped(self, start: str, end: str, group_by: str) -> Dict[str, float]:
+    def _fetch_costs_grouped(self, start: str, end: str, group_by: str) -> dict[str, float]:
         ce = self._get_ce()
         response = ce.get_cost_and_usage(
             TimePeriod={"Start": start, "End": end},
@@ -228,7 +252,7 @@ class ReportGenerator:
                 totals[name] = totals.get(name, 0) + amount
         return totals
 
-    def _fetch_costs_by_tag(self, start: str, end: str, tag_key: str) -> Dict[str, float]:
+    def _fetch_costs_by_tag(self, start: str, end: str, tag_key: str) -> dict[str, float]:
         ce = self._get_ce()
         response = ce.get_cost_and_usage(
             TimePeriod={"Start": start, "End": end},
@@ -241,7 +265,7 @@ class ReportGenerator:
             for group in period.get("Groups", []):
                 tag_val = group["Keys"][0] if group.get("Keys") else "No Tag"
                 if tag_val.startswith(f"{tag_key}$"):
-                    tag_val = tag_val[len(tag_key) + 1:] or "No Tag"
+                    tag_val = tag_val[len(tag_key) + 1 :] or "No Tag"
                 amount = float(group["Metrics"]["UnblendedCost"]["Amount"])
                 totals[tag_val] = totals.get(tag_val, 0) + amount
         return totals
@@ -260,20 +284,20 @@ class ReportGenerator:
 
     # ── Period trend (chart + service breakdown) ─────────────────────────────
 
-    PERIOD_CONFIG: Dict[str, Dict] = {
-        "3d":  {"days": 3,   "granularity": "DAILY",   "label_fmt": "%a %d"},
-        "1w":  {"days": 7,   "granularity": "DAILY",   "label_fmt": "%a %d"},
-        "1m":  {"days": 30,  "granularity": "DAILY",   "label_fmt": "%d/%m"},
-        "3m":  {"days": 90,  "granularity": "MONTHLY", "label_fmt": "%b"},
-        "1y":  {"days": 365, "granularity": "MONTHLY", "label_fmt": "%b %y"},
+    PERIOD_CONFIG: dict[str, dict] = {
+        "3d": {"days": 3, "granularity": "DAILY", "label_fmt": "%a %d"},
+        "1w": {"days": 7, "granularity": "DAILY", "label_fmt": "%a %d"},
+        "1m": {"days": 30, "granularity": "DAILY", "label_fmt": "%d/%m"},
+        "3m": {"days": 90, "granularity": "MONTHLY", "label_fmt": "%b"},
+        "1y": {"days": 365, "granularity": "MONTHLY", "label_fmt": "%b %y"},
     }
 
-    def get_trend_data(self, period: str = "1m") -> Dict[str, Any]:
+    def get_trend_data(self, period: str = "1m") -> dict[str, Any]:
         if self._should_mock():
             return self._mock_trend_data(period)
         return self._live_trend_data(period)
 
-    def _live_trend_data(self, period: str) -> Dict[str, Any]:
+    def _live_trend_data(self, period: str) -> dict[str, Any]:
         cfg = self.PERIOD_CONFIG.get(period, self.PERIOD_CONFIG["1m"])
         end = datetime.utcnow().date()
         start = end - timedelta(days=cfg["days"])
@@ -288,10 +312,10 @@ class ReportGenerator:
             GroupBy=[{"Type": "DIMENSION", "Key": "SERVICE"}],
         )
 
-        trend_map: Dict[str, float] = {}
-        svc_totals: Dict[str, float] = {}
-        svc_timeline: Dict[str, List[Dict]] = {}  # service → [{label, cost}, ...]
-        labels: List[str] = []
+        trend_map: dict[str, float] = {}
+        svc_totals: dict[str, float] = {}
+        svc_timeline: dict[str, list[dict]] = {}  # service → [{label, cost}, ...]
+        labels: list[str] = []
 
         for row in resp.get("ResultsByTime", []):
             dt = datetime.strptime(row["TimePeriod"]["Start"], "%Y-%m-%d")
@@ -313,14 +337,17 @@ class ReportGenerator:
         total = sum(svc_totals.values())
         days = cfg["days"]
         by_service = sorted(
-            [{
-                "name": k,
-                "cost": round(v, 2),
-                "pct": round(v / total * 100, 1) if total else 0,
-                "daily_avg": round(v / days, 2),
-                "timeline": svc_timeline.get(k, []),
-            }
-             for k, v in svc_totals.items() if v > 0.01],
+            [
+                {
+                    "name": k,
+                    "cost": round(v, 2),
+                    "pct": round(v / total * 100, 1) if total else 0,
+                    "daily_avg": round(v / days, 2),
+                    "timeline": svc_timeline.get(k, []),
+                }
+                for k, v in svc_totals.items()
+                if v > 0.01
+            ],
             key=lambda x: -x["cost"],
         )[:15]
 
@@ -335,8 +362,9 @@ class ReportGenerator:
             "end": end.isoformat(),
         }
 
-    def _mock_trend_data(self, period: str) -> Dict[str, Any]:
+    def _mock_trend_data(self, period: str) -> dict[str, Any]:
         import random
+
         cfg = self.PERIOD_CONFIG.get(period, self.PERIOD_CONFIG["1m"])
         end = datetime.utcnow().date()
         start = end - timedelta(days=cfg["days"])
@@ -346,19 +374,19 @@ class ReportGenerator:
         base = 850.0
 
         SVC_BASES = [
-            ("Amazon EC2",         0.35),
-            ("Amazon RDS",         0.20),
-            ("Amazon EKS",         0.15),
-            ("Amazon S3",          0.10),
-            ("AWS Lambda",         0.08),
-            ("Amazon CloudFront",  0.05),
+            ("Amazon EC2", 0.35),
+            ("Amazon RDS", 0.20),
+            ("Amazon EKS", 0.15),
+            ("Amazon S3", 0.10),
+            ("AWS Lambda", 0.08),
+            ("Amazon CloudFront", 0.05),
             ("Amazon ElastiCache", 0.04),
-            ("Amazon CloudWatch",  0.03),
+            ("Amazon CloudWatch", 0.03),
         ]
 
         # Build day-by-day labels and per-service timelines
         labels = []
-        svc_timeline: Dict[str, List[Dict]] = {n: [] for n, _ in SVC_BASES}
+        svc_timeline: dict[str, list[dict]] = {n: [] for n, _ in SVC_BASES}
 
         if gran == "DAILY":
             d = start
@@ -366,22 +394,27 @@ class ReportGenerator:
                 lbl = d.strftime(fmt)
                 labels.append(lbl)
                 for svc, frac in SVC_BASES:
-                    svc_timeline[svc].append({
-                        "label": lbl,
-                        "cost": round(base * frac * rng.uniform(0.75, 1.25), 2),
-                    })
+                    svc_timeline[svc].append(
+                        {
+                            "label": lbl,
+                            "cost": round(base * frac * rng.uniform(0.75, 1.25), 2),
+                        }
+                    )
                 d += timedelta(days=1)
         else:
             from datetime import date as _date
+
             d = _date(start.year, start.month, 1)
             while d <= end:
                 lbl = d.strftime(fmt)
                 labels.append(lbl)
                 for svc, frac in SVC_BASES:
-                    svc_timeline[svc].append({
-                        "label": lbl,
-                        "cost": round(base * 30 * frac * rng.uniform(0.9, 1.1), 2),
-                    })
+                    svc_timeline[svc].append(
+                        {
+                            "label": lbl,
+                            "cost": round(base * 30 * frac * rng.uniform(0.9, 1.1), 2),
+                        }
+                    )
                 d = _date(d.year + (d.month // 12), (d.month % 12) + 1, 1)
 
         trend = []
@@ -393,13 +426,15 @@ class ReportGenerator:
         by_service = []
         for svc, frac in SVC_BASES:
             cost = sum(p["cost"] for p in svc_timeline[svc])
-            by_service.append({
-                "name": svc,
-                "cost": round(cost, 2),
-                "pct": round(frac * 100, 1),
-                "daily_avg": round(cost / max(days, 1), 2),
-                "timeline": svc_timeline[svc],
-            })
+            by_service.append(
+                {
+                    "name": svc,
+                    "cost": round(cost, 2),
+                    "pct": round(frac * 100, 1),
+                    "daily_avg": round(cost / max(days, 1), 2),
+                    "timeline": svc_timeline[svc],
+                }
+            )
 
         total = sum(s["cost"] for s in by_service)
         return {
@@ -413,7 +448,7 @@ class ReportGenerator:
             "end": end.isoformat(),
         }
 
-    def _save(self, report: Dict[str, Any]):
+    def _save(self, report: dict[str, Any]):
         with open(self._report_path, "w") as f:
             json.dump(report, f, indent=2, default=str)
         logger.info(f"Report saved to {self._report_path}")
@@ -423,13 +458,13 @@ class ReportGenerator:
             self._report_path.unlink()
             logger.info("Report cache invalidated")
 
-    def load_cached(self) -> Optional[Dict[str, Any]]:
+    def load_cached(self) -> Optional[dict[str, Any]]:
         if not self._report_path.exists():
             return None
         try:
             with open(self._report_path) as f:
                 data = json.load(f)
-            # Always regenerate in mock mode (dates stay fresh) 
+            # Always regenerate in mock mode (dates stay fresh)
             if self._should_mock():
                 return None
             # Don't serve a mock cache when we want live data

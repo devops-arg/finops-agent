@@ -1,7 +1,8 @@
 import logging
-from typing import Any, Dict, List, Optional
-from backend.tools.base import BaseTool
+from typing import Any
+
 from backend.models.core import ToolResult
+from backend.tools.base import BaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -10,8 +11,8 @@ class ToolRegistry:
     """Central registry that maps tool names to their handler classes."""
 
     def __init__(self):
-        self._providers: List[BaseTool] = []
-        self._tool_map: Dict[str, BaseTool] = {}
+        self._providers: list[BaseTool] = []
+        self._tool_map: dict[str, BaseTool] = {}
 
     def register(self, provider: BaseTool):
         self._providers.append(provider)
@@ -21,13 +22,13 @@ class ToolRegistry:
             self._tool_map[name] = provider
         logger.info(f"Registered {len(provider.get_tool_names())} tools from {provider.__class__.__name__}")
 
-    def get_all_definitions(self) -> List[Dict[str, Any]]:
+    def get_all_definitions(self) -> list[dict[str, Any]]:
         defs = []
         for provider in self._providers:
             defs.extend(provider.get_definitions())
         return defs
 
-    def execute(self, tool_name: str, parameters: Dict[str, Any]) -> ToolResult:
+    def execute(self, tool_name: str, parameters: dict[str, Any]) -> ToolResult:
         provider = self._tool_map.get(tool_name)
         if not provider:
             return ToolResult(

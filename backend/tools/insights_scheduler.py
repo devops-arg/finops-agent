@@ -1,6 +1,7 @@
 """
 Insights scheduler — runs billing checks at startup (respects TTL).
 """
+
 import asyncio
 import functools
 import logging

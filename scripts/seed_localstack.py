@@ -3,11 +3,13 @@
 Seed LocalStack with demo AWS resources for the FinOps Intelligence Platform.
 Simulates a Series A LatAm fintech startup's AWS footprint.
 """
+
+import logging
 import os
 import sys
 import time
+
 import boto3
-import logging
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
@@ -25,6 +27,7 @@ BOTO_KWARGS = dict(
 
 def wait_for_localstack(retries=20, delay=3):
     import urllib.request
+
     url = ENDPOINT + "/_localstack/health"
     for i in range(retries):
         try:
@@ -60,11 +63,13 @@ def seed_s3():
     try:
         s3.put_bucket_tagging(
             Bucket="fintech-prod-data",
-            Tagging={"TagSet": [
-                {"Key": "Environment", "Value": "production"},
-                {"Key": "Team", "Value": "platform"},
-                {"Key": "CostCenter", "Value": "engineering"},
-            ]},
+            Tagging={
+                "TagSet": [
+                    {"Key": "Environment", "Value": "production"},
+                    {"Key": "Team", "Value": "platform"},
+                    {"Key": "CostCenter", "Value": "engineering"},
+                ]
+            },
         )
     except Exception:
         pass
@@ -94,14 +99,16 @@ def seed_ec2():
                     MinCount=1,
                     MaxCount=1,
                     InstanceType=spec["type"],
-                    TagSpecifications=[{
-                        "ResourceType": "instance",
-                        "Tags": [
-                            {"Key": "Name", "Value": f"{spec['name']}-{i+1}"},
-                            {"Key": "Environment", "Value": spec["env"]},
-                            {"Key": "Team", "Value": "platform"},
-                        ],
-                    }],
+                    TagSpecifications=[
+                        {
+                            "ResourceType": "instance",
+                            "Tags": [
+                                {"Key": "Name", "Value": f"{spec['name']}-{i+1}"},
+                                {"Key": "Environment", "Value": spec["env"]},
+                                {"Key": "Team", "Value": "platform"},
+                            ],
+                        }
+                    ],
                 )
                 iid = resp["Instances"][0]["InstanceId"]
                 logger.info(f"  Started {spec['type']} instance: {spec['name']}-{i+1} ({iid})")
@@ -222,8 +229,13 @@ def main():
     if not wait_for_localstack():
         sys.exit(1)
 
-    for name, fn in [("S3", seed_s3), ("EC2", seed_ec2), ("RDS", seed_rds),
-                      ("ElastiCache", seed_elasticache), ("SecretsManager", seed_secretsmanager)]:
+    for name, fn in [
+        ("S3", seed_s3),
+        ("EC2", seed_ec2),
+        ("RDS", seed_rds),
+        ("ElastiCache", seed_elasticache),
+        ("SecretsManager", seed_secretsmanager),
+    ]:
         try:
             fn()
         except Exception as e:

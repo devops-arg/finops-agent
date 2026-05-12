@@ -7,6 +7,7 @@ Persistence layer for waste analyzer results.
 - Queryable by service / severity / category / min_savings
 - In-memory hot cache (1h TTL) on top of SQLite for fast reads
 """
+
 import json
 import logging
 import os
@@ -15,7 +16,7 @@ import threading
 import uuid
 from datetime import datetime, timedelta
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from backend.models.finding import Finding
 
@@ -34,11 +35,11 @@ class FindingsStore:
     def __init__(self, db_path: Path = DB_PATH):
         self._db_path = db_path
         self._lock = threading.Lock()
-        self._cache: Optional[List[Dict]] = None
+        self._cache: Optional[list[dict]] = None
         self._cache_at: Optional[datetime] = None
-        self._last_scan_run: Optional[Dict] = None
+        self._last_scan_run: Optional[dict] = None
         self._scanning: bool = False
-        self._scan_progress: Dict = {}
+        self._scan_progress: dict = {}
         self._current_scan_id: Optional[str] = None
         self._current_account_id: str = "unknown"
         self._init_db()
@@ -63,7 +64,7 @@ class FindingsStore:
                 "pct": round(done / total * 100) if total else 0,
             }
 
-    def get_progress(self) -> Dict:
+    def get_progress(self) -> dict:
         with self._lock:
             return dict(self._scan_progress)
 
@@ -169,7 +170,7 @@ class FindingsStore:
 
         return scan_id
 
-    def append_batch(self, findings: List[Finding], scan_id: str):
+    def append_batch(self, findings: list[Finding], scan_id: str):
         """Insert a batch of findings from one analyzer into the current scan.
 
         Immediately invalidates the in-memory cache so the next API poll
@@ -192,9 +193,16 @@ class FindingsStore:
             for f in findings
         ]
         with self._lock:
-            # Update in-memory cache incrementally
+            # Update in-memory cache incrementally. The cache MUST use the same
+            # account_id override as the DB — otherwise mock and live data leak
+            # across modes (CLAUDE.md invariant I-2).
             existing = self._cache or []
-            existing.extend([{**f.to_dict(), "tags": f.tags, "metadata": f.metadata} for f in findings])
+            existing.extend(
+                [
+                    {**f.to_dict(), "account_id": scan_account, "tags": f.tags, "metadata": f.metadata}
+                    for f in findings
+                ]
+            )
             self._cache = existing
             self._cache_at = datetime.utcnow()
 
@@ -219,12 +227,14 @@ class FindingsStore:
             total_savings = round(sum(r.get("estimated_savings_usd", 0) for r in all_findings), 2)
             total_waste = round(sum(r.get("monthly_cost_usd", 0) for r in all_findings), 2)
             if self._last_scan_run:
-                self._last_scan_run.update({
-                    "completed_at": now,
-                    "findings_count": len(all_findings),
-                    "total_savings_usd": total_savings,
-                    "total_waste_usd": total_waste,
-                })
+                self._last_scan_run.update(
+                    {
+                        "completed_at": now,
+                        "findings_count": len(all_findings),
+                        "total_savings_usd": total_savings,
+                        "total_waste_usd": total_waste,
+                    }
+                )
 
         if self._db_path:
             try:
@@ -237,7 +247,7 @@ class FindingsStore:
             except Exception as e:
                 logger.error(f"close_scan DB error: {e}")
 
-    def save_scan(self, findings: List[Finding], mode: str = "mock") -> str:
+    def save_scan(self, findings: list[Finding], mode: str = "mock") -> str:
         """Persist a full scan result at once (used in mock/fallback mode). Returns scan_run_id."""
         scan_id = self.open_scan(mode)
         self.append_batch(findings, scan_id)
@@ -255,7 +265,7 @@ class FindingsStore:
         region: Optional[str] = None,
         account_id: Optional[str] = None,
         limit: int = 500,
-    ) -> List[Dict[str, Any]]:
+    ) -> list[dict[str, Any]]:
         """Return findings from hot cache (or SQLite if cache expired)."""
         with self._lock:
             rows = self._get_cached_findings()
@@ -277,7 +287,7 @@ class FindingsStore:
         results.sort(key=lambda x: x.get("estimated_savings_usd", 0), reverse=True)
         return results[:limit]
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         """Aggregated summary for /api/health and system prompt injection."""
         with self._lock:
             rows = self._get_cached_findings()
@@ -291,13 +301,15 @@ class FindingsStore:
         cleanup_count = sum(1 for r in rows if r.get("category") == "cleanup")
         rightsize_count = sum(1 for r in rows if r.get("category") == "rightsize")
 
-        by_service: Dict[str, Dict] = {}
+        by_service: dict[str, dict] = {}
         for r in rows:
             svc = r.get("service", "Unknown")
             if svc not in by_service:
                 by_service[svc] = {"count": 0, "savings": 0, "worst_severity": "info"}
             by_service[svc]["count"] += 1
-            by_service[svc]["savings"] = round(by_service[svc]["savings"] + r.get("estimated_savings_usd", 0), 2)
+            by_service[svc]["savings"] = round(
+                by_service[svc]["savings"] + r.get("estimated_savings_usd", 0), 2
+            )
             if r.get("severity") == "critical":
                 by_service[svc]["worst_severity"] = "critical"
             elif r.get("severity") == "warning" and by_service[svc]["worst_severity"] != "critical":
@@ -365,7 +377,7 @@ class FindingsStore:
         except Exception:
             return None
 
-    def get_trends(self, service: Optional[str] = None, days: int = 30) -> List[Dict]:
+    def get_trends(self, service: Optional[str] = None, days: int = 30) -> list[dict]:
         """Return per-scan summary for trend charts. SQLite only."""
         if not self._db_path:
             return []
@@ -400,7 +412,7 @@ class FindingsStore:
 
     # ── Internal ──────────────────────────────────────────────────────────────
 
-    def _get_cached_findings(self) -> List[Dict]:
+    def _get_cached_findings(self) -> list[dict]:
         """Return in-memory cache if fresh, else reload from SQLite."""
         if self._cache is not None and self._cache_at:
             age = (datetime.utcnow() - self._cache_at).total_seconds()
@@ -422,6 +434,7 @@ class FindingsStore:
                     (latest_scan["id"],),
                 ).fetchall()
                 from backend.models.finding import compute_fix_command
+
                 enriched = []
                 for r in rows:
                     d = dict(r)

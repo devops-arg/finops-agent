@@ -2,20 +2,20 @@
 Finding model — core data structure produced by all waste analyzers.
 Every analyzer yields List[Finding] regardless of service or check type.
 """
+
+import uuid
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Dict, Optional
-import uuid
-
+from typing import Any, Optional
 
 # ── Severity levels ───────────────────────────────────────────────────────────
-SEVERITY_CRITICAL = "critical"   # > $200/mo waste or security risk
-SEVERITY_WARNING  = "warning"    # $50–$200/mo waste
-SEVERITY_INFO     = "info"       # < $50/mo or best-practice gap
+SEVERITY_CRITICAL = "critical"  # > $200/mo waste or security risk
+SEVERITY_WARNING = "warning"  # $50–$200/mo waste
+SEVERITY_INFO = "info"  # < $50/mo or best-practice gap
 
 # ── Finding categories ────────────────────────────────────────────────────────
-CATEGORY_CLEANUP    = "cleanup"    # resource should be deleted (zombie/orphan)
-CATEGORY_RIGHTSIZE  = "rightsize"  # resource should be resized / reconfigured
+CATEGORY_CLEANUP = "cleanup"  # resource should be deleted (zombie/orphan)
+CATEGORY_RIGHTSIZE = "rightsize"  # resource should be resized / reconfigured
 
 
 def _severity_from_savings(savings: float) -> str:
@@ -29,19 +29,19 @@ def _severity_from_savings(savings: float) -> str:
 @dataclass
 class Finding:
     resource_id: str
-    resource_type: str          # "ebs_volume", "rds_instance", "ec2_instance", …
-    service: str                # "EBS", "RDS", "EC2", "ELB", "Lambda", …
-    category: str               # CATEGORY_CLEANUP | CATEGORY_RIGHTSIZE
+    resource_type: str  # "ebs_volume", "rds_instance", "ec2_instance", …
+    service: str  # "EBS", "RDS", "EC2", "ELB", "Lambda", …
+    category: str  # CATEGORY_CLEANUP | CATEGORY_RIGHTSIZE
     title: str
     description: str
-    severity: str               # SEVERITY_CRITICAL | SEVERITY_WARNING | SEVERITY_INFO
+    severity: str  # SEVERITY_CRITICAL | SEVERITY_WARNING | SEVERITY_INFO
     monthly_cost_usd: float
     estimated_savings_usd: float
     region: str
     account_id: str = "666666666666"
     idle_days: Optional[int] = None
-    tags: Dict[str, str] = field(default_factory=dict)
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    tags: dict[str, str] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)
     detected_at: str = field(default_factory=lambda: datetime.utcnow().isoformat())
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
 
@@ -91,7 +91,9 @@ class Finding:
             repo = self.metadata.get("repository_name", rid)
             digest = self.metadata.get("image_digest", "")
             if digest:
-                return f"aws ecr batch-delete-image --repository-name {repo} --image-ids imageDigest={digest}{r}"
+                return (
+                    f"aws ecr batch-delete-image --repository-name {repo} --image-ids imageDigest={digest}{r}"
+                )
         if rt == "s3_bucket":
             return f"aws s3 rb s3://{rid} --force"
         if rt == "acm_certificate":
@@ -122,7 +124,7 @@ class Finding:
         # Rightsizing or unknown — no simple delete command
         return None
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "resource_id": self.resource_id,
@@ -144,7 +146,7 @@ class Finding:
         }
 
 
-def compute_fix_command(d: Dict[str, Any]) -> Optional[str]:
+def compute_fix_command(d: dict[str, Any]) -> Optional[str]:
     """Compute the fix command for a finding dict loaded from SQLite (no Finding object needed)."""
     rt = d.get("resource_type", "")
     rid = d.get("resource_id", "")

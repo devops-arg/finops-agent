@@ -17,28 +17,49 @@ Examples the LLM can issue:
 
 import json
 import logging
-import re
 import shlex
 import time
-from typing import Any, Dict, List
+from typing import Any
 
-from backend.tools.base import BaseTool
-from backend.models.core import ToolResult
 from backend.config.manager import AWSConfig, LocalStackConfig
+from backend.models.core import ToolResult
+from backend.tools.base import BaseTool
 
 logger = logging.getLogger(__name__)
 
 # Operations we explicitly block even in read-only mode (sensitive/expensive)
 _BLOCKED_OPERATIONS = {
-    "delete", "terminate", "stop", "start", "create", "run", "put",
-    "update", "modify", "attach", "detach", "associate", "disassociate",
-    "revoke", "authorize", "reset", "restore", "reboot",
+    "delete",
+    "terminate",
+    "stop",
+    "start",
+    "create",
+    "run",
+    "put",
+    "update",
+    "modify",
+    "attach",
+    "detach",
+    "associate",
+    "disassociate",
+    "revoke",
+    "authorize",
+    "reset",
+    "restore",
+    "reboot",
 }
 
 # Prefix whitelist — only these verb prefixes are allowed
 _ALLOWED_PREFIXES = {
-    "describe", "list", "get", "search", "scan", "query",
-    "filter", "show", "check",
+    "describe",
+    "list",
+    "get",
+    "search",
+    "scan",
+    "query",
+    "filter",
+    "show",
+    "check",
 }
 
 TOOL_DEFINITIONS = [
@@ -92,11 +113,44 @@ def _to_snake(s: str) -> str:
 
 # AWS known abbreviations that should stay uppercase in PascalCase
 _AWS_ABBREVS = {
-    "db", "id", "ids", "arn", "arns", "uri", "url", "ami", "api",
-    "ec2", "rds", "eks", "ecs", "iam", "acl", "acls", "vpc", "vpn",
-    "tls", "ssl", "mfa", "kms", "sns", "sqs", "sso", "scp", "nat",
-    "az", "ip", "cidr", "dns", "ebs", "efs", "elb", "alb", "nlb",
-    "s3", "cf",
+    "db",
+    "id",
+    "ids",
+    "arn",
+    "arns",
+    "uri",
+    "url",
+    "ami",
+    "api",
+    "ec2",
+    "rds",
+    "eks",
+    "ecs",
+    "iam",
+    "acl",
+    "acls",
+    "vpc",
+    "vpn",
+    "tls",
+    "ssl",
+    "mfa",
+    "kms",
+    "sns",
+    "sqs",
+    "sso",
+    "scp",
+    "nat",
+    "az",
+    "ip",
+    "cidr",
+    "dns",
+    "ebs",
+    "efs",
+    "elb",
+    "alb",
+    "nlb",
+    "s3",
+    "cf",
 }
 
 
@@ -114,9 +168,29 @@ def _cli_param_to_boto3(cli_key: str) -> str:
     # Standalone abbreviations that should stay fully uppercase ONLY when the
     # whole segment is the abbreviation AND it's not a suffix like 'ids'.
     # Rule: db → DB, ec2 → EC2, but 'ids' → 'Ids', 'id' alone at end → 'Id'
-    _FULL_UPPER = {"db", "ec2", "rds", "iam", "vpc", "vpn", "acl",
-                   "tls", "ssl", "mfa", "kms", "sns", "sqs", "nat", "ami",
-                   "api", "arn", "uri", "url", "az", "s3"}
+    _FULL_UPPER = {
+        "db",
+        "ec2",
+        "rds",
+        "iam",
+        "vpc",
+        "vpn",
+        "acl",
+        "tls",
+        "ssl",
+        "mfa",
+        "kms",
+        "sns",
+        "sqs",
+        "nat",
+        "ami",
+        "api",
+        "arn",
+        "uri",
+        "url",
+        "az",
+        "s3",
+    }
 
     parts = cli_key.lstrip("-").split("-")
     result = []
@@ -137,7 +211,7 @@ def _parse_value(raw: str) -> Any:
         return raw
 
 
-def _parse_cli_command(cli_command: str) -> tuple[str, str, Dict[str, Any], str]:
+def _parse_cli_command(cli_command: str) -> tuple[str, str, dict[str, Any], str]:
     """
     Parse 'aws <service> <operation> [--key value ...]' into
     (service, boto3_operation, params_dict, region).
@@ -178,7 +252,7 @@ def _parse_cli_command(cli_command: str) -> tuple[str, str, Dict[str, Any], str]
     }
     service = service_aliases.get(service, service)
 
-    params: Dict[str, Any] = {}
+    params: dict[str, Any] = {}
     region: str = ""
 
     remaining = parts[2:]
@@ -271,6 +345,7 @@ class AWSAPITool(BaseTool):
         if self._boto_session:
             return self._boto_session
         import boto3
+
         if self._aws.profile and not self._ls.enabled:
             session = boto3.Session(
                 profile_name=self._aws.profile,
@@ -297,18 +372,20 @@ class AWSAPITool(BaseTool):
         self._boto_session = session
         return session
 
-    def get_definitions(self) -> List[Dict[str, Any]]:
+    def get_definitions(self) -> list[dict[str, Any]]:
         return TOOL_DEFINITIONS
 
-    def get_tool_names(self) -> List[str]:
+    def get_tool_names(self) -> list[str]:
         return ["call_aws"]
 
-    def execute(self, tool_name: str, parameters: Dict[str, Any]) -> ToolResult:
+    def execute(self, tool_name: str, parameters: dict[str, Any]) -> ToolResult:
         start = time.time()
         if tool_name != "call_aws":
             return ToolResult(
-                tool_name=tool_name, operation=tool_name,
-                success=False, error=f"Unknown tool: {tool_name}",
+                tool_name=tool_name,
+                operation=tool_name,
+                success=False,
+                error=f"Unknown tool: {tool_name}",
             )
         cli_command = parameters.get("command", "").strip()
         max_results = int(parameters.get("max_results", 50))
@@ -316,19 +393,23 @@ class AWSAPITool(BaseTool):
         try:
             data = self._call_aws(cli_command, max_results)
             return ToolResult(
-                tool_name=tool_name, operation=cli_command,
-                success=True, data=data,
+                tool_name=tool_name,
+                operation=cli_command,
+                success=True,
+                data=data,
                 execution_time=round(time.time() - start, 2),
             )
         except Exception as e:
             logger.error(f"call_aws failed [{cli_command!r}]: {e}")
             return ToolResult(
-                tool_name=tool_name, operation=cli_command,
-                success=False, error=str(e),
+                tool_name=tool_name,
+                operation=cli_command,
+                success=False,
+                error=str(e),
                 execution_time=round(time.time() - start, 2),
             )
 
-    def _call_aws(self, cli_command: str, max_results: int = 50) -> Dict[str, Any]:
+    def _call_aws(self, cli_command: str, max_results: int = 50) -> dict[str, Any]:
         if not cli_command:
             raise ValueError("command is required")
 

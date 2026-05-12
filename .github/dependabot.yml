@@ -1,0 +1,39 @@
+version: 2
+updates:
+  # Python runtime + dev deps
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: America/Argentina/Buenos_Aires
+    open-pull-requests-limit: 5
+    labels: [dependencies, python]
+    groups:
+      python-minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # Pin major bumps of Anthropic + OpenAI SDKs — they break tool-call APIs.
+      # Bump intentionally with a separate PR + smoke test.
+      - dependency-name: anthropic
+        update-types: [version-update:semver-major]
+      - dependency-name: openai
+        update-types: [version-update:semver-major]
+
+  # Dockerfile base image
+  - package-ecosystem: docker
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels: [dependencies, docker]
+
+  # GitHub Actions used in workflows
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+    labels: [dependencies, github-actions]
+    groups:
+      actions:
+        patterns: ["*"]

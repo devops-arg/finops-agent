@@ -7,12 +7,13 @@ the frontend renderer doesn't care which source it's from.
 All calls are read-only and cached per-request (no state between requests).
 Errors in a single service don't break others — we catch and continue.
 """
+
 from __future__ import annotations
 
 import logging
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
-from typing import Any, Dict, List
+from typing import Any
 
 import boto3
 
@@ -53,7 +54,7 @@ def _session(aws_config) -> boto3.Session:
 
 
 # ── Region enumeration ─────────────────────────────────────────────────────
-def _list_enabled_regions(session: boto3.Session) -> List[str]:
+def _list_enabled_regions(session: boto3.Session) -> list[str]:
     """Return all regions enabled/opted-in for this account."""
     ec2 = session.client("ec2", region_name="us-east-1")
     resp = ec2.describe_regions(AllRegions=False)  # AllRegions=False excludes opted-out regions
@@ -62,7 +63,9 @@ def _list_enabled_regions(session: boto3.Session) -> List[str]:
     return regions
 
 
-def _run_per_region(session: boto3.Session, regions: List[str], fn, label: str, max_workers: int = 10) -> List[Dict[str, Any]]:
+def _run_per_region(
+    session: boto3.Session, regions: list[str], fn, label: str, max_workers: int = 10
+) -> list[dict[str, Any]]:
     """Run `fn(session, region)` for each region in parallel. Returns list of results."""
     results = []
     with ThreadPoolExecutor(max_workers=max_workers) as pool:
@@ -80,7 +83,7 @@ def _run_per_region(session: boto3.Session, regions: List[str], fn, label: str, 
 
 
 # ── EC2 ────────────────────────────────────────────────────────────────────
-def _fetch_ec2_region(session: boto3.Session, region: str) -> Dict[str, Any]:
+def _fetch_ec2_region(session: boto3.Session, region: str) -> dict[str, Any]:
     ec2 = session.client("ec2", region_name=region)
     paginator = ec2.get_paginator("describe_instances")
     instances = []
@@ -88,17 +91,19 @@ def _fetch_ec2_region(session: boto3.Session, region: str) -> Dict[str, Any]:
         for reservation in page.get("Reservations", []):
             for inst in reservation.get("Instances", []):
                 tags = {t["Key"]: t["Value"] for t in inst.get("Tags", [])}
-                instances.append({
-                    "id": inst["InstanceId"],
-                    "type": inst["InstanceType"],
-                    "state": inst["State"]["Name"],
-                    "name": tags.get("Name", inst["InstanceId"]),
-                    "environment": tags.get("Environment", tags.get("env", "unknown")),
-                })
+                instances.append(
+                    {
+                        "id": inst["InstanceId"],
+                        "type": inst["InstanceType"],
+                        "state": inst["State"]["Name"],
+                        "name": tags.get("Name", inst["InstanceId"]),
+                        "environment": tags.get("Environment", tags.get("env", "unknown")),
+                    }
+                )
     return {"instances": instances}
 
 
-def _aggregate_ec2(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _aggregate_ec2(per_region: list[dict[str, Any]]) -> dict[str, Any]:
     all_instances = []
     by_region = {}
     for rdata in per_region:
@@ -132,14 +137,14 @@ def _aggregate_ec2(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 # ── RDS ────────────────────────────────────────────────────────────────────
-def _fetch_rds_region(session: boto3.Session, region: str) -> Dict[str, Any]:
+def _fetch_rds_region(session: boto3.Session, region: str) -> dict[str, Any]:
     rds = session.client("rds", region_name=region)
     dbs = rds.describe_db_instances().get("DBInstances", [])
     clusters = rds.describe_db_clusters().get("DBClusters", [])
     return {"dbs": dbs, "clusters": clusters}
 
 
-def _aggregate_rds(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _aggregate_rds(per_region: list[dict[str, Any]]) -> dict[str, Any]:
     all_dbs = []
     all_clusters = []
     by_region = {}
@@ -153,7 +158,15 @@ def _aggregate_rds(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
             by_region[region] = {"dbs": len(dbs), "clusters": len(clusters)}
 
     if not all_dbs and not all_clusters:
-        return {"clusters": 0, "instances": 0, "engine": "none", "regions": {}, "monthly_cost": 0, "status": "healthy", "detail": "No RDS instances in any region"}
+        return {
+            "clusters": 0,
+            "instances": 0,
+            "engine": "none",
+            "regions": {},
+            "monthly_cost": 0,
+            "status": "healthy",
+            "detail": "No RDS instances in any region",
+        }
 
     total_storage = sum(db.get("AllocatedStorage", 0) for db in all_dbs)
     engines = {db.get("Engine", "unknown") for db in all_dbs}
@@ -176,7 +189,7 @@ def _aggregate_rds(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 # ── EKS ────────────────────────────────────────────────────────────────────
-def _fetch_eks_region(session: boto3.Session, region: str) -> Dict[str, Any]:
+def _fetch_eks_region(session: boto3.Session, region: str) -> dict[str, Any]:
     eks = session.client("eks", region_name=region)
     cluster_names = eks.list_clusters().get("clusters", [])
     if not cluster_names:
@@ -196,7 +209,7 @@ def _fetch_eks_region(session: boto3.Session, region: str) -> Dict[str, Any]:
     return {"clusters": clusters}
 
 
-def _aggregate_eks(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _aggregate_eks(per_region: list[dict[str, Any]]) -> dict[str, Any]:
     all_clusters = []
     by_region = {}
     for rdata in per_region:
@@ -215,18 +228,20 @@ def _aggregate_eks(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
         "regions": by_region,
         "monthly_cost": 0,
         "status": "healthy",
-        "detail": f"{len(all_clusters)} clusters, ~{total_nodes} nodes across {len(by_region)} regions" if all_clusters else "No EKS clusters in any region",
+        "detail": f"{len(all_clusters)} clusters, ~{total_nodes} nodes across {len(by_region)} regions"
+        if all_clusters
+        else "No EKS clusters in any region",
     }
 
 
 # ── ElastiCache ────────────────────────────────────────────────────────────
-def _fetch_elasticache_region(session: boto3.Session, region: str) -> Dict[str, Any]:
+def _fetch_elasticache_region(session: boto3.Session, region: str) -> dict[str, Any]:
     ec = session.client("elasticache", region_name=region)
     clusters = ec.describe_cache_clusters().get("CacheClusters", [])
     return {"clusters": clusters}
 
 
-def _aggregate_elasticache(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _aggregate_elasticache(per_region: list[dict[str, Any]]) -> dict[str, Any]:
     all_clusters = []
     by_region = {}
     for rdata in per_region:
@@ -237,7 +252,15 @@ def _aggregate_elasticache(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
             by_region[region] = len(cls)
 
     if not all_clusters:
-        return {"clusters": 0, "total_nodes": 0, "engine": "none", "regions": {}, "monthly_cost": 0, "status": "healthy", "detail": "No ElastiCache clusters in any region"}
+        return {
+            "clusters": 0,
+            "total_nodes": 0,
+            "engine": "none",
+            "regions": {},
+            "monthly_cost": 0,
+            "status": "healthy",
+            "detail": "No ElastiCache clusters in any region",
+        }
 
     engines = {c.get("Engine", "unknown") for c in all_clusters}
     total_nodes = sum(c.get("NumCacheNodes", 0) for c in all_clusters)
@@ -256,13 +279,13 @@ def _aggregate_elasticache(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 # ── OpenSearch ─────────────────────────────────────────────────────────────
-def _fetch_opensearch_region(session: boto3.Session, region: str) -> Dict[str, Any]:
+def _fetch_opensearch_region(session: boto3.Session, region: str) -> dict[str, Any]:
     os_client = session.client("opensearch", region_name=region)
     domains = os_client.list_domain_names().get("DomainNames", [])
     return {"domains": domains}
 
 
-def _aggregate_opensearch(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _aggregate_opensearch(per_region: list[dict[str, Any]]) -> dict[str, Any]:
     all_domains = []
     by_region = {}
     for rdata in per_region:
@@ -273,7 +296,13 @@ def _aggregate_opensearch(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
             by_region[region] = len(doms)
 
     if not all_domains:
-        return {"domains": 0, "regions": {}, "monthly_cost": 0, "status": "healthy", "detail": "No OpenSearch domains in any region"}
+        return {
+            "domains": 0,
+            "regions": {},
+            "monthly_cost": 0,
+            "status": "healthy",
+            "detail": "No OpenSearch domains in any region",
+        }
 
     return {
         "domains": len(all_domains),
@@ -285,20 +314,22 @@ def _aggregate_opensearch(per_region: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 # ── S3 ─────────────────────────────────────────────────────────────────────
-def _fetch_s3(session: boto3.Session) -> Dict[str, Any]:
+def _fetch_s3(session: boto3.Session) -> dict[str, Any]:
     s3 = session.client("s3")
     resp = s3.list_buckets()
     buckets = resp.get("Buckets", [])
     bucket_info = []
     # Just list first 10 — don't do GetBucketSize (expensive) for dashboard
     for b in buckets[:10]:
-        bucket_info.append({
-            "name": b["Name"],
-            "created": b["CreationDate"].isoformat() if "CreationDate" in b else "",
-            "size_gb": 0,
-            "objects": 0,
-            "lifecycle": False,
-        })
+        bucket_info.append(
+            {
+                "name": b["Name"],
+                "created": b["CreationDate"].isoformat() if "CreationDate" in b else "",
+                "size_gb": 0,
+                "objects": 0,
+                "lifecycle": False,
+            }
+        )
 
     return {
         "total_buckets": len(buckets),
@@ -312,7 +343,7 @@ def _fetch_s3(session: boto3.Session) -> Dict[str, Any]:
 
 
 # ── Entry point ────────────────────────────────────────────────────────────
-def fetch_live_infrastructure(aws_config, region: str = None) -> Dict[str, Any]:
+def fetch_live_infrastructure(aws_config, region: str = None) -> dict[str, Any]:
     """Fetch live infrastructure from AWS.
 
     Args:
@@ -325,10 +356,10 @@ def fetch_live_infrastructure(aws_config, region: str = None) -> Dict[str, Any]:
     S3 is global. Cost Explorer is queried once in us-east-1 (all-region costs).
     """
     session = _session(aws_config)
-    resources: Dict[str, Any] = {}
+    resources: dict[str, Any] = {}
 
     # Determine which regions to scan
-    scan_all = (region == "all")
+    scan_all = region == "all"
     if scan_all:
         try:
             regions = _list_enabled_regions(session)
@@ -346,11 +377,11 @@ def fetch_live_infrastructure(aws_config, region: str = None) -> Dict[str, Any]:
 
     # ── Regional services: fetch all regions in parallel, then aggregate ──
     regional_services = [
-        ("ec2",         _fetch_ec2_region,         _aggregate_ec2),
-        ("rds",         _fetch_rds_region,         _aggregate_rds),
-        ("eks",         _fetch_eks_region,         _aggregate_eks),
+        ("ec2", _fetch_ec2_region, _aggregate_ec2),
+        ("rds", _fetch_rds_region, _aggregate_rds),
+        ("eks", _fetch_eks_region, _aggregate_eks),
         ("elasticache", _fetch_elasticache_region, _aggregate_elasticache),
-        ("opensearch",  _fetch_opensearch_region,  _aggregate_opensearch),
+        ("opensearch", _fetch_opensearch_region, _aggregate_opensearch),
     ]
     for key, fetch_fn, agg_fn in regional_services:
         try:
@@ -393,9 +424,10 @@ def fetch_live_infrastructure(aws_config, region: str = None) -> Dict[str, Any]:
     }
 
 
-def _attach_costs(session: boto3.Session, resources: Dict[str, Any], region: str):
+def _attach_costs(session: boto3.Session, resources: dict[str, Any], region: str):
     """Pull last 30-day cost per service and attribute to matching resources."""
     from datetime import timedelta
+
     ce = session.client("ce", region_name="us-east-1")
     end = datetime.utcnow().date()
     start = end - timedelta(days=30)
@@ -428,7 +460,7 @@ def _attach_costs(session: boto3.Session, resources: Dict[str, Any], region: str
         resources[res_key]["monthly_cost"] = round(total, 2)
 
 
-def fetch_live_optimization(aws_config) -> Dict[str, Any]:
+def fetch_live_optimization(aws_config) -> dict[str, Any]:
     """Fetch cost optimization recommendations from AWS Cost Optimization Hub.
 
     Cost Optimization Hub (launched Nov 2023) is the unified AWS service that
@@ -457,8 +489,10 @@ def _map_effort(aws_effort: str) -> str:
 
 
 def _priority_from_savings(monthly_savings: float) -> str:
-    if monthly_savings >= 200: return "P1"
-    if monthly_savings >= 50:  return "P2"
+    if monthly_savings >= 200:
+        return "P1"
+    if monthly_savings >= 50:
+        return "P2"
     return "P3"
 
 
@@ -478,7 +512,7 @@ def _action_to_type(action: str) -> str:
     }.get(action, "other")
 
 
-def _fetch_cost_optimization_hub(session: boto3.Session) -> Dict[str, Any]:
+def _fetch_cost_optimization_hub(session: boto3.Session) -> dict[str, Any]:
     """Fetch from the unified Cost Optimization Hub service (us-east-1 only)."""
     hub = session.client("cost-optimization-hub", region_name="us-east-1")
 
@@ -549,27 +583,32 @@ def _fetch_cost_optimization_hub(session: boto3.Session) -> Dict[str, Any]:
         if rec.get("restartNeeded"):
             detail_parts.append("Restart required")
 
-        recommendations.append({
-            "id": rec.get("recommendationId", f"OPT-{i+1:04d}"),
-            "priority": _priority_from_savings(savings),
-            "severity": "high" if savings >= 200 else "medium" if savings >= 50 else "low",
-            "service": resource_type or "AWS",
-            "title": title,
-            "detail": " · ".join(detail_parts) + (
-                f". Current resource: {curr_summary}" if curr_summary and curr_summary not in title else ""
-            ),
-            "monthly_savings": round(savings, 2),
-            "annual_savings": round(savings * 12, 2),
-            "current_monthly_cost": round(float(rec.get("estimatedMonthlyCost", 0) or 0), 2),
-            "effort": _map_effort(rec.get("implementationEffort", "Medium")),
-            "risk": "medium" if rec.get("restartNeeded") else "low",
-            "type": _action_to_type(action),
-            "action_type": action,
-            "region": region,
-            "resource_id": resource_id,
-            "rollback_possible": rec.get("rollbackPossible", False),
-            "source": rec.get("source", "CostOptimizationHub"),
-        })
+        recommendations.append(
+            {
+                "id": rec.get("recommendationId", f"OPT-{i+1:04d}"),
+                "priority": _priority_from_savings(savings),
+                "severity": "high" if savings >= 200 else "medium" if savings >= 50 else "low",
+                "service": resource_type or "AWS",
+                "title": title,
+                "detail": " · ".join(detail_parts)
+                + (
+                    f". Current resource: {curr_summary}"
+                    if curr_summary and curr_summary not in title
+                    else ""
+                ),
+                "monthly_savings": round(savings, 2),
+                "annual_savings": round(savings * 12, 2),
+                "current_monthly_cost": round(float(rec.get("estimatedMonthlyCost", 0) or 0), 2),
+                "effort": _map_effort(rec.get("implementationEffort", "Medium")),
+                "risk": "medium" if rec.get("restartNeeded") else "low",
+                "type": _action_to_type(action),
+                "action_type": action,
+                "region": region,
+                "resource_id": resource_id,
+                "rollback_possible": rec.get("rollbackPossible", False),
+                "source": rec.get("source", "CostOptimizationHub"),
+            }
+        )
 
     # Summary score: more/bigger opportunities = lower score
     score = max(0, min(100, 100 - int(total_savings / 50)))
@@ -597,9 +636,9 @@ def _fetch_cost_optimization_hub(session: boto3.Session) -> Dict[str, Any]:
     }
 
 
-def _fetch_ce_recommendations_fallback(session: boto3.Session) -> Dict[str, Any]:
+def _fetch_ce_recommendations_fallback(session: boto3.Session) -> dict[str, Any]:
     """Fallback when Cost Optimization Hub is not enrolled: use CE APIs directly."""
-    recommendations: List[Dict[str, Any]] = []
+    recommendations: list[dict[str, Any]] = []
     total_savings = 0.0
 
     try:
@@ -612,20 +651,22 @@ def _fetch_ce_recommendations_fallback(session: boto3.Session) -> Dict[str, Any]
             inst_id = rec.get("CurrentInstance", {}).get("ResourceId", "unknown")
             curr_type = rec.get("CurrentInstance", {}).get("InstanceName", "")
             action = rec.get("RightsizingType", "")
-            recommendations.append({
-                "id": f"CE-RS-{i+1:03d}",
-                "priority": _priority_from_savings(savings),
-                "severity": "high" if savings > 100 else "medium",
-                "service": "Amazon EC2",
-                "title": f"{action} {curr_type or inst_id}",
-                "detail": f"Instance {inst_id}: {action.lower()}. Based on AWS rightsizing recommendation.",
-                "monthly_savings": round(savings, 2),
-                "annual_savings": round(savings * 12, 2),
-                "effort": "low",
-                "risk": "low",
-                "type": "rightsizing",
-                "source": "CostExplorer",
-            })
+            recommendations.append(
+                {
+                    "id": f"CE-RS-{i+1:03d}",
+                    "priority": _priority_from_savings(savings),
+                    "severity": "high" if savings > 100 else "medium",
+                    "service": "Amazon EC2",
+                    "title": f"{action} {curr_type or inst_id}",
+                    "detail": f"Instance {inst_id}: {action.lower()}. Based on AWS rightsizing recommendation.",
+                    "monthly_savings": round(savings, 2),
+                    "annual_savings": round(savings * 12, 2),
+                    "effort": "low",
+                    "risk": "low",
+                    "type": "rightsizing",
+                    "source": "CostExplorer",
+                }
+            )
     except Exception as e:
         logger.warning(f"EC2 rightsizing fallback failed: {e}")
 

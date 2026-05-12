@@ -5,12 +5,13 @@ Zero external dependencies — designed for single-user FinOps agent.
 Indexes cost reports, AWS metadata, and pre-fetched data so the agent
 can answer common questions instantly without calling AWS APIs every time.
 """
+
 import json
 import logging
 import re
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 logger = logging.getLogger(__name__)
 
@@ -20,7 +21,7 @@ INDEX_FILE = Path("knowledge_index.json")
 class KnowledgeStore:
     def __init__(self, persist_path: Optional[str] = None):
         self._path = Path(persist_path) if persist_path else INDEX_FILE
-        self._documents: List[Dict[str, Any]] = []
+        self._documents: list[dict[str, Any]] = []
         self._load()
 
     def _load(self):
@@ -37,11 +38,16 @@ class KnowledgeStore:
     def _save(self):
         try:
             with open(self._path, "w") as f:
-                json.dump({
-                    "updated": datetime.utcnow().isoformat(),
-                    "count": len(self._documents),
-                    "documents": self._documents,
-                }, f, indent=2, default=str)
+                json.dump(
+                    {
+                        "updated": datetime.utcnow().isoformat(),
+                        "count": len(self._documents),
+                        "documents": self._documents,
+                    },
+                    f,
+                    indent=2,
+                    default=str,
+                )
             logger.info(f"Knowledge store saved: {len(self._documents)} documents")
         except Exception as e:
             logger.error(f"Failed to save knowledge store: {e}")
@@ -54,20 +60,22 @@ class KnowledgeStore:
     def document_count(self) -> int:
         return len(self._documents)
 
-    def add(self, content: str, doc_type: str, metadata: Optional[Dict] = None):
-        self._documents.append({
-            "content": content,
-            "type": doc_type,
-            "metadata": metadata or {},
-            "indexed_at": datetime.utcnow().isoformat(),
-        })
+    def add(self, content: str, doc_type: str, metadata: Optional[dict] = None):
+        self._documents.append(
+            {
+                "content": content,
+                "type": doc_type,
+                "metadata": metadata or {},
+                "indexed_at": datetime.utcnow().isoformat(),
+            }
+        )
 
     def save(self):
         self._save()
 
-    def search(self, query: str, limit: int = 10, doc_type: Optional[str] = None) -> List[Dict[str, Any]]:
+    def search(self, query: str, limit: int = 10, doc_type: Optional[str] = None) -> list[dict[str, Any]]:
         query_lower = query.lower()
-        keywords = set(re.findall(r'\w+', query_lower))
+        keywords = set(re.findall(r"\w+", query_lower))
         keywords.discard("")
 
         scored = []
@@ -101,7 +109,7 @@ class KnowledgeStore:
 
     # ── Ingest helpers ──────────────────────────────────────
 
-    def ingest_cost_report(self, report: Dict[str, Any]) -> int:
+    def ingest_cost_report(self, report: dict[str, Any]) -> int:
         """Index a weekly cost report into searchable documents."""
         count = 0
         summary = report.get("summary", {})
@@ -158,7 +166,11 @@ class KnowledgeStore:
             lines = [f"AWS Account: {name} ({acct_id})"]
             for week, cost in costs.items():
                 lines.append(f"  {week}: ${cost:,.2f}")
-            self.add("\n".join(lines), "cost_by_account", {"account_id": acct_id, "name": name, "last_cost": last_cost})
+            self.add(
+                "\n".join(lines),
+                "cost_by_account",
+                {"account_id": acct_id, "name": name, "last_cost": last_cost},
+            )
             count += 1
 
         for item in report.get("byEnvironment", []):
@@ -177,7 +189,7 @@ class KnowledgeStore:
 
         return count
 
-    def ingest_account_metadata(self, accounts: List[Dict[str, Any]]) -> int:
+    def ingest_account_metadata(self, accounts: list[dict[str, Any]]) -> int:
         """Index AWS account dimension values."""
         count = 0
         for acct in accounts:
@@ -192,7 +204,7 @@ class KnowledgeStore:
             count += 1
         return count
 
-    def ingest_service_list(self, services: List[Dict[str, Any]]) -> int:
+    def ingest_service_list(self, services: list[dict[str, Any]]) -> int:
         """Index available AWS services."""
         names = [s.get("value", "") for s in services if s.get("value")]
         if names:
@@ -201,7 +213,7 @@ class KnowledgeStore:
             return 1
         return 0
 
-    def ingest_region_list(self, regions: List[Dict[str, Any]]) -> int:
+    def ingest_region_list(self, regions: list[dict[str, Any]]) -> int:
         """Index AWS regions in use."""
         names = [r.get("value", "") for r in regions if r.get("value")]
         if names:

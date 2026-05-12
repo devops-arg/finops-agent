@@ -1,7 +1,8 @@
 import json
 import logging
-from typing import Any, Dict, List, Optional
-from backend.llm.provider import LLMProvider, ChatResponse
+from typing import Any, Optional
+
+from backend.llm.provider import ChatResponse, LLMProvider
 from backend.models.conversation import ToolCall
 
 logger = logging.getLogger(__name__)
@@ -10,6 +11,7 @@ logger = logging.getLogger(__name__)
 class OpenAIProvider(LLMProvider):
     def __init__(self, api_key: str, model: str = "gpt-4o"):
         from openai import OpenAI
+
         self._client = OpenAI(api_key=api_key)
         self._model = model
         logger.info(f"OpenAI provider initialized: {model}")
@@ -22,7 +24,7 @@ class OpenAIProvider(LLMProvider):
     def provider_name(self) -> str:
         return "openai"
 
-    def format_tool_for_provider(self, tool_def: Dict[str, Any]) -> Dict[str, Any]:
+    def format_tool_for_provider(self, tool_def: dict[str, Any]) -> dict[str, Any]:
         params = tool_def.get("parameters", {})
         if not params.get("type"):
             params = {
@@ -41,12 +43,12 @@ class OpenAIProvider(LLMProvider):
 
     def chat_completion(
         self,
-        messages: List[Dict[str, Any]],
-        tools: Optional[List[Dict[str, Any]]] = None,
+        messages: list[dict[str, Any]],
+        tools: Optional[list[dict[str, Any]]] = None,
         temperature: float = 0.0,
         max_tokens: int = 4096,
     ) -> ChatResponse:
-        from openai import RateLimitError, APIError
+        from openai import APIError, RateLimitError
 
         api_params = {
             "model": self._model,

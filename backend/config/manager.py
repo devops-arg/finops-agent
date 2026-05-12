@@ -1,8 +1,8 @@
-import os
 import logging
+import os
 from dataclasses import dataclass, field
-from typing import Optional, List
 from pathlib import Path
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +16,7 @@ class AWSConfig:
     access_key_id: str = ""
     secret_access_key: str = ""
     region: str = "us-east-1"
-    scan_regions: List[str] = field(default_factory=list)
+    scan_regions: list[str] = field(default_factory=list)
     profile: Optional[str] = None
     assume_role_arn: Optional[str] = None
 
@@ -40,9 +40,9 @@ class LLMConfig:
 class ServerConfig:
     host: str = "0.0.0.0"
     port: int = 8000
-    cors_origins: List[str] = field(default_factory=lambda: [
-        "http://localhost:3000", "http://localhost:8080"
-    ])
+    cors_origins: list[str] = field(
+        default_factory=lambda: ["http://localhost:3000", "http://localhost:8080"]
+    )
 
 
 @dataclass
@@ -59,6 +59,7 @@ class FeatureFlags:
         are configured, those endpoints hit live AWS APIs (slower, real data).
         Defaults to True when USE_LOCALSTACK=true (no AWS to hit), False otherwise.
     """
+
     use_mock_data: bool = True
 
 
@@ -96,7 +97,7 @@ class ConfigurationManager:
 
     def _load_env_file(self, path: str):
         try:
-            with open(path, "r") as f:
+            with open(path) as f:
                 for line in f:
                     line = line.strip()
                     if not line or line.startswith("#"):
@@ -119,7 +120,8 @@ class ConfigurationManager:
         raw_scan_regions = os.getenv("AWS_REGIONS_TO_ANALYZE", "")
         scan_regions = (
             [r.strip() for r in raw_scan_regions.split(",") if r.strip()]
-            if raw_scan_regions else [default_region]
+            if raw_scan_regions
+            else [default_region]
         )
         aws = AWSConfig(
             access_key_id=os.getenv("AWS_ACCESS_KEY_ID", "test" if localstack_enabled else ""),
@@ -158,7 +160,7 @@ class ConfigurationManager:
         )
         return Config(aws=aws, localstack=localstack, llm=llm, server=server, report=report, flags=flags)
 
-    def validate(self) -> List[str]:
+    def validate(self) -> list[str]:
         errors = []
         cfg = self.config
         if cfg.llm.provider == "anthropic" and not cfg.llm.anthropic_api_key:

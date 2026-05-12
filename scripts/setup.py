@@ -13,8 +13,8 @@ Usage:
     python scripts/setup.py --report-only    # Skip AWS metadata indexing
     python scripts/setup.py --refresh        # Clear KB and rebuild from scratch
 """
+
 import argparse
-import json
 import os
 import sys
 import time
@@ -28,8 +28,12 @@ from backend.reports.generator import ReportGenerator
 
 def main():
     parser = argparse.ArgumentParser(description="FinOps Agent - Initial Setup")
-    parser.add_argument("--report-only", action="store_true", help="Only generate the cost report, skip KB population")
-    parser.add_argument("--refresh", action="store_true", help="Clear knowledge base and rebuild from scratch")
+    parser.add_argument(
+        "--report-only", action="store_true", help="Only generate the cost report, skip KB population"
+    )
+    parser.add_argument(
+        "--refresh", action="store_true", help="Clear knowledge base and rebuild from scratch"
+    )
     args = parser.parse_args()
 
     print("=" * 60)
@@ -88,6 +92,7 @@ def main():
     print("\n[3/3] Indexing AWS metadata from Cost Explorer...")
     try:
         import boto3
+
         aws = config.aws
 
         if aws.profile:
@@ -101,7 +106,9 @@ def main():
 
         if aws.assume_role_arn:
             sts = session.client("sts")
-            creds = sts.assume_role(RoleArn=aws.assume_role_arn, RoleSessionName="finops-setup")["Credentials"]
+            creds = sts.assume_role(RoleArn=aws.assume_role_arn, RoleSessionName="finops-setup")[
+                "Credentials"
+            ]
             session = boto3.Session(
                 aws_access_key_id=creds["AccessKeyId"],
                 aws_secret_access_key=creds["SecretAccessKey"],
@@ -112,6 +119,7 @@ def main():
         ce = session.client("ce", region_name="us-east-1")
 
         from datetime import datetime, timedelta
+
         today = datetime.utcnow().date()
         start_date = (today - timedelta(days=30)).isoformat()
         end_date = today.isoformat()
@@ -164,12 +172,12 @@ def main():
     kb.save()
 
     print("\n" + "=" * 60)
-    print(f"  Setup complete!")
+    print("  Setup complete!")
     print(f"  Knowledge base: {kb.document_count} documents indexed")
     print(f"  Report: {'report_data.json' if report else 'not generated'}")
-    print(f"")
-    print(f"  Start the agent:  python run_server.py")
-    print(f"  Open the UI:      http://localhost:3000")
+    print("")
+    print("  Start the agent:  python run_server.py")
+    print("  Open the UI:      http://localhost:3000")
     print("=" * 60)
 
 

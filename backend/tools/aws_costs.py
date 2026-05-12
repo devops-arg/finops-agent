@@ -1,10 +1,11 @@
 import logging
 import time
 from datetime import datetime, timedelta
-from typing import Any, Dict, List, Optional
-from backend.tools.base import BaseTool
-from backend.models.core import ToolResult
+from typing import Any, Optional
+
 from backend.config.manager import AWSConfig, LocalStackConfig
+from backend.models.core import ToolResult
+from backend.tools.base import BaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -253,18 +254,19 @@ class AWSCostTools(BaseTool):
         Sources: localstack mode (no real AWS), or the USE_MOCK_DATA env flag.
         """
         import os
+
         if self._is_localstack():
             return True
         flag = os.environ.get("USE_MOCK_DATA", "").lower()
         return flag in ("true", "1", "yes")
 
-    def get_definitions(self) -> List[Dict[str, Any]]:
+    def get_definitions(self) -> list[dict[str, Any]]:
         return TOOL_DEFINITIONS
 
-    def get_tool_names(self) -> List[str]:
+    def get_tool_names(self) -> list[str]:
         return [t["name"] for t in TOOL_DEFINITIONS]
 
-    def execute(self, tool_name: str, parameters: Dict[str, Any]) -> ToolResult:
+    def execute(self, tool_name: str, parameters: dict[str, Any]) -> ToolResult:
         start = time.time()
 
         # Mock mode: either LocalStack or USE_MOCK_DATA=true flag
@@ -272,13 +274,19 @@ class AWSCostTools(BaseTool):
             try:
                 data = self._mock_dispatch(tool_name, parameters)
                 return ToolResult(
-                    tool_name=tool_name, operation=tool_name, success=True,
-                    data=data, execution_time=round(time.time() - start, 3),
+                    tool_name=tool_name,
+                    operation=tool_name,
+                    success=True,
+                    data=data,
+                    execution_time=round(time.time() - start, 3),
                 )
             except Exception as e:
                 return ToolResult(
-                    tool_name=tool_name, operation=tool_name, success=False,
-                    error=str(e), execution_time=round(time.time() - start, 3),
+                    tool_name=tool_name,
+                    operation=tool_name,
+                    success=False,
+                    error=str(e),
+                    execution_time=round(time.time() - start, 3),
                 )
 
         handlers = {
@@ -292,7 +300,9 @@ class AWSCostTools(BaseTool):
         }
         handler = handlers.get(tool_name)
         if not handler:
-            return ToolResult(tool_name=tool_name, operation=tool_name, success=False, error=f"Unknown tool: {tool_name}")
+            return ToolResult(
+                tool_name=tool_name, operation=tool_name, success=False, error=f"Unknown tool: {tool_name}"
+            )
 
         try:
             data = handler(parameters)
@@ -313,9 +323,9 @@ class AWSCostTools(BaseTool):
                 execution_time=round(time.time() - start, 2),
             )
 
-    def _mock_dispatch(self, tool_name: str, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _mock_dispatch(self, tool_name: str, params: dict[str, Any]) -> dict[str, Any]:
         """Route Cost Explorer queries to mock data in LocalStack mode."""
-        from backend.tools.mock_data import generate_report, generate_daily_trend, generate_optimization
+        from backend.tools.mock_data import generate_optimization, generate_report
 
         report = generate_report()
 
@@ -331,12 +341,14 @@ class AWSCostTools(BaseTool):
                 for svc in report["byService"]:
                     # Use most recent week's cost as the period cost
                     latest_cost = list(svc["costs"].values())[-1]
-                    service_costs.append({
-                        "key": svc["name"],
-                        "amount": round(latest_cost, 2),
-                        "unit": "USD",
-                        "monthly_estimate": svc["monthly_estimate"],
-                    })
+                    service_costs.append(
+                        {
+                            "key": svc["name"],
+                            "amount": round(latest_cost, 2),
+                            "unit": "USD",
+                            "monthly_estimate": svc["monthly_estimate"],
+                        }
+                    )
                 service_costs.sort(key=lambda x: x["amount"], reverse=True)
                 total = sum(s["amount"] for s in service_costs)
 
@@ -365,21 +377,34 @@ class AWSCostTools(BaseTool):
                 }
 
             # Non-SERVICE group_by (ACCOUNT, REGION, USAGE_TYPE, TAG:xxx, INSTANCE_TYPE)
-            from backend.tools.mock_data import ACCOUNTS, REGIONS, TEAMS, USAGE_TYPES_WEEKLY, ENVIRONMENTS
+            from backend.tools.mock_data import ACCOUNTS, ENVIRONMENTS, REGIONS, TEAMS, USAGE_TYPES_WEEKLY
+
             total = report["summary"]["lastWeekCost"]
             gb_upper = group_by.upper() if isinstance(group_by, str) else ""
 
             if gb_upper == "LINKED_ACCOUNT":
                 groups = [{"key": a["name"], "amount": round(total * a["pct"], 2)} for a in ACCOUNTS]
             elif gb_upper == "REGION":
-                groups = [{"key": r["name"], "amount": round(total * r["pct"], 2), "label": r["label"]} for r in REGIONS]
+                groups = [
+                    {"key": r["name"], "amount": round(total * r["pct"], 2), "label": r["label"]}
+                    for r in REGIONS
+                ]
             elif gb_upper == "USAGE_TYPE":
-                groups = [{"key": ut["type"], "amount": round(ut["weekly"], 2), "category": ut["category"], "service": ut["service"]}
-                          for ut in USAGE_TYPES_WEEKLY]
+                groups = [
+                    {
+                        "key": ut["type"],
+                        "amount": round(ut["weekly"], 2),
+                        "category": ut["category"],
+                        "service": ut["service"],
+                    }
+                    for ut in USAGE_TYPES_WEEKLY
+                ]
                 groups.sort(key=lambda x: x["amount"], reverse=True)
             elif gb_upper.startswith("TAG:") or gb_upper == "TAG" or params.get("tag_key"):
                 # Accept both TAG:Environment (AWS format) and tag_key=Environment
-                tag_key = params.get("tag_key") or (group_by.split(":", 1)[1] if ":" in str(group_by) else "Team")
+                tag_key = params.get("tag_key") or (
+                    group_by.split(":", 1)[1] if ":" in str(group_by) else "Team"
+                )
                 tk_lower = tag_key.lower()
                 if tk_lower in ("environment", "env"):
                     src = ENVIRONMENTS
@@ -387,22 +412,24 @@ class AWSCostTools(BaseTool):
                     src = TEAMS
                 elif tk_lower in ("service", "application", "app"):
                     src = [
-                        {"name": "api",      "pct": 0.40},
-                        {"name": "workers",  "pct": 0.22},
+                        {"name": "api", "pct": 0.40},
+                        {"name": "workers", "pct": 0.22},
                         {"name": "database", "pct": 0.18},
                         {"name": "frontend", "pct": 0.12},
-                        {"name": "analytics","pct": 0.08},
+                        {"name": "analytics", "pct": 0.08},
                     ]
                 else:
                     src = TEAMS
-                groups = [{"key": f"{tag_key}${x['name']}", "amount": round(total * x["pct"], 2)} for x in src]
+                groups = [
+                    {"key": f"{tag_key}${x['name']}", "amount": round(total * x["pct"], 2)} for x in src
+                ]
             elif gb_upper == "INSTANCE_TYPE":
                 groups = [
-                    {"key": "m5.xlarge",   "amount": round(total * 0.28, 2)},
+                    {"key": "m5.xlarge", "amount": round(total * 0.28, 2)},
                     {"key": "c6i.2xlarge", "amount": round(total * 0.18, 2)},
-                    {"key": "m5.large",    "amount": round(total * 0.12, 2)},
-                    {"key": "r5.xlarge",   "amount": round(total * 0.09, 2)},
-                    {"key": "t3.large",    "amount": round(total * 0.06, 2)},
+                    {"key": "m5.large", "amount": round(total * 0.12, 2)},
+                    {"key": "r5.xlarge", "amount": round(total * 0.09, 2)},
+                    {"key": "t3.large", "amount": round(total * 0.06, 2)},
                 ]
             else:
                 groups = []
@@ -419,7 +446,13 @@ class AWSCostTools(BaseTool):
             monthly = report["summary"]["monthlyProjection"]
             return {
                 "total_forecast": round(monthly, 2),
-                "periods": [{"mean": round(monthly, 2), "low": round(monthly * 0.92, 2), "high": round(monthly * 1.09, 2)}],
+                "periods": [
+                    {
+                        "mean": round(monthly, 2),
+                        "low": round(monthly * 0.92, 2),
+                        "high": round(monthly * 1.09, 2),
+                    }
+                ],
                 "metric": "UNBLENDED_COST",
                 "currency": "USD",
                 "note": "LocalStack mode — trend-based projection",
@@ -451,11 +484,15 @@ class AWSCostTools(BaseTool):
         elif tool_name == "list_available_dimensions":
             dimension = params.get("dimension", "SERVICE")
             if dimension == "SERVICE":
-                return {"dimension": "SERVICE", "values": [{"value": s["name"]} for s in report["byService"]], "count": len(report["byService"])}
+                return {
+                    "dimension": "SERVICE",
+                    "values": [{"value": s["name"]} for s in report["byService"]],
+                    "count": len(report["byService"]),
+                }
             return {"dimension": dimension, "values": [], "note": "LocalStack mode"}
         return {"note": f"LocalStack mode — {tool_name} not fully supported", "data": {}}
 
-    def _query_costs(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _query_costs(self, params: dict[str, Any]) -> dict[str, Any]:
         ce = self._get_ce()
         start_date = params["start_date"]
         end_date = params["end_date"]
@@ -484,9 +521,13 @@ class AWSCostTools(BaseTool):
                     values = [values]
                 if key.startswith("TAG:"):
                     tag_key = key[4:]
-                    filter_expressions.append({"Tags": {"Key": tag_key, "Values": values, "MatchOptions": ["EQUALS"]}})
+                    filter_expressions.append(
+                        {"Tags": {"Key": tag_key, "Values": values, "MatchOptions": ["EQUALS"]}}
+                    )
                 else:
-                    filter_expressions.append({"Dimensions": {"Key": key, "Values": values, "MatchOptions": ["EQUALS"]}})
+                    filter_expressions.append(
+                        {"Dimensions": {"Key": key, "Values": values, "MatchOptions": ["EQUALS"]}}
+                    )
             if len(filter_expressions) == 1:
                 api_params["Filter"] = filter_expressions[0]
             elif len(filter_expressions) > 1:
@@ -495,7 +536,7 @@ class AWSCostTools(BaseTool):
         results = ce.get_cost_and_usage(**api_params)
         return self._format_cost_results(results, group_by_key, metrics)
 
-    def _format_cost_results(self, results: Dict, group_by: Optional[str], metrics: List[str]) -> Dict:
+    def _format_cost_results(self, results: dict, group_by: Optional[str], metrics: list[str]) -> dict:
         periods = []
         total = 0.0
 
@@ -527,7 +568,7 @@ class AWSCostTools(BaseTool):
             "query": {"group_by": group_by, "metrics": metrics},
         }
 
-    def _get_forecast(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_forecast(self, params: dict[str, Any]) -> dict[str, Any]:
         ce = self._get_ce()
         start_date = params["start_date"]
         end_date = params["end_date"]
@@ -551,13 +592,15 @@ class AWSCostTools(BaseTool):
             total = float(response.get("Total", {}).get("Amount", 0))
             forecast_periods = []
             for item in response.get("ForecastResultsByTime", []):
-                forecast_periods.append({
-                    "start": item["TimePeriod"]["Start"],
-                    "end": item["TimePeriod"]["End"],
-                    "mean": round(float(item.get("MeanValue", 0)), 2),
-                    "low": round(float(item.get("PredictionIntervalLowerBound", 0)), 2),
-                    "high": round(float(item.get("PredictionIntervalUpperBound", 0)), 2),
-                })
+                forecast_periods.append(
+                    {
+                        "start": item["TimePeriod"]["Start"],
+                        "end": item["TimePeriod"]["End"],
+                        "mean": round(float(item.get("MeanValue", 0)), 2),
+                        "low": round(float(item.get("PredictionIntervalLowerBound", 0)), 2),
+                        "high": round(float(item.get("PredictionIntervalUpperBound", 0)), 2),
+                    }
+                )
             return {
                 "total_forecast": round(total, 2),
                 "periods": forecast_periods,
@@ -565,9 +608,11 @@ class AWSCostTools(BaseTool):
                 "currency": "USD",
             }
         except ce.exceptions.DataUnavailableException:
-            return {"error": "Not enough historical data for forecasting. Need at least 30 days of cost data."}
+            return {
+                "error": "Not enough historical data for forecasting. Need at least 30 days of cost data."
+            }
 
-    def _get_anomalies(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_anomalies(self, params: dict[str, Any]) -> dict[str, Any]:
         ce = self._get_ce()
         today = datetime.utcnow().date()
         start_date = params.get("start_date", (today - timedelta(days=30)).isoformat())
@@ -581,24 +626,26 @@ class AWSCostTools(BaseTool):
             anomalies = []
             for a in response.get("Anomalies", []):
                 impact = a.get("Impact", {})
-                anomalies.append({
-                    "id": a.get("AnomalyId"),
-                    "start": a.get("AnomalyStartDate"),
-                    "end": a.get("AnomalyEndDate"),
-                    "score": a.get("AnomalyScore", {}).get("CurrentScore", 0),
-                    "total_impact": float(impact.get("TotalImpact", 0)),
-                    "total_actual_spend": float(impact.get("TotalActualSpend", 0)),
-                    "total_expected_spend": float(impact.get("TotalExpectedSpend", 0)),
-                    "root_causes": [
-                        {
-                            "service": rc.get("Service", ""),
-                            "region": rc.get("Region", ""),
-                            "account": rc.get("LinkedAccount", ""),
-                            "usage_type": rc.get("UsageType", ""),
-                        }
-                        for rc in a.get("RootCauses", [])
-                    ],
-                })
+                anomalies.append(
+                    {
+                        "id": a.get("AnomalyId"),
+                        "start": a.get("AnomalyStartDate"),
+                        "end": a.get("AnomalyEndDate"),
+                        "score": a.get("AnomalyScore", {}).get("CurrentScore", 0),
+                        "total_impact": float(impact.get("TotalImpact", 0)),
+                        "total_actual_spend": float(impact.get("TotalActualSpend", 0)),
+                        "total_expected_spend": float(impact.get("TotalExpectedSpend", 0)),
+                        "root_causes": [
+                            {
+                                "service": rc.get("Service", ""),
+                                "region": rc.get("Region", ""),
+                                "account": rc.get("LinkedAccount", ""),
+                                "usage_type": rc.get("UsageType", ""),
+                            }
+                            for rc in a.get("RootCauses", [])
+                        ],
+                    }
+                )
             return {
                 "anomalies": anomalies,
                 "count": len(anomalies),
@@ -606,10 +653,13 @@ class AWSCostTools(BaseTool):
             }
         except Exception as e:
             if "Anomaly" in str(e) and ("not" in str(e).lower() or "enable" in str(e).lower()):
-                return {"error": "Cost Anomaly Detection is not enabled. Enable it in AWS Cost Management console first.", "anomalies": []}
+                return {
+                    "error": "Cost Anomaly Detection is not enabled. Enable it in AWS Cost Management console first.",
+                    "anomalies": [],
+                }
             raise
 
-    def _list_dimensions(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _list_dimensions(self, params: dict[str, Any]) -> dict[str, Any]:
         ce = self._get_ce()
         dimension = params["dimension"]
         today = datetime.utcnow().date()
@@ -622,17 +672,19 @@ class AWSCostTools(BaseTool):
         )
         values = []
         for v in response.get("DimensionValues", []):
-            values.append({
-                "value": v.get("Value", ""),
-                "attributes": v.get("Attributes", {}),
-            })
+            values.append(
+                {
+                    "value": v.get("Value", ""),
+                    "attributes": v.get("Attributes", {}),
+                }
+            )
         return {
             "dimension": dimension,
             "values": values,
             "count": len(values),
         }
 
-    def _get_savings_utilization(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_savings_utilization(self, params: dict[str, Any]) -> dict[str, Any]:
         ce = self._get_ce()
         today = datetime.utcnow().date()
         start_date = params.get("start_date", (today - timedelta(days=30)).isoformat())
@@ -648,7 +700,9 @@ class AWSCostTools(BaseTool):
                 total = response.get("Total", {})
                 return {
                     "type": "savings_plans",
-                    "utilization_percentage": float(total.get("Utilization", {}).get("UtilizationPercentage", 0)),
+                    "utilization_percentage": float(
+                        total.get("Utilization", {}).get("UtilizationPercentage", 0)
+                    ),
                     "total_commitment": float(total.get("Utilization", {}).get("TotalCommitment", 0)),
                     "used_commitment": float(total.get("Utilization", {}).get("UsedCommitment", 0)),
                     "unused_commitment": float(total.get("Utilization", {}).get("UnusedCommitment", 0)),
@@ -687,7 +741,7 @@ class AWSCostTools(BaseTool):
             except Exception as e:
                 return {"error": f"Could not retrieve RI data: {e}", "type": "reserved_instances"}
 
-    def _get_rightsizing(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_rightsizing(self, params: dict[str, Any]) -> dict[str, Any]:
         ce = self._get_ce()
         service = params.get("service", "AmazonEC2")
         lookback = params.get("lookback_days", 14)
@@ -710,25 +764,33 @@ class AWSCostTools(BaseTool):
                 current = rec.get("CurrentInstance", {})
                 actions = rec.get("ModifyRecommendationDetail", {}).get("TargetInstances", [])
                 target = actions[0] if actions else {}
-                recommendations.append({
-                    "account_id": rec.get("AccountId", ""),
-                    "instance_id": current.get("ResourceId", ""),
-                    "current_type": current.get("ResourceDetails", {}).get("EC2ResourceDetails", {}).get("InstanceType", ""),
-                    "action": rec.get("RightsizingType", ""),
-                    "target_type": target.get("ResourceDetails", {}).get("EC2ResourceDetails", {}).get("InstanceType", ""),
-                    "estimated_monthly_savings": float(target.get("EstimatedMonthlySavings", "0") or "0"),
-                    "current_monthly_cost": float(current.get("MonthlyCost", "0") or "0"),
-                })
+                recommendations.append(
+                    {
+                        "account_id": rec.get("AccountId", ""),
+                        "instance_id": current.get("ResourceId", ""),
+                        "current_type": current.get("ResourceDetails", {})
+                        .get("EC2ResourceDetails", {})
+                        .get("InstanceType", ""),
+                        "action": rec.get("RightsizingType", ""),
+                        "target_type": target.get("ResourceDetails", {})
+                        .get("EC2ResourceDetails", {})
+                        .get("InstanceType", ""),
+                        "estimated_monthly_savings": float(target.get("EstimatedMonthlySavings", "0") or "0"),
+                        "current_monthly_cost": float(current.get("MonthlyCost", "0") or "0"),
+                    }
+                )
             return {
                 "total_recommendations": int(summary.get("TotalRecommendationCount", 0)),
-                "estimated_total_monthly_savings": float(summary.get("EstimatedTotalMonthlySavingsAmount", 0)),
+                "estimated_total_monthly_savings": float(
+                    summary.get("EstimatedTotalMonthlySavingsAmount", 0)
+                ),
                 "savings_currency": summary.get("SavingsCurrencyCode", "USD"),
                 "recommendations": recommendations,
             }
         except Exception as e:
             return {"error": f"Could not get rightsizing recommendations: {e}"}
 
-    def _get_current_date(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _get_current_date(self, params: dict[str, Any]) -> dict[str, Any]:
         today = datetime.utcnow().date()
         return {
             "today": today.isoformat(),
@@ -741,6 +803,11 @@ class AWSCostTools(BaseTool):
             "last_90_days_start": (today - timedelta(days=90)).isoformat(),
             "current_quarter_start": today.replace(month=((today.month - 1) // 3) * 3 + 1, day=1).isoformat(),
             "day_of_month": today.day,
-            "days_remaining_in_month": (today.replace(month=today.month % 12 + 1, day=1) - timedelta(days=1)).day - today.day if today.month < 12 else (today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)).day - today.day,
+            "days_remaining_in_month": (
+                today.replace(month=today.month % 12 + 1, day=1) - timedelta(days=1)
+            ).day
+            - today.day
+            if today.month < 12
+            else (today.replace(year=today.year + 1, month=1, day=1) - timedelta(days=1)).day - today.day,
             "hint": "Use these dates to build queries. Cost Explorer end_date is exclusive (does not include that day).",
         }

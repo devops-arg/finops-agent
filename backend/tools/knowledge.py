@@ -1,9 +1,10 @@
 import logging
 import time
-from typing import Any, Dict, List
-from backend.tools.base import BaseTool
-from backend.models.core import ToolResult
+from typing import Any
+
 from backend.knowledge.store import KnowledgeStore
+from backend.models.core import ToolResult
+from backend.tools.base import BaseTool
 
 logger = logging.getLogger(__name__)
 
@@ -47,17 +48,17 @@ class KnowledgeTools(BaseTool):
     def __init__(self, store: KnowledgeStore):
         self._store = store
 
-    def get_definitions(self) -> List[Dict[str, Any]]:
+    def get_definitions(self) -> list[dict[str, Any]]:
         if self._store.document_count == 0:
             return []
         return TOOL_DEFINITIONS
 
-    def get_tool_names(self) -> List[str]:
+    def get_tool_names(self) -> list[str]:
         if self._store.document_count == 0:
             return []
         return [t["name"] for t in TOOL_DEFINITIONS]
 
-    def execute(self, tool_name: str, parameters: Dict[str, Any]) -> ToolResult:
+    def execute(self, tool_name: str, parameters: dict[str, Any]) -> ToolResult:
         start = time.time()
         query = parameters.get("query", "")
         doc_type = parameters.get("doc_type")
@@ -76,11 +77,13 @@ class KnowledgeTools(BaseTool):
 
         formatted = []
         for r in results:
-            formatted.append({
-                "content": r["content"],
-                "type": r["type"],
-                "score": r["score"],
-            })
+            formatted.append(
+                {
+                    "content": r["content"],
+                    "type": r["type"],
+                    "score": r["score"],
+                }
+            )
 
         return ToolResult(
             tool_name=tool_name,

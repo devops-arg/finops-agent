@@ -1,6 +1,6 @@
 from dataclasses import dataclass, field
-from typing import Any, Dict, Optional
 from datetime import datetime
+from typing import Any, Optional
 
 
 @dataclass
@@ -13,6 +13,7 @@ class Query:
     def __post_init__(self):
         if not self.id:
             import uuid
+
             self.id = str(uuid.uuid4())
         if not self.timestamp:
             self.timestamp = datetime.utcnow().isoformat()
@@ -26,4 +27,4 @@ class ToolResult:
     data: Any = None
     error: Optional[str] = None
     execution_time: float = 0.0
-    metadata: Dict[str, Any] = field(default_factory=dict)
+    metadata: dict[str, Any] = field(default_factory=dict)

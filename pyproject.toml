@@ -1,0 +1,123 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "finops-agent"
+version = "2.0.0"
+description = "AI-powered FinOps platform — DevOps ARG"
+requires-python = ">=3.11"
+readme = "README.md"
+
+# Runtime deps live in requirements.txt (pinned for reproducible builds).
+# Dev deps live in requirements-dev.txt.
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Ruff — linter + formatter (replaces flake8/black/isort)
+# ─────────────────────────────────────────────────────────────────────────────
+[tool.ruff]
+line-length = 110
+target-version = "py311"
+extend-exclude = [
+    ".venv",
+    "venv",
+    "build",
+    "dist",
+    "*.egg-info",
+    "docs/dev",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",    # pycodestyle errors
+    "W",    # pycodestyle warnings
+    "F",    # pyflakes
+    "I",    # isort
+    "B",    # flake8-bugbear
+    "C4",   # flake8-comprehensions
+    "UP",   # pyupgrade
+    "SIM",  # flake8-simplify
+    "RUF",  # ruff-specific
+]
+ignore = [
+    "E501",   # line too long — formatter handles it
+    "B008",   # function call in default arg — FastAPI uses Depends() this way
+    "SIM108", # ternary instead of if/else — readability is subjective
+    "UP007",  # X | Y vs Optional[X] — we still target 3.11 typing usage in places
+    # ─── Tech-debt easing — cleanup tracked in docs/dev/lint-debt.md ──────────
+    # These rules are valid and worth applying, but the existing waste_analyzers
+    # / live_resources / mock_data code predates the linter. Re-enable rule by
+    # rule once the offending files have been cleaned up.
+    "RUF013", # implicit Optional[T]      → re-enable after live_resources cleanup
+    "RUF012", # mutable ClassVar          → analyzer base classes
+    "RUF001", # ambiguous '×' in strings  → mock_data has multi-language strings
+    "RUF003", # ambiguous '–' in comments → unicode box-drawing in comments
+    "W291",   # trailing whitespace       → multi-line system prompt strings
+    "B007",   # loop var unused           → html_report.py
+    "E722",   # bare except               → html_report.py
+    "RUF006", # asyncio.create_task ref   → main.py refresh endpoint
+    "E701",   # multi-statement lines     → live_resources tight ternaries
+    "E741",   # ambiguous name 'l'        → waste_analyzers
+    "B904",   # raise ... from err        → main.py + live_resources
+    "F401",   # unused import             → backend/tools/__init__.py re-exports
+    "F811",   # redefinition              → waste_analyzers RDS analyzer dup (REAL BUG, see TODO)
+    "F841",   # unused local              → 2 instances, dead code
+    "C408",   # dict() literal            → stylistic
+    "C416",   # dict comprehension        → stylistic
+    "SIM105", # contextlib.suppress       → stylistic
+    "SIM113", # enumerate()               → stylistic
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["E402", "F401", "F811"]   # test files often need late imports / fixtures
+"backend/__init__.py" = ["F401"]
+"scripts/*" = ["E402"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Mypy — static type checking
+# Pragmatic config: warn on real bugs, don't require typing everything yet.
+# ─────────────────────────────────────────────────────────────────────────────
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = false
+warn_unused_configs = true
+ignore_missing_imports = true     # boto3/anthropic don't ship complete stubs
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = false
+show_error_codes = true
+exclude = [
+    "tests/",
+    "scripts/",
+    "build/",
+    "dist/",
+]
+
+[[tool.mypy.overrides]]
+module = "backend.tools.mock_data"
+ignore_errors = true
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Pytest
+# ─────────────────────────────────────────────────────────────────────────────
+[tool.pytest.ini_options]
+minversion = "7.0"
+testpaths = ["tests"]
+addopts = [
+    "-ra",
+    "--strict-markers",
+    "--strict-config",
+    "--tb=short",
+]
+filterwarnings = [
+    "ignore::DeprecationWarning:botocore.*",
+    "ignore::DeprecationWarning:pydantic.*",
+]
+markers = [
+    "integration: tests that hit LocalStack or real AWS (skipped by default)",
+]

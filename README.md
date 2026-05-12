@@ -6,6 +6,19 @@
   <img src="docs/screenshots/logo.webp" alt="DevOps ARG" width="140" />
 </p>
 
+<p align="center">
+  <a href="https://github.com/devops-arg/finops-agent/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/devops-arg/finops-agent/actions/workflows/ci.yml/badge.svg?branch=main"></a>
+  <a href="https://github.com/devops-arg/finops-agent/actions/workflows/codeql.yml"><img alt="CodeQL" src="https://github.com/devops-arg/finops-agent/actions/workflows/codeql.yml/badge.svg?branch=main"></a>
+  <a href="https://www.python.org/downloads/release/python-3110/"><img alt="Python" src="https://img.shields.io/badge/python-3.11%2B-blue.svg"></a>
+  <a href="https://github.com/astral-sh/ruff"><img alt="Ruff" src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json"></a>
+  <a href="https://mypy-lang.org/"><img alt="Mypy" src="https://img.shields.io/badge/types-mypy-blue.svg"></a>
+  <a href="https://pre-commit.com/"><img alt="pre-commit" src="https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit"></a>
+  <a href="https://fastapi.tiangolo.com/"><img alt="FastAPI" src="https://img.shields.io/badge/FastAPI-0.115-009688?logo=fastapi&logoColor=white"></a>
+  <a href="https://www.docker.com/"><img alt="Docker" src="https://img.shields.io/badge/docker-multi--stage-2496ED?logo=docker&logoColor=white"></a>
+  <img alt="License" src="https://img.shields.io/badge/license-proprietary-lightgrey.svg">
+  <img alt="Read-only" src="https://img.shields.io/badge/AWS-read--only-success?logo=amazon-aws&logoColor=white">
+</p>
+
 An AI-powered FinOps platform that analyzes AWS cloud costs and infrastructure using conversational AI. Ask questions in natural language — the agent reasons across Cost Explorer, infrastructure metrics, and AWS's native recommendation APIs (Cost Optimization Hub, Compute Optimizer, Rightsizing, Savings Plans) to answer them.
 
 **What's included:**
@@ -22,6 +35,25 @@ An AI-powered FinOps platform that analyzes AWS cloud costs and infrastructure u
 | 🧪 **Zero-cost demo mode** | LocalStack + mock data. Full UI works without an AWS account — fictional "Ribbon" fintech, $28K/mo spend. |
 
 > **Read-only by design.** The agent uses a dedicated IAM user with `ReadOnlyAccess`. It can't create, modify, or delete anything — it reads metrics and suggests changes that you apply yourself.
+
+---
+
+## 🛠 Engineering quality
+
+This isn't a vibe-coded weekend prototype. Patterns we apply on every client engagement at DevOps ARG also apply here:
+
+| Practice | What we ship |
+|----------|--------------|
+| ✅ **Test suite** | 57 pytest tests under 1s — guard the read-only AWS allowlist, the mock/live data isolation invariant, the tool registry, config validation, and reasoning-engine heuristics. See [tests/](tests/) and [CLAUDE.md §13](CLAUDE.md#13-testing--verification). |
+| ✅ **CI on every push** | [GitHub Actions](.github/workflows/ci.yml) runs `ruff` (lint+format), `mypy` (types), `pytest` on Python 3.11 + 3.12, `pip-audit` (CVE scan, strict), and a Docker build. |
+| ✅ **Security scanning** | [CodeQL](.github/workflows/codeql.yml) static analysis (Python + JS/TS) on every PR and weekly via cron. GitHub secret-scanning auto-enabled. |
+| ✅ **Dependency hygiene** | [Dependabot](.github/dependabot.yml) opens weekly grouped PRs for pip + Docker + GitHub Actions. Anthropic/OpenAI SDK majors intentionally ignored — bumped manually with a smoke test. |
+| ✅ **Pre-commit hooks** | [`.pre-commit-config.yaml`](.pre-commit-config.yaml) runs ruff + mypy + private-key detection + large-file guard before every commit. |
+| ✅ **Container hardening** | Multi-stage [Dockerfile](Dockerfile), non-root user (`finops:1001`), `tini` as PID 1 for clean signal handling, minimal apt surface. |
+| ✅ **Structured logging + cost tracking** | structlog (JSON in containers, console in dev). Every chat response includes `usage.cost_usd` — per-question LLM spend visible to the user and to log aggregators. See [`backend/observability.py`](backend/observability.py). |
+| ✅ **Read-only enforced in 3 layers** | IAM policy + Python prefix-allowlist + boot-time EC2 dry-run check. Three independent guards — see [CLAUDE.md §6 I-1](CLAUDE.md#6-critical-invariants--do-not-regress). |
+| ✅ **Mock/live data isolation** | Every Finding stamped with the scan's `account_id`. Mock data uses sentinel `666666666666` — you cannot accidentally show fake data as real. |
+| ✅ **Living documentation** | [CLAUDE.md](CLAUDE.md) is the source of truth for invariants, architecture, layering rules, and conventions. Pushed publicly because we have nothing to hide. |
 
 ---
 

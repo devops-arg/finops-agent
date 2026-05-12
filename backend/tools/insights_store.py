@@ -2,14 +2,15 @@
 InsightsStore — SQLite-backed cache for pre-computed billing insights.
 Same pattern as FindingsStore but simpler (no scan_runs table needed).
 """
+
 import json
 import logging
 import os
 import sqlite3
 import threading
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Optional
 
 from backend.models.insight import Insight
 
@@ -22,7 +23,7 @@ class InsightsStore:
     def __init__(self, db_path: Path = DB_PATH):
         self._db_path = db_path
         self._lock = threading.Lock()
-        self._cache: Optional[List[Dict]] = None
+        self._cache: Optional[list[dict]] = None
         self._cache_at: Optional[datetime] = None
         self._scanning = False
         self._init_db()
@@ -64,14 +65,11 @@ class InsightsStore:
     def set_scanning(self, v: bool):
         self._scanning = v
 
-    def save(self, insights: List[Insight]):
+    def save(self, insights: list[Insight]):
         """Replace all insights with fresh results."""
-        rows = [
-            {**i.to_dict(), "context": json.dumps(i.context)}
-            for i in insights
-        ]
+        rows = [{**i.to_dict(), "context": json.dumps(i.context)} for i in insights]
         with self._lock:
-            self._cache = [{**r, "context": i.context} for r, i in zip(rows, insights)]
+            self._cache = [{**r, "context": i.context} for r, i in zip(rows, insights, strict=False)]
             self._cache_at = datetime.utcnow()
 
         if self._db_path:
@@ -87,7 +85,7 @@ class InsightsStore:
             except Exception as e:
                 logger.error(f"InsightsStore save error: {e}")
 
-    def get_insights(self) -> List[Dict]:
+    def get_insights(self) -> list[dict]:
         with self._lock:
             if self._cache is not None:
                 return list(self._cache)
@@ -126,7 +124,7 @@ class InsightsStore:
         except Exception:
             return None
 
-    def get_summary(self) -> Dict[str, Any]:
+    def get_summary(self) -> dict[str, Any]:
         insights = self.get_insights()
         total_savings = sum(i.get("savings_usd", 0) for i in insights)
         by_status = {}

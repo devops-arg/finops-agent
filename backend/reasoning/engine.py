@@ -1,9 +1,11 @@
 import json
 import logging
-import time
+from collections.abc import Generator
 from datetime import datetime
-from typing import Any, Dict, Generator, List, Optional
+from typing import Any, Optional
+
 from backend.llm.provider import LLMProvider
+from backend.observability import TokenTracker
 from backend.tools.registry import ToolRegistry
 
 logger = logging.getLogger(__name__)
@@ -197,21 +199,25 @@ class ReasoningEngine:
     def process_query_stream(
         self,
         query: str,
-        conversation_history: Optional[List[Dict[str, str]]] = None,
+        conversation_history: Optional[list[dict[str, str]]] = None,
         findings_context: Optional[str] = None,
         use_mock_data: bool = False,
-    ) -> Generator[Dict[str, Any], None, None]:
+    ) -> Generator[dict[str, Any], None, None]:
+        # Per-request token + cost accumulator. Emitted in the `done` event and
+        # logged at request end so it lands in the log pipeline.
+        tracker = TokenTracker(model=self._llm.model_name)
         try:
             yield self._event("thinking", {"status": "Building context..."})
 
             messages = self._build_messages(query, conversation_history, findings_context, use_mock_data)
             # Strip get_current_date from available tools — date is already in the system prompt
             available_tools = [
-                t for t in self._tools.get_all_definitions()
-                if t["name"] != "get_current_date"
+                t for t in self._tools.get_all_definitions() if t["name"] != "get_current_date"
             ]
 
-            yield self._event("thinking", {"status": f"Reasoning with {len(available_tools)} tools available"})
+            yield self._event(
+                "thinking", {"status": f"Reasoning with {len(available_tools)} tools available"}
+            )
 
             for round_num in range(1, MAX_ROUNDS + 1):
                 yield self._event("thinking", {"status": f"Round {round_num}/{MAX_ROUNDS}"})
@@ -226,52 +232,84 @@ class ReasoningEngine:
                     yield self._event("error", {"message": f"LLM error: {e}"})
                     return
 
+                # Accumulate per-round usage for cost tracking
+                if response.usage:
+                    tracker.add(
+                        input_tokens=response.usage.get("input_tokens", 0),
+                        output_tokens=response.usage.get("output_tokens", 0),
+                    )
+
                 if not response.tool_calls:
                     if response.content:
                         if self._looks_like_plan(response.content) and round_num == 1:
                             messages.append({"role": "assistant", "content": response.content})
-                            messages.append({
-                                "role": "user",
-                                "content": (
-                                    "Good plan. Now EXECUTE it — call the tools to get real data. "
-                                    "Do not just describe what you would do; actually do it."
-                                ),
-                            })
+                            messages.append(
+                                {
+                                    "role": "user",
+                                    "content": (
+                                        "Good plan. Now EXECUTE it — call the tools to get real data. "
+                                        "Do not just describe what you would do; actually do it."
+                                    ),
+                                }
+                            )
                             continue
                         yield self._event("answer", {"content": response.content})
-                        yield self._event("done", {"rounds": round_num})
+                        usage = tracker.usage
+                        logger.info(
+                            "chat_completed",
+                            extra={
+                                "rounds": round_num,
+                                "input_tokens": usage.input_tokens,
+                                "output_tokens": usage.output_tokens,
+                                "cost_usd": usage.cost_usd,
+                                "model": self._llm.model_name,
+                            },
+                        )
+                        yield self._event("done", {"rounds": round_num, "usage": usage.to_dict()})
                         return
                     continue
 
                 for tool_call in response.tool_calls:
                     params = self._normalize_params(tool_call.parameters)
 
-                    yield self._event("tool_call", {
-                        "name": tool_call.tool_name,
-                        "parameters": params,
-                        "round": round_num,
-                    })
+                    yield self._event(
+                        "tool_call",
+                        {
+                            "name": tool_call.tool_name,
+                            "parameters": params,
+                            "round": round_num,
+                        },
+                    )
 
                     result = self._tools.execute(tool_call.tool_name, params)
 
-                    yield self._event("tool_result", {
-                        "name": tool_call.tool_name,
-                        "success": result.success,
-                        "execution_time": result.execution_time,
-                        "data_preview": self._truncate(json.dumps(result.data, default=str), 500) if result.data else None,
-                        "error": result.error,
-                    })
+                    yield self._event(
+                        "tool_result",
+                        {
+                            "name": tool_call.tool_name,
+                            "success": result.success,
+                            "execution_time": result.execution_time,
+                            "data_preview": self._truncate(json.dumps(result.data, default=str), 500)
+                            if result.data
+                            else None,
+                            "error": result.error,
+                        },
+                    )
 
-                    messages.append({
-                        "role": "assistant",
-                        "content": f"[Called {tool_call.tool_name} with {json.dumps(params, default=str)}]",
-                    })
+                    messages.append(
+                        {
+                            "role": "assistant",
+                            "content": f"[Called {tool_call.tool_name} with {json.dumps(params, default=str)}]",
+                        }
+                    )
 
                     result_str = self._format_tool_result(result)
-                    messages.append({
-                        "role": "user",
-                        "content": f"Result of {tool_call.tool_name}:\n{self._truncate(result_str, TOOL_RESULT_LIMIT)}",
-                    })
+                    messages.append(
+                        {
+                            "role": "user",
+                            "content": f"Result of {tool_call.tool_name}:\n{self._truncate(result_str, TOOL_RESULT_LIMIT)}",
+                        }
+                    )
 
                 if round_num < MAX_ROUNDS:
                     # Append to last user message to avoid consecutive user messages
@@ -286,13 +324,32 @@ class ReasoningEngine:
 
             try:
                 final = self._llm.chat_completion(messages=messages, tools=None, temperature=0.0)
-                content = final.content or "I was unable to generate a complete analysis. Please try rephrasing your question."
+                if final.usage:
+                    tracker.add(
+                        input_tokens=final.usage.get("input_tokens", 0),
+                        output_tokens=final.usage.get("output_tokens", 0),
+                    )
+                content = (
+                    final.content
+                    or "I was unable to generate a complete analysis. Please try rephrasing your question."
+                )
                 yield self._event("answer", {"content": content})
             except Exception as e:
                 yield self._event("error", {"message": f"Final synthesis error: {e}"})
                 return
 
-            yield self._event("done", {"rounds": MAX_ROUNDS})
+            usage = tracker.usage
+            logger.info(
+                "chat_completed",
+                extra={
+                    "rounds": MAX_ROUNDS,
+                    "input_tokens": usage.input_tokens,
+                    "output_tokens": usage.output_tokens,
+                    "cost_usd": usage.cost_usd,
+                    "model": self._llm.model_name,
+                },
+            )
+            yield self._event("done", {"rounds": MAX_ROUNDS, "usage": usage.to_dict()})
 
         except Exception as e:
             logger.error(f"Reasoning error: {e}", exc_info=True)
@@ -301,10 +358,10 @@ class ReasoningEngine:
     def _build_messages(
         self,
         query: str,
-        history: Optional[List[Dict[str, str]]] = None,
+        history: Optional[list[dict[str, str]]] = None,
         findings_context: Optional[str] = None,
         use_mock_data: bool = False,
-    ) -> List[Dict[str, str]]:
+    ) -> list[dict[str, str]]:
         # Inject current date — no need for the AI to waste a round calling get_current_date
         now = datetime.utcnow()
         date_prefix = (
@@ -344,7 +401,7 @@ class ReasoningEngine:
         has_data = any(ind in lower for ind in action_indicators)
         return has_plan and not has_data
 
-    def _normalize_params(self, params: Dict[str, Any]) -> Dict[str, Any]:
+    def _normalize_params(self, params: dict[str, Any]) -> dict[str, Any]:
         if "properties" in params and isinstance(params["properties"], dict):
             params = params["properties"]
         if "parameters" in params and isinstance(params["parameters"], dict):
@@ -368,7 +425,7 @@ class ReasoningEngine:
             return text
         return text[:limit] + f"\n... [truncated, {len(text)} total chars]"
 
-    def _event(self, event_type: str, data: Dict[str, Any]) -> Dict[str, Any]:
+    def _event(self, event_type: str, data: dict[str, Any]) -> dict[str, Any]:
         return {
             "type": event_type,
             "data": data,

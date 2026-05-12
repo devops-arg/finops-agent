@@ -41,9 +41,11 @@ cleanup-plan.md
 findings.db
 *.db
 
-# IDE / OS
+# IDE / OS / AI tooling
 .idea/
 .vscode/
+.cursor/
+.claude/
 .DS_Store
 Thumbs.db
 
