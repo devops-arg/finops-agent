@@ -548,9 +548,209 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
 .insight-savings{font-size:11px;font-weight:600;color:var(--green);}
 .insight-ask-btn{font-size:11px;padding:4px 10px;background:var(--accent-dim);border:1px solid var(--accent-border);color:var(--accent);border-radius:4px;cursor:pointer;font-family:var(--font);font-weight:500;transition:all .15s;white-space:nowrap;}
 .insight-ask-btn:hover{background:var(--accent);color:#0a0a0b;}
+
+/* ── BOOT SEQUENCE OVERLAY ─────────────────────────────────── */
+.boot{position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;justify-content:center;align-items:center;padding:2rem;transition:opacity .6s, visibility .6s;}
+.boot.done{opacity:0;visibility:hidden;pointer-events:none;}
+.boot-logo{width:84px;height:84px;border-radius:18px;margin-bottom:22px;box-shadow:0 0 0 1px rgba(201,162,39,.35), 0 0 40px rgba(201,162,39,.2);animation:bootPulse 2s ease-in-out infinite;}
+@keyframes bootPulse{0%,100%{box-shadow:0 0 0 1px rgba(201,162,39,.35),0 0 40px rgba(201,162,39,.2)}50%{box-shadow:0 0 0 1px rgba(201,162,39,.6),0 0 60px rgba(201,162,39,.45)}}
+.boot-title{font-family:var(--mono);font-size:13px;letter-spacing:.18em;color:var(--accent);margin-bottom:4px;text-transform:uppercase;}
+.boot-sub{font-family:var(--mono);font-size:11px;color:var(--text-muted);margin-bottom:24px;letter-spacing:.06em;}
+.boot-log{font-family:var(--mono);font-size:12px;color:var(--cyan);max-width:580px;width:100%;line-height:1.85;white-space:pre-wrap;text-shadow:0 0 6px rgba(6,182,212,.45);min-height:230px;}
+.boot-log .ok{color:var(--green);text-shadow:0 0 6px rgba(16,185,129,.45);}
+.boot-log .warn{color:var(--orange);text-shadow:0 0 6px rgba(245,158,11,.45);}
+.boot-log .err{color:var(--red);text-shadow:0 0 6px rgba(239,68,68,.45);}
+.boot-log .info{color:var(--purple);text-shadow:0 0 6px rgba(167,139,250,.45);}
+.boot-log .dim{color:var(--text-muted);text-shadow:none;}
+.boot-bar{max-width:580px;width:100%;height:3px;background:rgba(255,255,255,.08);border-radius:2px;margin-top:20px;overflow:hidden;}
+.boot-fill{height:100%;width:0%;background:linear-gradient(90deg, var(--cyan), var(--purple), var(--accent));border-radius:2px;transition:width .25s;box-shadow:0 0 12px var(--cyan);}
+.boot-skip{margin-top:16px;font-family:var(--mono);font-size:10px;color:var(--text-muted);cursor:pointer;letter-spacing:.12em;transition:color .2s;user-select:none;}
+.boot-skip:hover{color:var(--cyan);}
+.boot-cursor{display:inline-block;width:8px;height:14px;background:var(--cyan);vertical-align:text-bottom;animation:bootBlink 1s steps(2) infinite;box-shadow:0 0 6px var(--cyan);}
+@keyframes bootBlink{0%,50%{opacity:1}51%,100%{opacity:0}}
 </style>
 </head>
 <body>
+
+<!-- ═══════ BOOT SEQUENCE (real backend validation) ═══════ -->
+<div class="boot" id="boot">
+  <img class="boot-logo" src="/devopsarg-logo.png" alt="DevOps ARG" />
+  <div class="boot-title">DevOps ARG · FinOps Intelligence</div>
+  <div class="boot-sub">v2.0 · initializing platform</div>
+  <pre class="boot-log" id="boot-log"></pre>
+  <div class="boot-bar"><div class="boot-fill" id="boot-fill"></div></div>
+  <div class="boot-skip" id="boot-skip">[ click to skip ]</div>
+</div>
+
+<script>
+/* Boot sequence — runs REAL validations against the backend.
+   Lines marked {check:fn} call the fn and use its returned value to decide
+   ok/warn/err and render the status text. Lines without {check} are flavor
+   that still feels grounded. The whole thing is bounded: bails out after
+   ~6s no matter what so a slow/unreachable backend never hard-blocks the UI. */
+(function bootSequence(){
+  const overlay = document.getElementById('boot');
+  const logEl = document.getElementById('boot-log');
+  const fillEl = document.getElementById('boot-fill');
+  const skipBtn = document.getElementById('boot-skip');
+
+  let skipped = false;
+  function skip(){ skipped = true; overlay.classList.add('done'); }
+  skipBtn.addEventListener('click', skip);
+  // Hard timeout — UI must never be blocked by a slow backend
+  const hardTimeout = setTimeout(skip, 8000);
+
+  function append(text, cls){
+    const span = document.createElement('span');
+    if (cls) span.className = cls;
+    span.textContent = text;
+    logEl.appendChild(span);
+    logEl.scrollTop = logEl.scrollHeight;
+  }
+  function cursor(on){
+    const old = logEl.querySelector('.boot-cursor');
+    if (old) old.remove();
+    if (on) {
+      const c = document.createElement('span');
+      c.className = 'boot-cursor';
+      logEl.appendChild(c);
+    }
+  }
+  function sleep(ms){ return new Promise(r => setTimeout(r, ms)); }
+
+  // Cached so multiple steps can read the same response
+  let health = null, kbStats = null;
+
+  async function fetchHealth(){
+    const r = await fetch('/api/health', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    health = await r.json();
+    return health;
+  }
+  async function fetchKB(){
+    const r = await fetch('/api/knowledge/stats', { cache: 'no-store' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    kbStats = await r.json();
+    return kbStats;
+  }
+
+  const steps = [
+    { label: '[BOOT ] FinOps Intelligence Platform v2.0', status: () => 'STARTING', cls: 'info' },
+    { label: '[CFG  ] Environment + .env loaded', status: () => 'OK', cls: 'ok' },
+    {
+      label: '[NET  ] Reaching backend (/api/health)',
+      run: async () => {
+        try { await fetchHealth(); return { text: 'ONLINE', cls: 'ok' }; }
+        catch (e) { return { text: 'OFFLINE — ' + e.message, cls: 'err' }; }
+      },
+    },
+    {
+      label: '[AWS  ] STS GetCallerIdentity',
+      run: async () => {
+        if (!health) return { text: 'SKIPPED', cls: 'warn' };
+        const acct = health.account_id || 'unknown';
+        if (health.use_mock_data) return { text: 'MOCK ' + acct, cls: 'warn' };
+        return { text: 'LIVE ' + acct, cls: 'ok' };
+      },
+    },
+    {
+      label: '[LLM  ] Provider',
+      run: async () => {
+        if (!health) return { text: 'UNKNOWN', cls: 'err' };
+        const p = (health.provider || '').trim();
+        const m = (health.model || '').trim();
+        if (!p || p === 'not initialized') return { text: 'NOT CONFIGURED', cls: 'err' };
+        return { text: p + ' · ' + (m || 'default'), cls: 'ok' };
+      },
+    },
+    {
+      label: '[TOOL ] Tool registry',
+      run: async () => {
+        if (!health) return { text: '?', cls: 'warn' };
+        return { text: (health.tools || 0) + ' tools registered', cls: 'ok' };
+      },
+    },
+    {
+      label: '[KB   ] Knowledge base',
+      run: async () => {
+        try {
+          const k = await fetchKB();
+          if (!k.documents) return { text: 'empty (optional)', cls: 'warn' };
+          return { text: k.documents + ' docs loaded', cls: 'ok' };
+        } catch (e) { return { text: 'unreachable', cls: 'warn' }; }
+      },
+    },
+    {
+      label: '[WASTE] Findings store',
+      run: async () => {
+        if (!health) return { text: '?', cls: 'warn' };
+        if (health.scanning) return { text: 'SCAN IN PROGRESS', cls: 'info' };
+        if (health.findings_count > 0) {
+          const savings = Math.round(health.total_savings_identified || 0).toLocaleString('en-US');
+          return { text: health.findings_count + ' findings · $' + savings + '/mo identified', cls: 'ok' };
+        }
+        return { text: 'ready (no scan yet)', cls: 'info' };
+      },
+    },
+    {
+      label: '[INS  ] Insights engine',
+      run: async () => {
+        try {
+          const r = await fetch('/api/insights', { cache: 'no-store' });
+          if (!r.ok) return { text: 'unreachable', cls: 'warn' };
+          const j = await r.json();
+          const n = (j.insights || []).length;
+          if (j.scanning) return { text: 'computing...', cls: 'info' };
+          return { text: n ? n + ' checks active' : 'ready', cls: 'ok' };
+        } catch (e) { return { text: 'unreachable', cls: 'warn' }; }
+      },
+    },
+    {
+      label: '[SEC  ] Read-only allowlist (call_aws)',
+      status: () => 'ARMED',
+      cls: 'ok',
+    },
+    { label: '\nDEVOPS ARG · FinOps Intelligence', status: () => 'READY', cls: 'info' },
+  ];
+
+  async function run(){
+    const total = steps.length;
+    for (let i = 0; i < total; i++){
+      if (skipped) return;
+      const step = steps[i];
+      // Label with trailing dots padded to fixed width
+      const label = step.label;
+      const dots = label.startsWith('\n') ? '' : ' ' + '.'.repeat(Math.max(2, 42 - label.length)) + ' ';
+      append(label + dots, 'dim');
+      cursor(true);
+      let result;
+      if (step.run) {
+        try { result = await step.run(); }
+        catch (e) { result = { text: 'ERROR — ' + e.message, cls: 'err' }; }
+      } else {
+        result = { text: step.status ? step.status() : 'OK', cls: step.cls || 'ok' };
+      }
+      cursor(false);
+      append(result.text + '\n', result.cls);
+      fillEl.style.width = ((i + 1) / total * 100) + '%';
+      // Small delay so the user perceives progressive boot
+      await sleep(110);
+    }
+    fillEl.style.width = '100%';
+    await sleep(280);
+    clearTimeout(hardTimeout);
+    skip();
+  }
+
+  // Respect reduced-motion and "already seen this session"
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const seen = sessionStorage.getItem('finops.bootSeen') === '1';
+  if (reduced || seen) { skip(); return; }
+  sessionStorage.setItem('finops.bootSeen', '1');
+  run();
+})();
+</script>
+
 <div id="toast"></div>
 
 <header class="topbar">
@@ -1175,10 +1375,20 @@ html,body{height:100%;overflow:hidden;color:var(--text);font-family:var(--font);
       </div>
       <div class="chat-main">
         <div class="chat-messages" id="chat-messages">
-          <div class="chat-welcome">
-            <img src="/devopsarg-logo.png" alt="DevOps ARG" style="width:160px;height:160px;border-radius:24px;margin:0 auto 18px;display:block;box-shadow:0 0 0 1px var(--border);" />
-            <div class="chat-welcome-title">FinOps AI Agent</div>
-            <div class="chat-welcome-sub">Built by <a href="https://www.devopsarg.com" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:500">DevOps ARG</a> · powered with Claude<br>Ask anything about your AWS costs, infrastructure health, or optimization opportunities.</div>
+          <div class="chat-welcome" style="text-align:left;max-width:760px;margin:0 auto;padding:32px 24px;">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:18px;">
+              <img src="/devopsarg-logo.png" alt="DevOps ARG" style="width:52px;height:52px;border-radius:12px;flex-shrink:0;box-shadow:0 0 0 1px var(--accent-border);" />
+              <div>
+                <div style="font-size:15px;font-weight:600;color:var(--text);line-height:1.3;">FinOps Agent · DevOps ARG</div>
+                <div style="font-size:12px;color:var(--text-muted);margin-top:2px;">AWS cost optimization specialist · read-only, multi-round reasoning</div>
+              </div>
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px 20px;font-size:13.5px;line-height:1.65;color:var(--text-secondary);">
+              <p style="margin-bottom:10px;color:var(--text);font-weight:500;">Hola 👋 — soy el FinOps Agent de <a href="https://www.devopsarg.com" target="_blank" style="color:var(--accent);text-decoration:none;font-weight:600">DevOps ARG</a>.</p>
+              <p style="margin-bottom:10px;">Mi trabajo es analizar tu cuenta de AWS y encontrar dónde estás gastando de más. Tengo acceso de <strong style="color:var(--green);">solo lectura</strong> a Cost Explorer, infrastructure APIs (EC2/RDS/EKS/ElastiCache/S3/Lambda), Compute Optimizer, Cost Optimization Hub y al recomendador de Savings Plans/RIs. También puedo correr cualquier comando AWS de <code style="font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 6px;border-radius:4px;color:var(--cyan);">describe-* / list-* / get-*</code> en vivo via <code style="font-family:var(--mono);font-size:12px;background:var(--surface-2);padding:1px 6px;border-radius:4px;color:var(--cyan);">call_aws</code>.</p>
+              <p style="margin-bottom:10px;">No voy a inventar números. Si te respondo con un costo, sale de una llamada real a Cost Explorer y te puedo mostrar la query que usé.</p>
+              <p style="margin:0;color:var(--text-muted);font-size:12.5px;">Probá una de las preguntas del sidebar ←, o preguntame algo libre: <em style="color:var(--text-secondary);">"¿cuál fue mi top 3 servicios la semana pasada?"</em>, <em style="color:var(--text-secondary);">"¿tengo NAT Gateways desperdiciados?"</em>, <em style="color:var(--text-secondary);">"¿qué snapshots viejos puedo borrar?"</em></p>
+            </div>
           </div>
         </div>
         <div id="chat-mock-banner" style="display:none;margin:0 16px 8px;padding:8px 14px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.3);border-radius:8px;font-size:12px;color:#f59e0b;display:flex;align-items:center;gap:8px">
