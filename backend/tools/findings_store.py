@@ -33,7 +33,7 @@ class FindingsStore:
     """Thread-safe SQLite store with in-memory hot cache."""
 
     def __init__(self, db_path: Path = DB_PATH):
-        self._db_path = db_path
+        self._db_path: Optional[Path] = db_path
         self._lock = threading.Lock()
         self._cache: Optional[list[dict]] = None
         self._cache_at: Optional[datetime] = None

@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Optional
 
 from backend.models.conversation import ConversationContext
 
@@ -7,7 +8,7 @@ from backend.models.conversation import ConversationContext
 @dataclass
 class SessionState:
     session_id: str
-    context: ConversationContext = None
+    context: Optional[ConversationContext] = None
     created_at: str = ""
     last_activity: str = ""
 

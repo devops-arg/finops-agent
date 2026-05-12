@@ -34,7 +34,7 @@ def _is_container() -> bool:
 
 def configure_logging(level: str | None = None) -> None:
     """Wire structlog through stdlib logging. Idempotent — safe to call twice."""
-    log_level = (level or os.environ.get("LOG_LEVEL", "INFO")).upper()
+    log_level = (level or os.environ.get("LOG_LEVEL", "INFO") or "INFO").upper()
     log_format = os.environ.get("LOG_FORMAT", "json" if _is_container() else "console").lower()
 
     # Stdlib handler — structlog will share it
@@ -46,7 +46,7 @@ def configure_logging(level: str | None = None) -> None:
     )
 
     # Common processors run on every event from every logger
-    shared = [
+    shared: list[Any] = [
         structlog.contextvars.merge_contextvars,
         structlog.processors.add_log_level,
         structlog.processors.TimeStamper(fmt="iso", utc=True),

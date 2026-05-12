@@ -77,7 +77,7 @@ class ConfigurationManager:
     def __init__(self):
         self._config: Optional[Config] = None
 
-    def load_config(self, env_path: str = None) -> Config:
+    def load_config(self, env_path: Optional[str] = None) -> Config:
         if env_path:
             self._load_env_file(env_path)
         else:

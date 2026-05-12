@@ -56,7 +56,7 @@ class KnowledgeTools(BaseTool):
     def get_tool_names(self) -> list[str]:
         if self._store.document_count == 0:
             return []
-        return [t["name"] for t in TOOL_DEFINITIONS]
+        return [str(t["name"]) for t in TOOL_DEFINITIONS]
 
     def execute(self, tool_name: str, parameters: dict[str, Any]) -> ToolResult:
         start = time.time()

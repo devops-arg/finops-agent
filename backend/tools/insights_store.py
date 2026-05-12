@@ -21,7 +21,7 @@ DB_PATH = Path(os.environ.get("DATA_DIR", "/app/data")) / "insights.db"
 
 class InsightsStore:
     def __init__(self, db_path: Path = DB_PATH):
-        self._db_path = db_path
+        self._db_path: Optional[Path] = db_path
         self._lock = threading.Lock()
         self._cache: Optional[list[dict]] = None
         self._cache_at: Optional[datetime] = None
@@ -127,7 +127,7 @@ class InsightsStore:
     def get_summary(self) -> dict[str, Any]:
         insights = self.get_insights()
         total_savings = sum(i.get("savings_usd", 0) for i in insights)
-        by_status = {}
+        by_status: dict[str, int] = {}
         for i in insights:
             s = i.get("status", "info")
             by_status[s] = by_status.get(s, 0) + 1

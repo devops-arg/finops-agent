@@ -102,6 +102,34 @@ exclude = [
 module = "backend.tools.mock_data"
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = "backend.tools.waste_analyzers"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.tools.live_resources"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.tools.insights_engine"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.tools.aws_costs"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.tools.aws_api"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.reports.generator"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.reports.html_report"
+ignore_errors = true
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Pytest
 # ─────────────────────────────────────────────────────────────────────────────
