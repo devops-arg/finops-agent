@@ -34,6 +34,8 @@ class InsightsStore:
         return conn
 
     def _init_db(self):
+        if self._db_path is None:
+            return
         try:
             self._db_path.parent.mkdir(parents=True, exist_ok=True)
             with self._connect() as conn:

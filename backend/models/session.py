@@ -21,8 +21,10 @@ class SessionState:
             self.last_activity = self.created_at
 
     def add_message(self, role: str, content: str):
+        assert self.context is not None
         self.context.add_message(role, content)
         self.last_activity = datetime.utcnow().isoformat()
 
     def get_messages_for_llm(self) -> list[dict[str, str]]:
+        assert self.context is not None
         return self.context.get_messages_for_llm()

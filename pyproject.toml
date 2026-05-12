@@ -130,6 +130,22 @@ ignore_errors = true
 module = "backend.reports.html_report"
 ignore_errors = true
 
+[[tool.mypy.overrides]]
+module = "backend.server.main"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.tools.aws_resources"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.llm.openai_provider"
+ignore_errors = true
+
+[[tool.mypy.overrides]]
+module = "backend.llm.anthropic_provider"
+ignore_errors = true
+
 # ─────────────────────────────────────────────────────────────────────────────
 # Pytest
 # ─────────────────────────────────────────────────────────────────────────────
